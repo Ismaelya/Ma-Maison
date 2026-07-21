@@ -1,0 +1,366 @@
+// ============================================================
+// MA MAISON — schema.prisma (v1.1, consolidé)
+// Consolide les définitions des Parties 3, 5 et 6 du Master Prompt.
+// Prisma ne modélise jamais l'identité : `Profile` est une extension
+// 1:1 de auth.users (Supabase Auth), synchronisée par trigger SQL
+// (voir supabase-rls-policies.sql). Aucun mot de passe ici.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------
+
+enum UserRole {
+  TENANT
+  OWNER
+  AGENCY  // même mécanique que OWNER (1 compte = 1 abonnement = TRIAL/ACTIVE/EXPIRED), compte partagé par l'équipe
+  ADMIN
+}
+
+/// Statut du COMPTE — indépendant du statut d'abonnement.
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+/// Statut de l'ABONNEMENT uniquement (jamais SUSPENDED ici,
+/// qui appartient à AccountStatus — décision Partie 2/3).
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentMethod {
+  AMANATA
+  MYNITA
+  WAVE
+}
+
+enum PropertyStatus {
+  DRAFT     // sauvegardée par le propriétaire/agence, pas encore soumise à validation admin
+  PENDING
+  APPROVED
+  REJECTED
+  HIDDEN
+  DELETED
+}
+
+enum PropertyType {
+  HOUSE
+  APARTMENT
+  ROOM
+  VILLA
+  OFFICE
+  SHOP
+  LAND
+}
+
+enum ReportStatus {
+  OPEN
+  IN_REVIEW
+  CLOSED
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  ADMIN_LOGIN
+  PROPERTY_CREATED
+  PROPERTY_UPDATED
+  PROPERTY_DELETED
+  PROPERTY_APPROVED
+  PROPERTY_REJECTED
+  PAYMENT_APPROVED
+  PAYMENT_REJECTED
+  ACCOUNT_SUSPENDED
+  ADMIN_ACTION
+}
+
+// ---------------------------------------------------------
+// PROFIL — extension de auth.users, PAS un modèle d'identité autonome
+// ---------------------------------------------------------
+
+model Profile {
+  /// FK 1:1 vers auth.users.id — jamais @default(uuid()).
+  /// Alimenté par le trigger on_auth_user_created (voir .sql).
+  id String @id
+
+  name  String
+  phone String @unique
+  email String @unique // identifiant Supabase Auth — obligatoire (Partie 2)
+
+  role   UserRole
+  status AccountStatus @default(ACTIVE)
+
+  city      String?
+  district  String?
+  avatarUrl String?
+
+  emailVerified Boolean @default(false)
+  phoneVerified Boolean @default(false)
+
+  trialStartedAt DateTime?
+  badgeVerified  Boolean   @default(false)
+
+  // Uniquement pertinent si role = AGENCY
+  agencyName    String?
+  agencyLogoUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  properties        Property[]
+  favorites         Favorite[]
+  sentMessages      Message[]        @relation("MessageSender")
+  subscriptions     Subscription[]
+  paymentsMade      Payment[]        @relation("PaymentOwner")
+  paymentsValidated Payment[]        @relation("PaymentValidator")
+  reviews           Review[]
+  reports           Report[]
+  tenantConversations Conversation[] @relation("ConversationTenant")
+  ownerConversations  Conversation[] @relation("ConversationOwner")
+  auditLogs         AuditLog[]
+
+  @@map("profiles")
+}
+
+// ---------------------------------------------------------
+// ANNONCES
+// ---------------------------------------------------------
+
+model Property {
+  id String @id @default(uuid())
+
+  ownerId String
+
+  title       String
+  description String
+  type        PropertyType
+
+  price Int
+
+  city     String
+  district String
+  address  String?
+
+  latitude  Float?
+  longitude Float?
+
+  rooms     Int
+  bathrooms Int
+  surface   Int?
+
+  status     PropertyStatus @default(DRAFT)
+  isFeatured Boolean        @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner Profile @relation(fields: [ownerId], references: [id])
+
+  images        PropertyImage[]
+  favorites     Favorite[]
+  conversations Conversation[]
+  reviews       Review[]
+  reports       Report[]
+
+  @@index([city])
+  @@index([district])
+  @@index([price])
+  @@index([status])
+  @@index([ownerId])
+  @@index([city, type, price])
+  @@map("properties")
+}
+
+model PropertyImage {
+  id         String @id @default(uuid())
+  propertyId String
+  url        String
+  order      Int    @default(0)
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_images")
+}
+
+model Favorite {
+  id         String @id @default(uuid())
+  userId     String
+  propertyId String
+
+  user     Profile  @relation(fields: [userId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, propertyId])
+  @@map("favorites")
+}
+
+// ---------------------------------------------------------
+// ABONNEMENT ET PAIEMENT
+// ---------------------------------------------------------
+
+model Subscription {
+  id String @id @default(uuid())
+
+  userId String
+  status SubscriptionStatus // TRIAL | ACTIVE | EXPIRED uniquement
+
+  price     Int      @default(1500)
+  startDate DateTime
+  endDate   DateTime
+
+  user Profile @relation(fields: [userId], references: [id])
+
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([status, endDate])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id String @id @default(uuid())
+
+  userId         String
+  subscriptionId String?
+
+  amount Int
+  method PaymentMethod
+
+  receiptUrl String?
+  reference  String?
+
+  status PaymentStatus @default(PENDING)
+
+  validatedBy String?
+  validatedAt DateTime?
+
+  user         Profile       @relation("PaymentOwner", fields: [userId], references: [id])
+  validator    Profile?      @relation("PaymentValidator", fields: [validatedBy], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@map("payments")
+}
+
+// ---------------------------------------------------------
+// MESSAGERIE
+// ---------------------------------------------------------
+
+model Conversation {
+  id String @id @default(uuid())
+
+  propertyId String
+  tenantId   String
+  ownerId    String
+
+  property Property @relation(fields: [propertyId], references: [id])
+  tenant   Profile   @relation("ConversationTenant", fields: [tenantId], references: [id])
+  owner    Profile   @relation("ConversationOwner", fields: [ownerId], references: [id])
+
+  messages Message[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([propertyId, tenantId])
+  @@map("conversations")
+}
+
+model Message {
+  id String @id @default(uuid())
+
+  conversationId String
+  senderId       String
+  content        String
+  isRead         Boolean @default(false)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  sender       Profile       @relation("MessageSender", fields: [senderId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+// ---------------------------------------------------------
+// AVIS ET SIGNALEMENTS
+// ---------------------------------------------------------
+
+model Review {
+  id String @id @default(uuid())
+
+  propertyId String
+  authorId   String
+  rating     Int
+  comment    String?
+
+  property Property @relation(fields: [propertyId], references: [id])
+  author   Profile   @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([propertyId, authorId])
+  @@map("reviews")
+}
+
+model Report {
+  id String @id @default(uuid())
+
+  propertyId String
+  userId     String
+  reason     String
+  status     ReportStatus @default(OPEN)
+
+  property Property @relation(fields: [propertyId], references: [id])
+  user     Profile   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("reports")
+}
+
+// ---------------------------------------------------------
+// AUDIT
+// ---------------------------------------------------------
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  actorId   String?
+  action    AuditAction
+  targetId  String?
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  actor Profile? @relation(fields: [actorId], references: [id])
+
+  @@index([action])
+  @@index([actorId])
+  @@map("audit_logs")
+}

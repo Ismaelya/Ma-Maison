@@ -1,0 +1,42 @@
+{
+  "Hero": {
+    "title": "Trouvez votre logement idéal au Niger",
+    "subtitle": "Maisons, appartements, villas et bureaux à Niamey, Zinder, Maradi et dans tout le Niger.",
+    "searchPlaceholder": "Rechercher par quartier ou ville...",
+    "searchButton": "Rechercher"
+  },
+  "Categories": {
+    "title": "Explorer par catégorie",
+    "house": "Maison",
+    "apartment": "Appartement",
+    "villa": "Villa",
+    "room": "Chambre / Studio",
+    "office": "Bureau",
+    "shop": "Boutique / Commerce",
+    "land": "Terrain"
+  },
+  "Property": {
+    "pricePerMonth": "FCFA / mois",
+    "rooms": "pièce(s)",
+    "bathrooms": "salle(s) de bain",
+    "surface": "m²",
+    "verifiedOwner": "Propriétaire Vérifié",
+    "verifiedAgency": "Agence Vérifiée",
+    "contactOwner": "Contacter le propriétaire",
+    "contactAgency": "Contacter l'agence"
+  },
+  "Status": {
+    "draft": "Brouillon",
+    "pending": "En attente de validation",
+    "approved": "Approuvée",
+    "rejected": "Refusée",
+    "hidden": "Masquée",
+    "deleted": "Supprimée"
+  },
+  "Roles": {
+    "tenant": "Locataire",
+    "owner": "Propriétaire",
+    "agency": "Agence immobilière",
+    "admin": "Administrateur"
+  }
+}
