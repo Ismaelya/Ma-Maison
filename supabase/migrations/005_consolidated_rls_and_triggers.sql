@@ -133,7 +133,7 @@ security definer
 stable
 set search_path = public
 as $$
-  select role from public.profiles where id = auth.uid();
+  select role from public.profiles where id = auth.uid()::text;
 $$;
 
 create or replace function public.is_admin()
@@ -143,7 +143,7 @@ security definer
 stable
 set search_path = public
 as $$
-  select coalesce((select role from public.profiles where id = auth.uid()) = 'ADMIN', false);
+  select coalesce((select role from public.profiles where id = auth.uid()::text) = 'ADMIN', false);
 $$;
 
 -- ------------------------------------------------------------
@@ -169,13 +169,13 @@ alter table public.audit_logs enable row level security;
 drop policy if exists "profiles_select_own_or_public_fields" on public.profiles;
 create policy "profiles_select_own_or_public_fields"
   on public.profiles for select
-  using (id = auth.uid() or public.is_admin());
+  using (id = auth.uid()::text or public.is_admin());
 
 drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own"
   on public.profiles for update
-  using (id = auth.uid())
-  with check (id = auth.uid());
+  using (id = auth.uid()::text)
+  with check (id = auth.uid()::text);
 
 create or replace function public.prevent_role_status_escalation()
 returns trigger
@@ -226,28 +226,28 @@ create policy "properties_public_read"
 drop policy if exists "properties_owner_read_own" on public.properties;
 create policy "properties_owner_read_own"
   on public.properties for select
-  using ("ownerId" = auth.uid());
+  using ("ownerId" = auth.uid()::text);
 
 drop policy if exists "properties_owner_insert" on public.properties;
 create policy "properties_owner_insert"
   on public.properties for insert
   with check (
-    "ownerId" = auth.uid()
+    "ownerId" = auth.uid()::text
     and exists (
       select 1 from public.profiles p
-      where p.id = auth.uid() and p.role in ('OWNER', 'AGENCY') and p.status = 'ACTIVE'
+      where p.id = auth.uid()::text and p.role in ('OWNER', 'AGENCY') and p.status = 'ACTIVE'
     )
   );
 
 drop policy if exists "properties_owner_update_delete" on public.properties;
 create policy "properties_owner_update_delete"
   on public.properties for update
-  using ("ownerId" = auth.uid());
+  using ("ownerId" = auth.uid()::text);
 
 drop policy if exists "properties_owner_delete" on public.properties;
 create policy "properties_owner_delete"
   on public.properties for delete
-  using ("ownerId" = auth.uid());
+  using ("ownerId" = auth.uid()::text);
 
 drop policy if exists "properties_admin_full_access" on public.properties;
 create policy "properties_admin_full_access"
@@ -271,14 +271,14 @@ create policy "property_images_owner_write"
   using (
     exists (
       select 1 from public.properties pr
-      where pr.id = property_images."propertyId" and pr."ownerId" = auth.uid()
+      where pr.id = property_images."propertyId" and pr."ownerId" = auth.uid()::text
     )
   );
 
 drop policy if exists "favorites_own_only" on public.favorites;
 create policy "favorites_own_only"
   on public.favorites for all
-  using ("userId" = auth.uid());
+  using ("userId" = auth.uid()::text);
 
 -- ------------------------------------------------------------
 -- 10. CONVERSATIONS / MESSAGES
@@ -287,12 +287,12 @@ create policy "favorites_own_only"
 drop policy if exists "conversations_participants_only" on public.conversations;
 create policy "conversations_participants_only"
   on public.conversations for select
-  using ("tenantId" = auth.uid() or "ownerId" = auth.uid() or public.is_admin());
+  using ("tenantId" = auth.uid()::text or "ownerId" = auth.uid()::text or public.is_admin());
 
 drop policy if exists "conversations_tenant_create" on public.conversations;
 create policy "conversations_tenant_create"
   on public.conversations for insert
-  with check ("tenantId" = auth.uid());
+  with check ("tenantId" = auth.uid()::text);
 
 drop policy if exists "messages_participants_only" on public.messages;
 create policy "messages_participants_only"
@@ -301,7 +301,7 @@ create policy "messages_participants_only"
     exists (
       select 1 from public.conversations c
       where c.id = messages."conversationId"
-        and (c."tenantId" = auth.uid() or c."ownerId" = auth.uid())
+        and (c."tenantId" = auth.uid()::text or c."ownerId" = auth.uid()::text)
     )
   );
 
@@ -309,11 +309,11 @@ drop policy if exists "messages_participants_send" on public.messages;
 create policy "messages_participants_send"
   on public.messages for insert
   with check (
-    "senderId" = auth.uid()
+    "senderId" = auth.uid()::text
     and exists (
       select 1 from public.conversations c
       where c.id = messages."conversationId"
-        and (c."tenantId" = auth.uid() or c."ownerId" = auth.uid())
+        and (c."tenantId" = auth.uid()::text or c."ownerId" = auth.uid()::text)
     )
   );
 
@@ -329,12 +329,12 @@ create policy "reviews_public_read"
 drop policy if exists "reviews_author_write" on public.reviews;
 create policy "reviews_author_write"
   on public.reviews for insert
-  with check ("authorId" = auth.uid());
+  with check ("authorId" = auth.uid()::text);
 
 drop policy if exists "reports_create_own" on public.reports;
 create policy "reports_create_own"
   on public.reports for insert
-  with check ("userId" = auth.uid());
+  with check ("userId" = auth.uid()::text);
 
 drop policy if exists "reports_admin_manage" on public.reports;
 create policy "reports_admin_manage"
@@ -348,7 +348,7 @@ create policy "reports_admin_manage"
 drop policy if exists "subscriptions_owner_read" on public.subscriptions;
 create policy "subscriptions_owner_read"
   on public.subscriptions for select
-  using ("userId" = auth.uid() or public.is_admin());
+  using ("userId" = auth.uid()::text or public.is_admin());
 
 drop policy if exists "subscriptions_admin_write" on public.subscriptions;
 create policy "subscriptions_admin_write"
@@ -358,12 +358,12 @@ create policy "subscriptions_admin_write"
 drop policy if exists "payments_owner_read_create" on public.payments;
 create policy "payments_owner_read_create"
   on public.payments for select
-  using ("userId" = auth.uid() or public.is_admin());
+  using ("userId" = auth.uid()::text or public.is_admin());
 
 drop policy if exists "payments_owner_create" on public.payments;
 create policy "payments_owner_create"
   on public.payments for insert
-  with check ("userId" = auth.uid());
+  with check ("userId" = auth.uid()::text);
 
 drop policy if exists "payments_admin_validate" on public.payments;
 create policy "payments_admin_validate"
