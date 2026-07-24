@@ -84,10 +84,12 @@ describe("getPropertyTypeLabel", () => {
 
 describe("getTransactionTypeLabel", () => {
   it("maps rent correctly", () => {
+    expect(getTransactionTypeLabel("RENT")).toBe("Location");
     expect(getTransactionTypeLabel("rent")).toBe("Location");
   });
 
   it("maps sale correctly", () => {
+    expect(getTransactionTypeLabel("SALE")).toBe("Vente");
     expect(getTransactionTypeLabel("sale")).toBe("Vente");
   });
 });

@@ -14,20 +14,11 @@ export default async function MyListingsPage() {
   const { profile } = await requireRole("owner");
   const supabase = await createClient();
 
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("properties")
     .select("*, property_images(url)")
-    .eq("owner_id", profile.id)
-    .order("created_at", { ascending: false });
-
-  if (!data || data.length === 0) {
-    const { data: legacyData } = await supabase
-      .from("listings")
-      .select("*")
-      .eq("owner_id", profile.id)
-      .order("created_at", { ascending: false });
-    data = legacyData as any;
-  }
+    .eq("ownerId", profile.id)
+    .order("createdAt", { ascending: false });
 
   const listings = (data ?? []) as any[];
 
@@ -96,17 +87,17 @@ export default async function MyListingsPage() {
                   <span
                     className={cn(
                       "flex-shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                      listing.is_published
+                      listing.status === "APPROVED"
                         ? "bg-green-100 text-green-700"
                         : "bg-neutral-100 text-neutral-600"
                     )}
                   >
-                    {listing.is_published ? "Active" : "Brouillon"}
+                    {listing.status === "APPROVED" ? "Publiée" : listing.status}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-neutral-600">
                   {formatPrice(listing.price)} · {listing.city} ·{" "}
-                  {formatRelativeTime(listing.created_at)}
+                  {formatRelativeTime(listing.createdAt)}
                 </p>
               </div>
 

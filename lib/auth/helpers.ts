@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, UserRole } from "@/types";
+import type { Profile, Subscription, UserRole } from "@/types";
 
 export type AuthUser = {
   id: string;
@@ -55,7 +55,7 @@ export async function requireAuth(): Promise<AuthUser> {
     redirect("/connexion");
   }
 
-  const accountStatus = (user.profile.account_status ?? "").toUpperCase();
+  const accountStatus = (user.profile.status ?? "").toUpperCase();
 
   if (accountStatus === "SUSPENDED") {
     redirect("/compte-suspendu");
@@ -85,23 +85,14 @@ export async function requireRole(role: UserRole): Promise<AuthUser> {
 
 /**
  * Checks whether an owner or agency can publish/manage listings.
- * Both 'TRIAL' and 'ACTIVE' subscription statuses are permitted.
- * 'EXPIRED' blocks publication.
- * Account status must not be 'SUSPENDED'.
+ * Requires active account status and a valid TRIAL or ACTIVE subscription.
  */
-export function canOwnerPublish(profile: Profile): boolean {
-  const accountStatus = (profile.account_status ?? "").toUpperCase();
-  const role = (profile.role ?? "").toUpperCase();
-  const subStatus = (profile.subscription_status ?? "").toUpperCase();
-
-  if (accountStatus === "SUSPENDED") {
-    return false;
-  }
-
-  if (role !== "OWNER" && role !== "AGENCY" && role !== "ADMIN") {
-    return false;
-  }
-
-  // TRIAL and ACTIVE are both allowed to publish. Only EXPIRED is blocked.
-  return subStatus !== "EXPIRED";
+export function canOwnerPublish(profile: Profile, subscription: Subscription | null): boolean {
+  const role = profile.role;
+  if (profile.status === "SUSPENDED") return false;
+  if (role !== "OWNER" && role !== "AGENCY" && role !== "ADMIN") return false;
+  if (role === "ADMIN") return true; // admin non soumis à l'abonnement
+  if (!subscription) return false;
+  if (subscription.status === "EXPIRED") return false;
+  return subscription.status === "TRIAL" || subscription.status === "ACTIVE";
 }

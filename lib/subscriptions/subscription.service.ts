@@ -2,10 +2,10 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 export class SubscriptionService {
   /**
-   * Creates an initial TRIAL subscription for a new OWNER user.
+   * Creates an initial TRIAL subscription for a new OWNER or AGENCY user.
    * TRIAL duration: 30 days.
    */
-  static async createTrialSubscription(ownerId: string): Promise<any> {
+  static async createTrialSubscription(userId: string): Promise<any> {
     const supabaseAdmin = await createAdminClient();
     const startDate = new Date().toISOString();
     const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -13,13 +13,11 @@ export class SubscriptionService {
     const { data, error } = await supabaseAdmin
       .from("subscriptions")
       .insert({
-        owner_id: ownerId,
-        user_id: ownerId,
+        userId,
         status: "TRIAL",
         price: 1500,
-        start_date: startDate,
-        end_date: endDate,
-        expires_at: endDate,
+        startDate,
+        endDate,
       } as any)
       .select()
       .single();
@@ -33,15 +31,15 @@ export class SubscriptionService {
   /**
    * Retrieves active/trial subscription status for an owner.
    */
-  static async getSubscriptionStatus(ownerId: string): Promise<any> {
+  static async getSubscriptionStatus(userId: string): Promise<any> {
     const supabase = await createClient();
     const { data } = await supabase
       .from("subscriptions")
       .select("*")
-      .or(`owner_id.eq.${ownerId},user_id.eq.${ownerId}`)
-      .order("created_at", { ascending: false })
+      .eq("userId", userId)
+      .order("createdAt", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     return data;
   }

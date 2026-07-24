@@ -1,21 +1,22 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { AuditService } from "@/lib/audit/audit.service";
+import { randomUUID } from "crypto";
 
 export class PaymentService {
   /**
    * Submits a manual payment request (WAVE, AMANATA, MYNITA) for an owner.
    * Status initialized to PENDING.
    */
-  static async submitPaymentRequest(userId: string, payload: { method: string; receiptUrl: string; amount?: number }) {
+  static async submitPaymentRequest(userId: string, payload: { method: string; receiptUrl: string; amount?: number; subscriptionId?: string }) {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("payments")
       .insert({
-        user_id: userId,
-        owner_id: userId,
+        id: randomUUID(),
+        userId,
+        subscriptionId: payload.subscriptionId ?? null,
         method: payload.method.toUpperCase(),
-        provider: payload.method.toUpperCase(),
-        receipt_url: payload.receiptUrl,
+        receiptUrl: payload.receiptUrl,
         amount: payload.amount ?? 1500,
         status: "PENDING",
       } as any)
@@ -29,7 +30,7 @@ export class PaymentService {
   /**
    * Approves a payment request.
    * Section 53 spec: Simply updates payment.status = 'APPROVED'.
-   * PostgreSQL trigger on_payment_approved handles atomic subscription update +30 days and badge verified.
+   * PostgreSQL trigger handle_payment_approved handles atomic subscription update +30 days and badge verified.
    */
   static async approvePayment(paymentId: string, adminId: string) {
     const supabaseAdmin = await createAdminClient();
@@ -37,8 +38,8 @@ export class PaymentService {
       .from("payments")
       .update({
         status: "APPROVED",
-        validated_by: adminId,
-        validated_at: new Date().toISOString(),
+        validatedBy: adminId,
+        validatedAt: new Date().toISOString(),
       } as any)
       .eq("id", paymentId)
       .select()
@@ -59,9 +60,8 @@ export class PaymentService {
       .from("payments")
       .update({
         status: "REJECTED",
-        admin_notes: reason ?? null,
-        validated_by: adminId,
-        validated_at: new Date().toISOString(),
+        validatedBy: adminId,
+        validatedAt: new Date().toISOString(),
       } as any)
       .eq("id", paymentId)
       .select()

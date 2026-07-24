@@ -26,6 +26,7 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
       title: initialData.title,
       description: initialData.description,
       propertyType: initialData.type || initialData.property_type || "HOUSE",
+      transactionType: String(initialData.transactionType || initialData.transaction_type || "RENT").toUpperCase(),
       price: initialData.price,
       city: initialData.city,
       district: initialData.district || initialData.neighborhood || initialData.city,
@@ -48,6 +49,7 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
           title: formData.title,
           description: formData.description,
           type: formData.propertyType.toUpperCase(),
+          transactionType: formData.transactionType.toUpperCase(),
           price: formData.price,
           city: formData.city,
           district: formData.district,
@@ -121,6 +123,22 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
           <option value="SHOP">Boutique / Local commercial</option>
           <option value="LAND">Terrain</option>
         </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 mb-1">
+          Type de transaction *
+        </label>
+        <select
+          {...register("transactionType")}
+          className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-3 text-sm focus:border-primary-500 focus:bg-white focus:outline-none"
+        >
+          <option value="RENT">Location</option>
+          <option value="SALE">Vente</option>
+        </select>
+        {errors.transactionType && (
+          <p className="mt-1 text-xs text-red-500">{errors.transactionType.message as string}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

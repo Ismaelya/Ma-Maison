@@ -72,6 +72,11 @@ enum PropertyType {
   LAND
 }
 
+enum TransactionType {
+  RENT
+  SALE
+}
+
 enum ReportStatus {
   OPEN
   IN_REVIEW
@@ -152,7 +157,8 @@ model Property {
 
   title       String
   description String
-  type        PropertyType
+  type            PropertyType
+  transactionType TransactionType @default(RENT) // RENT (prix affiché "/mois") ou SALE (prix affiché total)
 
   price Int
 
@@ -187,6 +193,7 @@ model Property {
   @@index([status])
   @@index([ownerId])
   @@index([city, type, price])
+  @@index([transactionType])
   @@map("properties")
 }
 
@@ -225,7 +232,7 @@ model Subscription {
   userId String
   status SubscriptionStatus // TRIAL | ACTIVE | EXPIRED uniquement
 
-  price     Int      @default(1500)
+  price     Int      // lu depuis AppSettings.subscriptionPrice au moment de la création, jamais une constante en dur
   startDate DateTime
   endDate   DateTime
 
@@ -363,4 +370,26 @@ model AuditLog {
   @@index([action])
   @@index([actorId])
   @@map("audit_logs")
+}
+
+// ---------------------------------------------------------
+// PARAMÈTRES DE L'APPLICATION — table singleton (une seule ligne)
+// Évite les valeurs métier en dur dans le code (Article 5 de la
+// Constitution + ajustement CTO Partie 10). Modifiable par un admin
+// sans redéploiement.
+// ---------------------------------------------------------
+
+model AppSettings {
+  id String @id @default("singleton") // toujours cette valeur unique — une seule ligne dans cette table
+
+  subscriptionPrice   Int @default(1500)
+  trialDurationDays   Int @default(30)
+
+  paymentPhoneNumbers Json // { amanata: string, mynita: string, wave: string }
+  maxImagesPerListing Int  @default(10)
+  maxImageSizeMb      Int  @default(5)
+
+  updatedAt DateTime @updatedAt
+
+  @@map("app_settings")
 }

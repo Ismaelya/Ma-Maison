@@ -1,89 +1,71 @@
 import type { Metadata } from "next";
-import { MessageSquare } from "lucide-react";
+import Link from "next/link";
+import { MessageSquare, Building2 } from "lucide-react";
 import { requireAuth } from "@/lib/auth/helpers";
-import { createClient } from "@/lib/supabase/server";
+import { MessageService } from "@/lib/messaging/message.service";
 import { formatRelativeTime, cn } from "@/lib/utils";
+import { ChatBox } from "@/components/dashboard/chat-box";
 
 export const metadata: Metadata = {
   title: "Messages",
 };
 
-export default async function MessagesPage() {
+type SearchParams = Promise<{
+  conv?: string;
+}>;
+
+export default async function MessagesPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const { profile } = await requireAuth();
-  const supabase = await createClient();
+  const params = await searchParams;
 
-  // Get conversations for current user
-  let { data: convData } = await supabase
-    .from("conversations")
-    .select("*, tenant:profiles!tenant_id(id, name, full_name, avatar_url), owner:profiles!owner_id(id, name, full_name, avatar_url), conversation_messages(*)")
-    .or(`tenant_id.eq.${profile.id},owner_id.eq.${profile.id}`)
-    .order("created_at", { ascending: false });
+  // Get conversations for current user using official MessageService
+  const rawConversations = await MessageService.getConversations(profile.id);
 
-  let messages = (convData ?? []) as any[];
+  const formattedConversations = rawConversations.map((conv: any) => {
+    const isTenant = conv.tenantId === profile.id;
+    const partner = isTenant ? conv.owner : conv.tenant;
+    const partnerName = partner?.name || partner?.full_name || "Utilisateur";
+    const partnerAvatar = partner?.avatarUrl || partner?.avatar_url || null;
+    const messages = Array.isArray(conv.messages) ? conv.messages : [];
 
-  if (messages.length === 0) {
-    const { data: legacyMessages } = await supabase
-      .from("messages")
-      .select("*, sender:profiles!sender_id(id, full_name, avatar_url), receiver:profiles!receiver_id(id, full_name, avatar_url)")
-      .or(`sender_id.eq.${profile.id},receiver_id.eq.${profile.id}`)
-      .order("created_at", { ascending: false })
-      .limit(50);
-    messages = (legacyMessages ?? []) as any[];
-  }
+    // Sort messages chronologically
+    const sortedMessages = [...messages].sort(
+      (a, b) => new Date(a.createdAt || a.created_at).getTime() - new Date(b.createdAt || b.created_at).getTime()
+    );
 
-  // Group messages by conversation partner
-  const conversations = new Map<
-    string,
-    {
-      partnerId: string;
-      partnerName: string;
-      lastMessage: string;
-      lastDate: string;
-      isRead: boolean;
-      unreadCount: number;
-    }
-  >();
+    const lastMsg = sortedMessages.length > 0 ? sortedMessages[sortedMessages.length - 1] : null;
 
-  (messages ?? []).forEach((msg) => {
-    const sender = msg.sender as unknown as { id: string; full_name: string | null };
-    const receiver = msg.receiver as unknown as { id: string; full_name: string | null };
-
-    const isMyMessage = msg.sender_id === profile.id;
-    const partnerId = isMyMessage ? msg.receiver_id : msg.sender_id;
-    const partnerName = isMyMessage
-      ? (receiver?.full_name ?? "Utilisateur")
-      : (sender?.full_name ?? "Utilisateur");
-
-    if (!conversations.has(partnerId)) {
-      conversations.set(partnerId, {
-        partnerId,
-        partnerName,
-        lastMessage: msg.content,
-        lastDate: msg.created_at,
-        isRead: isMyMessage || msg.is_read,
-        unreadCount: !isMyMessage && !msg.is_read ? 1 : 0,
-      });
-    } else {
-      const existing = conversations.get(partnerId)!;
-      if (!isMyMessage && !msg.is_read) {
-        existing.unreadCount += 1;
-      }
-    }
+    return {
+      id: conv.id,
+      propertyId: conv.propertyId || conv.property_id,
+      propertyTitle: conv.property?.title ?? "Bien immobilier",
+      partnerId: isTenant ? conv.ownerId : conv.tenantId,
+      partnerName,
+      partnerAvatar,
+      lastMessage: lastMsg?.content ?? "Nouvelle conversation",
+      lastDate: lastMsg?.createdAt || lastMsg?.created_at || conv.createdAt || conv.created_at,
+      messages: sortedMessages,
+    };
   });
 
-  const conversationList = Array.from(conversations.values());
+  const selectedConvId = params.conv || (formattedConversations.length > 0 ? formattedConversations[0].id : null);
+  const activeConversation = formattedConversations.find((c) => c.id === selectedConvId) || formattedConversations[0];
 
   return (
     <div className="animate-fade-in space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Messages</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">Messagerie</h1>
         <p className="mt-1 text-neutral-600">
-          {conversationList.length} conversation
-          {conversationList.length !== 1 ? "s" : ""}
+          {formattedConversations.length} conversation
+          {formattedConversations.length !== 1 ? "s" : ""}
         </p>
       </div>
 
-      {conversationList.length === 0 ? (
+      {formattedConversations.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-neutral-200 py-16 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
             <MessageSquare className="h-8 w-8 text-neutral-400" />
@@ -92,50 +74,74 @@ export default async function MessagesPage() {
             Aucun message
           </p>
           <p className="mt-1 text-sm text-neutral-500">
-            Vos conversations avec les propriétaires apparaîtront ici
+            Vos conversations avec les propriétaires et locataires apparaîtront ici
           </p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
-          {conversationList.map((conv, i) => (
-            <div
-              key={conv.partnerId}
-              className={cn(
-                "flex items-center gap-4 px-5 py-4 transition-colors hover:bg-neutral-50",
-                i !== 0 && "border-t border-[var(--border)]",
-                !conv.isRead && "bg-primary-50/50"
-              )}
-            >
-              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-700">
-                {conv.partnerName.charAt(0).toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <p
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* Conversation List Sidebar */}
+          <div className="lg:col-span-5 space-y-3">
+            <div className="rounded-2xl border border-[var(--border)] bg-white p-3 shadow-[var(--shadow-card)]">
+              {formattedConversations.map((conv) => {
+                const isSelected = conv.id === activeConversation?.id;
+                return (
+                  <Link
+                    key={conv.id}
+                    href={`/dashboard/messages?conv=${conv.id}`}
                     className={cn(
-                      "truncate text-sm",
-                      !conv.isRead
-                        ? "font-bold text-neutral-900"
-                        : "font-medium text-neutral-700"
+                      "flex items-center gap-3 rounded-xl p-3 transition-colors",
+                      isSelected
+                        ? "bg-primary-50 text-primary-900 border border-primary-200"
+                        : "hover:bg-neutral-50"
                     )}
                   >
-                    {conv.partnerName}
-                  </p>
-                  <span className="ml-2 flex-shrink-0 text-xs text-neutral-500">
-                    {formatRelativeTime(conv.lastDate)}
-                  </span>
-                </div>
-                <p className="mt-0.5 truncate text-sm text-neutral-500">
-                  {conv.lastMessage}
-                </p>
-              </div>
-              {conv.unreadCount > 0 && (
-                <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-primary-600 px-2 text-xs font-bold text-white">
-                  {conv.unreadCount}
-                </span>
-              )}
+                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-700">
+                      {conv.partnerAvatar ? (
+                        <img src={conv.partnerAvatar} alt={conv.partnerName} className="h-full w-full rounded-full object-cover" />
+                      ) : (
+                        conv.partnerName.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="truncate text-sm font-semibold text-neutral-900">
+                          {conv.partnerName}
+                        </p>
+                        <span className="text-[10px] text-neutral-400">
+                          {formatRelativeTime(conv.lastDate)}
+                        </span>
+                      </div>
+                      <p className="truncate text-xs text-neutral-500 mt-0.5">
+                        {conv.lastMessage}
+                      </p>
+                      <div className="mt-1 flex items-center gap-1 text-[11px] text-neutral-400">
+                        <Building2 className="h-3 w-3" />
+                        <span className="truncate">{conv.propertyTitle}</span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
-          ))}
+          </div>
+
+          {/* Active Conversation ChatBox */}
+          <div className="lg:col-span-7">
+            {activeConversation ? (
+              <ChatBox
+                currentUserId={profile.id}
+                partnerId={activeConversation.partnerId}
+                partnerName={activeConversation.partnerName}
+                partnerAvatar={activeConversation.partnerAvatar}
+                conversationId={activeConversation.id}
+                initialMessages={activeConversation.messages}
+              />
+            ) : (
+              <div className="flex h-[400px] items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-neutral-400 text-sm">
+                Sélectionnez une conversation
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

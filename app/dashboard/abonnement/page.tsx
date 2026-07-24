@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CheckCircle2, Clock, AlertTriangle, ShieldCheck, CreditCard, ArrowRight } from "lucide-react";
+import { CheckCircle2, ShieldCheck, CreditCard } from "lucide-react";
 import { requireRole } from "@/lib/auth/helpers";
 import { createClient } from "@/lib/supabase/server";
 import { getTrialDaysRemaining, formatDate, formatPrice, cn } from "@/lib/utils";
@@ -14,27 +14,38 @@ export default async function SubscriptionPage() {
   const { profile } = await requireRole("owner");
   const supabase = await createClient();
 
-  // Fetch active subscription if available
+  // 1. Fetch AppSettings (Requirement 5: payment numbers must come from app_settings, not hardcoded)
+  const { data: appSettings } = await supabase
+    .from("app_settings")
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+
+  const rawPhoneNumbers = (appSettings?.paymentPhoneNumbers as any) ?? {};
+  const wavePhone = rawPhoneNumbers.wave ?? "+227 90 00 00 01";
+  const amanataPhone = rawPhoneNumbers.amanata ?? "+227 96 00 00 02";
+  const mynitaPhone = rawPhoneNumbers.mynita ?? "+227 98 00 00 03";
+  const subPrice = appSettings?.subscriptionPrice ?? 1500;
+
+  // 2. Fetch active / trial subscription if available
   const { data: activeSub } = await supabase
     .from("subscriptions")
     .select("*")
-    .eq("owner_id", profile.id)
-    .eq("status", "active")
-    .gt("expires_at", new Date().toISOString())
-    .order("expires_at", { ascending: false })
+    .eq("userId", profile.id)
+    .order("createdAt", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
-  // Fetch payment request history
+  // 3. Fetch payment request history
   const { data: payments } = await supabase
     .from("payments")
     .select("*")
-    .eq("owner_id", profile.id)
-    .order("created_at", { ascending: false });
+    .eq("userId", profile.id)
+    .order("createdAt", { ascending: false });
 
   const paymentList = (payments ?? []) as Payment[];
-  const trialDays = getTrialDaysRemaining(profile.trial_started_at);
-  const status = profile.subscription_status;
+  const trialDays = activeSub?.endDate ? getTrialDaysRemaining(activeSub.endDate) : null;
+  const status = (activeSub?.status ?? "EXPIRED").toLowerCase();
 
   return (
     <div className="animate-fade-in space-y-8">
@@ -78,7 +89,7 @@ export default async function SubscriptionPage() {
                     ? "Essai Gratuit"
                     : "Abonnement Expiré"}
               </span>
-              {profile.badge_verified && (
+              {(profile.badgeVerified || profile.badge_verified) && (
                 <span className="flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
                   <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
                   Badge Vérifié
@@ -86,15 +97,15 @@ export default async function SubscriptionPage() {
               )}
             </div>
             <span className="text-2xl font-extrabold text-neutral-900">
-              {formatPrice(1500)} <span className="text-xs font-normal text-neutral-500">/mois</span>
+              {formatPrice(subPrice)} <span className="text-xs font-normal text-neutral-500">/mois</span>
             </span>
           </div>
 
           <div className="mt-6">
-            {status === "active" && activeSub?.expires_at ? (
+            {status === "active" && (activeSub?.endDate || activeSub?.expires_at) ? (
               <div>
                 <p className="text-sm font-semibold text-green-900">
-                  Votre abonnement Premium est valide jusqu&apos;au {formatDate(activeSub.expires_at)}.
+                  Votre abonnement Premium est valide jusqu&apos;au {formatDate(activeSub.endDate || activeSub.expires_at)}.
                 </p>
                 <p className="mt-1 text-xs text-green-700">
                   Vos annonces bénéficient de la visibilité normale et du badge propriétaire vérifié.
@@ -103,7 +114,7 @@ export default async function SubscriptionPage() {
             ) : status === "trial" ? (
               <div>
                 <p className="text-sm font-semibold text-blue-900">
-                  Période d&apos;essai gratuite : {trialDays} jour{trialDays > 1 ? "s" : ""} restant{trialDays > 1 ? "s" : ""}.
+                  Période d&apos;essai gratuite : {trialDays} jour{trialDays && trialDays > 1 ? "s" : ""} restant{trialDays && trialDays > 1 ? "s" : ""}.
                 </p>
                 <p className="mt-1 text-xs text-blue-700">
                   Profitez de la publication illimitée et recevez des messages de locataires.
@@ -150,7 +161,7 @@ export default async function SubscriptionPage() {
 
       {/* Manual Payment Instructions & Upload */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        {/* Instructions */}
+        {/* Instructions (Payment phone numbers from AppSettings) */}
         <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)] space-y-6">
           <h2 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary-600" />
@@ -158,8 +169,8 @@ export default async function SubscriptionPage() {
           </h2>
 
           <p className="text-sm text-neutral-600 leading-relaxed">
-            Pour souscrire ou renouveler votre abonnement Premium (**1 500 FCFA / mois**),
-            effectuez le virement du montant exact vers l&apos;un des comptes suivants :
+            Pour souscrire ou renouveler votre abonnement Premium (**{formatPrice(subPrice)} / mois**),
+            effectuez le virement du montant exact vers l&apos;un des comptes ci-dessous :
           </p>
 
           <div className="space-y-3">
@@ -167,7 +178,7 @@ export default async function SubscriptionPage() {
               <div className="flex items-center justify-between">
                 <span className="font-bold text-blue-900">Wave Niger</span>
                 <span className="rounded bg-blue-200 px-2 py-0.5 text-xs font-bold text-blue-800">
-                  +227 90 00 00 01
+                  {wavePhone}
                 </span>
               </div>
               <p className="mt-1 text-xs text-blue-700">Nom du compte : Ma Maison NE</p>
@@ -177,7 +188,7 @@ export default async function SubscriptionPage() {
               <div className="flex items-center justify-between">
                 <span className="font-bold text-orange-900">Amanata Mobile</span>
                 <span className="rounded bg-orange-200 px-2 py-0.5 text-xs font-bold text-orange-800">
-                  +227 96 00 00 02
+                  {amanataPhone}
                 </span>
               </div>
               <p className="mt-1 text-xs text-orange-700">Nom du compte : Ma Maison NE</p>
@@ -187,7 +198,7 @@ export default async function SubscriptionPage() {
               <div className="flex items-center justify-between">
                 <span className="font-bold text-purple-900">Mynita Service</span>
                 <span className="rounded bg-purple-200 px-2 py-0.5 text-xs font-bold text-purple-800">
-                  +227 98 00 00 03
+                  {mynitaPhone}
                 </span>
               </div>
               <p className="mt-1 text-xs text-purple-700">Nom du compte : Ma Maison NE</p>
@@ -197,72 +208,74 @@ export default async function SubscriptionPage() {
           <div className="rounded-xl bg-neutral-100 p-4 text-xs text-neutral-600 space-y-1">
             <p className="font-semibold text-neutral-900">Procédure de validation :</p>
             <ol className="list-decimal list-inside space-y-1">
-              <li>Effectuez le virement de **1 500 FCFA**</li>
+              <li>Effectuez le virement de **{formatPrice(subPrice)}**</li>
               <li>Prenez une capture d&apos;écran ou une photo nette du reçu</li>
               <li>Téléversez le reçu dans le formulaire ci-contre</li>
-              <li>L&apos;administration valide sous 24 heures max</li>
             </ol>
           </div>
         </div>
 
-        {/* Upload form */}
+        {/* Upload Form */}
         <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
-          <h2 className="text-lg font-bold text-neutral-900 mb-6">
-            Envoyer votre reçu de paiement
+          <h2 className="text-lg font-bold text-neutral-900 mb-4">
+            Soumettre un reçu de paiement
           </h2>
           <ReceiptUploadForm />
         </div>
       </div>
 
       {/* Payment History */}
-      <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
-        <h2 className="text-lg font-bold text-neutral-900 mb-4">
-          Historique de vos demandes de paiement
-        </h2>
-
-        {paymentList.length === 0 ? (
-          <p className="py-8 text-center text-sm text-neutral-500">
-            Aucune demande de paiement soumise pour l&apos;instant.
-          </p>
-        ) : (
-          <div className="divide-y divide-[var(--border)]">
-            {paymentList.map((pay: any) => (
-              <div key={pay.id} className="flex items-center justify-between py-4">
-                <div>
-                  <p className="font-semibold text-sm text-neutral-900">
-                    Paiement {(pay.method || pay.provider || "wave").toUpperCase()} — {formatPrice(pay.amount)}
-                  </p>
-                  <p className="text-xs text-neutral-500">
-                    Soumis le {formatDate(pay.created_at)}
-                  </p>
-                  {pay.admin_notes && (
-                    <p className="mt-1 text-xs text-red-600">
-                      Note admin : {pay.admin_notes}
-                    </p>
-                  )}
-                </div>
-
-                <span
-                  className={cn(
-                    "rounded-full px-3 py-1 text-xs font-bold uppercase",
-                    pay.status === "approved"
-                      ? "bg-green-100 text-green-700"
-                      : pay.status === "rejected"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-yellow-100 text-yellow-700"
-                  )}
-                >
-                  {pay.status === "approved"
-                    ? "Validé"
-                    : pay.status === "rejected"
-                      ? "Refusé"
-                      : "En attente"}
-                </span>
-              </div>
-            ))}
+      {paymentList.length > 0 && (
+        <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
+          <h2 className="text-lg font-bold text-neutral-900 mb-4">
+            Historique de vos paiements
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-neutral-200 bg-neutral-50 text-xs font-semibold uppercase text-neutral-500">
+                <tr>
+                  <th className="px-4 py-3">Méthode</th>
+                  <th className="px-4 py-3">Montant</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3 text-right">Statut</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100 text-neutral-700">
+                {paymentList.map((p: any) => {
+                  const pStatus = String(p.status).toLowerCase();
+                  return (
+                    <tr key={p.id}>
+                      <td className="px-4 py-3 font-semibold uppercase">
+                        {p.method || p.provider}
+                      </td>
+                      <td className="px-4 py-3 font-bold text-neutral-900">
+                        {formatPrice(p.amount)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-neutral-500">
+                        {formatDate(p.createdAt || p.created_at)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span
+                          className={cn(
+                            "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
+                            pStatus === "approved" || pStatus === "active"
+                              ? "bg-green-100 text-green-700"
+                              : pStatus === "pending"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-red-100 text-red-700"
+                          )}
+                        >
+                          {pStatus === "approved" ? "Validé" : pStatus === "pending" ? "En attente" : "Refusé"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

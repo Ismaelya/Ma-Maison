@@ -53,28 +53,37 @@ export function ReceiptUploadForm() {
 
       if (!user) throw new Error("Non authentifié");
 
-      // Upload receipt to private bucket `receipts`
+      // Upload receipt to private bucket `payment-receipts` (fallback `receipts`)
       const fileExt = file.name.split(".").pop();
       const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("receipts")
+      let uploadRes = await supabase.storage
+        .from("payment-receipts")
         .upload(filePath, file, { contentType: file.type });
 
-      if (uploadError) throw uploadError;
+      if (uploadRes.error) {
+        uploadRes = await supabase.storage
+          .from("receipts")
+          .upload(filePath, file, { contentType: file.type });
+      }
 
-      // Insert payment record (supports Part 3 user_id / method and legacy owner_id / provider)
-      const { error: dbError } = await supabase.from("payments").insert({
-        user_id: user.id,
-        owner_id: user.id,
-        method: provider.toUpperCase() as any,
-        provider: provider.toLowerCase(),
-        amount: 1500,
-        receipt_url: filePath,
-        status: "PENDING" as any,
-      } as any);
+      if (uploadRes.error) throw uploadRes.error;
 
-      if (dbError) throw dbError;
+      // Submit payment request via API endpoint
+      const res = await fetch("/api/subscription/payment-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: provider.toUpperCase(),
+          receiptUrl: filePath,
+          amount: 1500,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || "Erreur d'envoi du paiement");
+      }
 
       setSuccess(true);
       setFile(null);

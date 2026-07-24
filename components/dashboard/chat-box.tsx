@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Loader2, User, Check, CheckCheck } from "lucide-react";
+import { Send, Loader2, Check, CheckCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatRelativeTime, cn } from "@/lib/utils";
 
@@ -10,7 +10,7 @@ type ChatBoxProps = {
   partnerId: string;
   partnerName: string;
   partnerAvatar?: string | null;
-  conversationId?: string | null;
+  conversationId: string;
   initialMessages?: any[];
 };
 
@@ -34,29 +34,33 @@ export function ChatBox({
   }
 
   useEffect(() => {
+    setMessages(initialMessages);
+  }, [initialMessages]);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   // Subscribe to Supabase Realtime for instant message updates
   useEffect(() => {
+    if (!conversationId) return;
+
     const channel = supabase
-      .channel(`chat_${conversationId || partnerId}`)
+      .channel(`chat_${conversationId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
-          table: conversationId ? "conversation_messages" : "messages",
+          table: "messages",
+          filter: `conversationId=eq.${conversationId}`,
         },
         (payload) => {
           const newMsg = payload.new;
-          if (
-            newMsg.conversation_id === conversationId ||
-            newMsg.sender_id === partnerId ||
-            newMsg.receiver_id === partnerId
-          ) {
-            setMessages((prev) => [...prev, newMsg]);
-          }
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
         }
       )
       .subscribe();
@@ -64,7 +68,7 @@ export function ChatBox({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, partnerId, supabase]);
+  }, [conversationId, supabase]);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -75,31 +79,20 @@ export function ChatBox({
     setContent("");
 
     try {
-      if (conversationId) {
-        // Part 3 model: conversation_messages
-        const { error } = await supabase.from("conversation_messages").insert({
-          conversation_id: conversationId,
-          sender_id: currentUserId,
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId,
           content: msgText,
-          is_read: false,
-        });
+        }),
+      });
 
-        if (error) {
-          // Fallback legacy messages table
-          await supabase.from("messages").insert({
-            sender_id: currentUserId,
-            receiver_id: partnerId,
-            content: msgText,
-            is_read: false,
-          });
-        }
-      } else {
-        // Legacy messages insert
-        await supabase.from("messages").insert({
-          sender_id: currentUserId,
-          receiver_id: partnerId,
-          content: msgText,
-          is_read: false,
+      const json = await res.json();
+      if (json.success && json.data) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === json.data.id)) return prev;
+          return [...prev, json.data];
         });
       }
     } catch (err: any) {
@@ -134,7 +127,10 @@ export function ChatBox({
           </div>
         ) : (
           messages.map((msg, idx) => {
-            const isMine = msg.sender_id === currentUserId;
+            const senderId = msg.senderId || msg.sender_id;
+            const isMine = senderId === currentUserId;
+            const msgDate = msg.createdAt || msg.created_at;
+            const isRead = msg.isRead !== undefined ? msg.isRead : msg.is_read;
 
             return (
               <div
@@ -152,9 +148,9 @@ export function ChatBox({
                   {msg.content}
                 </div>
                 <div className="mt-1 flex items-center gap-1 text-[10px] text-neutral-400">
-                  <span>{formatRelativeTime(msg.created_at)}</span>
+                  <span>{formatRelativeTime(msgDate)}</span>
                   {isMine && (
-                    msg.is_read ? (
+                    isRead ? (
                       <CheckCheck className="h-3 w-3 text-blue-500 inline" />
                     ) : (
                       <Check className="h-3 w-3 text-neutral-400 inline" />

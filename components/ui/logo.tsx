@@ -34,8 +34,8 @@ export function Logo({
             variant === "light" ? "text-white" : "text-neutral-900"
           )}
         >
-          <span className={variant === "light" ? "text-white" : "text-[#0A2540]"}>Ma</span>{" "}
-          <span className="text-[#00C9A7]">Maison</span>
+          <span className={variant === "light" ? "text-white" : "text-[var(--color-text)]"}>Ma</span>{" "}
+          <span className="text-[var(--color-primary)]">Maison</span>
         </span>
       )}
     </div>

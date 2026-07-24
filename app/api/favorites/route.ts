@@ -12,7 +12,7 @@ export async function GET() {
   const { data } = await supabase
     .from("favorites")
     .select("*, property:properties(*, property_images(*))")
-    .eq("user_id", user.id);
+    .eq("userId", user.id);
 
   return apiSuccess(data ?? []);
 }
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from("favorites")
-      .insert({ user_id: user.id, property_id: propertyId } as any)
+      .insert({ userId: user.id, propertyId } as any)
       .select()
       .single();
 
@@ -63,8 +63,8 @@ export async function DELETE(request: Request) {
   await supabase
     .from("favorites")
     .delete()
-    .eq("user_id", user.id)
-    .eq("property_id", propertyId);
+    .eq("userId", user.id)
+    .eq("propertyId", propertyId);
 
   return apiSuccess(null, "Retiré des favoris");
 }

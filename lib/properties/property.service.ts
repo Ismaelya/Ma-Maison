@@ -15,21 +15,22 @@ export class PropertyService {
     const status: PropertyStatus = (payload.status ?? "DRAFT").toUpperCase() as PropertyStatus;
 
     const propertyRecord = {
-      owner_id: ownerId,
+      ownerId,
       title: payload.title,
       description: payload.description,
       type: (payload.propertyType || payload.type || "HOUSE").toUpperCase(),
-      price: payload.price,
+      price: Number(payload.price),
       city: payload.city,
       district: payload.district || payload.neighborhood || payload.city,
       address: payload.address || null,
-      rooms: payload.rooms || payload.bedrooms || 1,
-      bathrooms: payload.bathrooms || 1,
-      surface: payload.surface || payload.area_sqm || null,
+      rooms: Number(payload.rooms || payload.bedrooms || 1),
+      bathrooms: Number(payload.bathrooms || 1),
+      surface: payload.surface ? Number(payload.surface) : null,
       status,
+      images: payload.images || [],
     };
 
-    const newProperty = await PropertyRepository.create(propertyRecord);
+    const newProperty = await PropertyRepository.create(propertyRecord as any);
     return newProperty;
   }
 

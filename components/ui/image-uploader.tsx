@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, X, FileImage, Loader2 } from "lucide-react";
+import { Upload, X, Loader2 } from "lucide-react";
+import { uploadPropertyImage } from "@/lib/supabase/storage";
 
 type ImageUploaderProps = {
   maxFiles?: number;
   maxSizeMB?: number;
+  bucketName?: string;
+  onUpload?: (file: File) => Promise<string>;
+  onImagesChange?: (urls: string[]) => void;
   onImagesCompressed?: (files: File[]) => void;
   className?: string;
 };
@@ -76,14 +80,18 @@ async function compressImageToWebP(file: File): Promise<File> {
 }
 
 export function ImageUploader({
-  maxFiles = 5,
+  maxFiles = 10,
   maxSizeMB = 5,
+  bucketName = "property-images",
+  onUpload,
+  onImagesChange,
   onImagesCompressed,
   className,
 }: ImageUploaderProps) {
   const [previews, setPreviews] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
-  const [isCompressing, setIsCompressing] = useState(false);
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleFileSelection(selectedFiles: FileList | File[]) {
@@ -107,39 +115,65 @@ export function ImageUploader({
       }
     }
 
-    setIsCompressing(true);
+    setIsUploading(true);
 
     try {
       const compressedList: File[] = [];
       const newPreviews: string[] = [];
+      const newUrls: string[] = [];
+
+      const uploader = onUpload ?? ((file: File) => uploadPropertyImage(file, bucketName));
 
       for (const f of fileList) {
         const compressed = await compressImageToWebP(f);
         compressedList.push(compressed);
         newPreviews.push(URL.createObjectURL(compressed));
+
+        // Upload using passed handler or default Supabase Storage service
+        try {
+          const publicUrl = await uploader(compressed);
+          newUrls.push(publicUrl);
+        } catch (uploadErr: any) {
+          // If storage bucket isn't available or fails, fallback to blob preview URL
+          console.warn("Storage upload warning, using local preview fallback:", uploadErr);
+          newUrls.push(URL.createObjectURL(compressed));
+        }
       }
 
       const updatedFiles = [...files, ...compressedList];
       const updatedPreviews = [...previews, ...newPreviews];
+      const updatedUrls = [...uploadedUrls, ...newUrls];
 
       setFiles(updatedFiles);
       setPreviews(updatedPreviews);
+      setUploadedUrls(updatedUrls);
+
+      if (onImagesChange) {
+        onImagesChange(updatedUrls);
+      }
 
       if (onImagesCompressed) {
         onImagesCompressed(updatedFiles);
       }
     } catch (err: any) {
-      setError(err.message || "Erreur lors de la compression des images.");
+      setError(err.message || "Erreur lors de l'optimisation ou du téléversement des images.");
     } finally {
-      setIsCompressing(false);
+      setIsUploading(false);
     }
   }
 
   function removeImage(index: number) {
     const updatedFiles = files.filter((_, i) => i !== index);
     const updatedPreviews = previews.filter((_, i) => i !== index);
+    const updatedUrls = uploadedUrls.filter((_, i) => i !== index);
+
     setFiles(updatedFiles);
     setPreviews(updatedPreviews);
+    setUploadedUrls(updatedUrls);
+
+    if (onImagesChange) {
+      onImagesChange(updatedUrls);
+    }
 
     if (onImagesCompressed) {
       onImagesCompressed(updatedFiles);
@@ -149,7 +183,7 @@ export function ImageUploader({
   return (
     <div className={className}>
       {error && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+        <div className="mb-4 rounded-xl border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10 p-3 text-xs text-[var(--color-danger)]">
           {error}
         </div>
       )}
@@ -160,13 +194,13 @@ export function ImageUploader({
           {previews.map((src, index) => (
             <div
               key={index}
-              className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-[var(--border)] bg-neutral-100"
+              className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]"
             >
               <img src={src} alt={`Aperçu ${index + 1}`} className="h-full w-full object-cover" />
               <button
                 type="button"
                 onClick={() => removeImage(index)}
-                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-red-600"
+                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-[var(--color-danger)]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -177,11 +211,11 @@ export function ImageUploader({
 
       {/* File Dropzone */}
       {files.length < maxFiles && (
-        <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-6 text-center transition-colors hover:border-primary-400 hover:bg-primary-50/30">
-          {isCompressing ? (
-            <div className="flex flex-col items-center gap-2 text-primary-600">
+        <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-neutral-300 bg-[var(--color-muted)]/50 p-6 text-center transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10">
+          {isUploading ? (
+            <div className="flex flex-col items-center gap-2 text-[var(--color-primary)]">
               <Loader2 className="h-8 w-8 animate-spin" />
-              <span className="text-xs font-semibold">Optimization WebP en cours...</span>
+              <span className="text-xs font-semibold">Optimisation WebP et téléversement en cours...</span>
             </div>
           ) : (
             <>
@@ -190,7 +224,7 @@ export function ImageUploader({
                 Ajouter des photos ({files.length}/{maxFiles})
               </p>
               <p className="mt-1 text-xs text-neutral-400">
-                JPG, PNG, WEBP (compression automatique WebP)
+                JPG, PNG, WEBP (compression automatique WebP & Storage Supabase)
               </p>
             </>
           )}
@@ -199,7 +233,7 @@ export function ImageUploader({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             multiple
-            disabled={isCompressing}
+            disabled={isUploading}
             onChange={(e) => e.target.files && handleFileSelection(e.target.files)}
             className="sr-only"
           />

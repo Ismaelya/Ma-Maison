@@ -12,33 +12,43 @@ export const metadata: Metadata = {
 export default async function DashboardPage() {
   const { profile } = await requireAuth();
   const supabase = await createClient();
-  const isOwner = profile.role === "owner";
+  const isOwner = (profile.role ?? "").toUpperCase() === "OWNER" || (profile.role ?? "").toUpperCase() === "AGENCY";
 
-  // Fetch stats
-  const [listingsResult, favoritesResult, messagesResult] = await Promise.all([
+  // Fetch stats and subscription
+  const [propertiesResult, favoritesResult, messagesResult, subResult] = await Promise.all([
     isOwner
       ? supabase
-          .from("listings")
-          .select("id, title, price, created_at, is_published", { count: "exact" })
-          .eq("owner_id", profile.id)
-          .order("created_at", { ascending: false })
+          .from("properties")
+          .select("id, title, price, createdAt, status", { count: "exact" })
+          .eq("ownerId", profile.id)
+          .order("createdAt", { ascending: false })
           .limit(5)
       : Promise.resolve({ data: [], count: 0 }),
     supabase
       .from("favorites")
       .select("id", { count: "exact" })
-      .eq("user_id", profile.id),
+      .eq("userId", profile.id),
     supabase
       .from("messages")
       .select("id", { count: "exact" })
-      .eq("receiver_id", profile.id)
-      .eq("is_read", false),
+      .eq("receiverId", profile.id)
+      .eq("isRead", false),
+    isOwner
+      ? supabase
+          .from("subscriptions")
+          .select("*")
+          .eq("userId", profile.id)
+          .order("createdAt", { ascending: false })
+          .limit(1)
+          .single()
+      : Promise.resolve({ data: null }),
   ]);
 
-  const listingCount = listingsResult.count ?? 0;
+  const listingCount = propertiesResult.count ?? 0;
   const favoriteCount = favoritesResult.count ?? 0;
   const unreadCount = messagesResult.count ?? 0;
-  const trialDays = isOwner ? getTrialDaysRemaining(profile.trial_started_at) : null;
+  const sub = subResult.data as any;
+  const trialDays = isOwner && sub?.endDate ? getTrialDaysRemaining(sub.endDate) : null;
 
   return (
     <div className="animate-fade-in space-y-8">
@@ -137,7 +147,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent listings (for owners) */}
-      {isOwner && listingsResult.data && listingsResult.data.length > 0 && (
+      {isOwner && propertiesResult.data && propertiesResult.data.length > 0 && (
         <div>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-neutral-900">
@@ -151,7 +161,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="mt-4 rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
-            {listingsResult.data.map((listing, i) => (
+            {propertiesResult.data.map((listing, i) => (
               <Link
                 key={listing.id}
                 href={`/annonces/${listing.id}`}
@@ -169,12 +179,12 @@ export default async function DashboardPage() {
                 <span
                   className={cn(
                     "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                    listing.is_published
+                    listing.status === "APPROVED"
                       ? "bg-green-100 text-green-700"
                       : "bg-neutral-100 text-neutral-600"
                   )}
                 >
-                  {listing.is_published ? "Active" : "Brouillon"}
+                  {listing.status === "APPROVED" ? "Publiée" : listing.status}
                 </span>
               </Link>
             ))}

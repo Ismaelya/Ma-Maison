@@ -36,8 +36,11 @@ export default async function EditPropertyPage({
     notFound();
   }
 
-  // Ensure owner matches logged in profile
-  if (property.owner_id !== profile.id && profile.role !== "admin") {
+  // Ensure owner matches logged in profile (or admin)
+  const isOwner = (property.ownerId || property.owner_id) === profile.id;
+  const isAdmin = (profile.role ?? "").toUpperCase() === "ADMIN";
+
+  if (!isOwner && !isAdmin) {
     redirect("/dashboard/annonces");
   }
 

@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { ToastProvider } from "@/components/ui/toast-notification";
 import "./globals.css";
+
+const geist = {
+  variable: "--font-geist",
+  className: "font-sans",
+};
 
 export const metadata: Metadata = {
   title: {
@@ -45,20 +51,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="min-h-screen bg-[var(--background)] font-sans antialiased">
+    <html lang="fr" className={geist.variable}>
+      <body className={`${geist.className} min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] antialiased`}>
         <QueryProvider>
-          <div className="flex min-h-screen flex-col">
-            {children}
-          </div>
+          <ToastProvider>
+            <div className="flex min-h-screen flex-col">
+              {children}
+            </div>
+          </ToastProvider>
         </QueryProvider>
       </body>
     </html>

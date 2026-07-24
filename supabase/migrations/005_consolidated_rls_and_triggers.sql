@@ -15,13 +15,14 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, name, phone, role, status, "createdAt", "updatedAt")
+  insert into public.profiles (id, email, name, phone, role, "agencyName", status, "createdAt", "updatedAt")
   values (
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'name', ''),
     coalesce(new.raw_user_meta_data->>'phone', ''),
     coalesce((new.raw_user_meta_data->>'role')::"UserRole", 'TENANT'),
+    nullif(trim(new.raw_user_meta_data->>'agencyName'), ''),
     'ACTIVE',
     now(),
     now()
@@ -161,6 +162,7 @@ alter table public.messages enable row level security;
 alter table public.reviews enable row level security;
 alter table public.reports enable row level security;
 alter table public.audit_logs enable row level security;
+alter table public.app_settings enable row level security;
 
 -- ------------------------------------------------------------
 -- 7. PROFILES
@@ -378,6 +380,20 @@ create policy "payments_admin_validate"
 drop policy if exists "audit_logs_admin_read" on public.audit_logs;
 create policy "audit_logs_admin_read"
   on public.audit_logs for select
+  using (public.is_admin());
+
+-- ------------------------------------------------------------
+-- 14. APP_SETTINGS
+-- ------------------------------------------------------------
+
+drop policy if exists "app_settings_authenticated_read" on public.app_settings;
+create policy "app_settings_authenticated_read"
+  on public.app_settings for select
+  using (auth.uid() is not null);
+
+drop policy if exists "app_settings_admin_write" on public.app_settings;
+create policy "app_settings_admin_write"
+  on public.app_settings for all
   using (public.is_admin());
 
 -- ------------------------------------------------------------

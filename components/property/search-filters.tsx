@@ -107,15 +107,16 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
         <div className="grid grid-cols-2 gap-2">
           {[
             { value: "", label: "Tout" },
-            { value: "rent", label: "Location" },
-            { value: "sale", label: "Vente" },
+            { value: "RENT", label: "Location" },
+            { value: "SALE", label: "Vente" },
           ].map((option) => (
             <button
               key={option.value}
+              type="button"
               onClick={() => updateFilter("transaction", option.value)}
               className={cn(
                 "rounded-lg border px-3 py-2 text-sm font-medium transition-all",
-                (currentFilters.transaction ?? "") === option.value
+                (currentFilters.transaction ?? "").toUpperCase() === option.value
                   ? "border-primary-500 bg-primary-50 text-primary-700"
                   : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-neutral-100"
               )}

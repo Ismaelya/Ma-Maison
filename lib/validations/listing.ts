@@ -10,12 +10,15 @@ export const listingSchema = z.object({
     .min(20, "La description doit contenir au moins 20 caractères")
     .max(5000, "La description est trop longue"),
   propertyType: z.enum(
-    ["HOUSE", "APARTMENT", "ROOM", "VILLA", "OFFICE", "SHOP", "LAND", "apartment", "house", "studio", "land", "commercial"],
+    ["HOUSE", "APARTMENT", "ROOM", "VILLA", "OFFICE", "SHOP", "LAND", "COMMERCIAL", "house", "apartment", "room", "villa", "office", "shop", "land", "commercial"],
     {
       errorMap: () => ({ message: "Veuillez sélectionner un type de bien" }),
     }
   ),
-  price: z
+  transactionType: z.enum(["RENT", "SALE", "rent", "sale"], {
+    errorMap: () => ({ message: "Veuillez sélectionner le type de transaction (Location ou Vente)" }),
+  }),
+  price: z.coerce
     .number({ invalid_type_error: "Le prix doit être un nombre" })
     .min(1000, "Le prix minimum est de 1 000 FCFA")
     .max(1_000_000_000, "Le prix est trop élevé"),
@@ -29,20 +32,21 @@ export const listingSchema = z.object({
     .string()
     .optional()
     .or(z.literal("")),
-  rooms: z
+  rooms: z.coerce
     .number()
     .min(0, "Le nombre de pièces ne peut pas être négatif")
     .max(50, "Valeur trop élevée"),
-  bathrooms: z
+  bathrooms: z.coerce
     .number()
     .min(0, "Le nombre de salles de bain ne peut pas être négatif")
     .max(50, "Valeur trop élevée"),
-  surface: z
+  surface: z.coerce
     .number()
     .min(1, "La superficie doit être supérieure à 0")
     .max(100_000, "Valeur trop élevée")
     .optional()
     .nullable(),
+  images: z.array(z.string().url()).optional().default([]),
 });
 
 export type ListingFormData = z.infer<typeof listingSchema>;
@@ -84,6 +88,5 @@ export const NIGER_CITIES = [
   "Konni",
   "Kollo",
   "Say",
-  "Tera"
-
+  "Tera",
 ] as const;

@@ -37,8 +37,8 @@ export async function generateMetadata({
   const { id } = await params;
   const supabase = await createClient();
   const { data } = await supabase
-    .from("listings")
-    .select("title, description, city, price, transaction_type")
+    .from("properties")
+    .select("title, description, city, price, transactionType")
     .eq("id", id)
     .single();
 
@@ -50,7 +50,7 @@ export async function generateMetadata({
     title: data.title,
     description:
       data.description ??
-      `${data.title} — ${getTransactionTypeLabel(data.transaction_type)} à ${data.city} pour ${formatPrice(data.price)}`,
+      `${data.title} — ${getTransactionTypeLabel(data.transactionType)} à ${data.city} pour ${formatPrice(data.price)}`,
   };
 }
 
@@ -58,20 +58,11 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
   const { id } = await params;
   const supabase = await createClient();
 
-  let { data: listing, error } = await supabase
+  const { data: listing, error } = await supabase
     .from("properties")
-    .select("*, profiles!inner(id, name, full_name, avatar_url, phone, created_at), property_images(url)")
+    .select("*, profiles!inner(id, name, agencyName, badgeVerified, avatarUrl, phone, createdAt), property_images(url)")
     .eq("id", id)
     .single();
-
-  if (!listing) {
-    const { data: legacyListing } = await supabase
-      .from("listings")
-      .select("*, profiles!inner(id, name, full_name, avatar_url, phone, created_at)")
-      .eq("id", id)
-      .single();
-    listing = legacyListing as any;
-  }
 
   if (!listing) {
     notFound();
@@ -85,6 +76,11 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
     data: { user: currentUser },
   } = await supabase.auth.getUser();
   const isAuthenticated = !!currentUser;
+
+  // Security Requirement: Exclude exact address for unauthenticated visitors
+  if (!isAuthenticated && typedListing && "address" in typedListing) {
+    delete typedListing.address;
+  }
 
   const imagesList: string[] =
     Array.isArray(typedListing.images) && typedListing.images.length > 0

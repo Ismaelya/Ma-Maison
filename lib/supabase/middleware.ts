@@ -31,12 +31,22 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh user session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const pathname = request.nextUrl.pathname;
+
+  // Refresh user session
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch (error) {
+    if (pathname === "/connexion") {
+      return response;
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = "/connexion";
+    url.searchParams.set("error", "session_check_failed");
+    return NextResponse.redirect(url);
+  }
 
   // Protect /dashboard and /admin routes
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
@@ -49,11 +59,11 @@ export async function updateSession(request: NextRequest) {
     // Fetch user profile status & role
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role, account_status, status")
+      .select("role, status")
       .eq("id", user.id)
       .single();
 
-    const accountStatus = (profile?.account_status || profile?.status || "").toUpperCase();
+    const accountStatus = (profile?.status || "").toUpperCase();
     const role = (profile?.role || "").toUpperCase();
 
     // Account suspension check

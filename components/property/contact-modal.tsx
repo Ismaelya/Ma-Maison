@@ -21,16 +21,45 @@ export function ContactProtection({
 }: ContactProtectionProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  const [isInitializing, setIsInitializing] = useState(false);
+
+  async function handleStartChat() {
+    if (isInitializing) return;
+    setIsInitializing(true);
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          propertyId: listingId,
+          ownerId,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.data?.id) {
+        window.location.href = `/dashboard/messages?conv=${json.data.id}`;
+      } else {
+        window.location.href = `/dashboard/messages`;
+      }
+    } catch {
+      window.location.href = `/dashboard/messages`;
+    } finally {
+      setIsInitializing(false);
+    }
+  }
+
   if (isAuthenticated) {
     return (
       <div className="mt-6 space-y-3">
-        <Link
-          href={`/dashboard/messages?to=${ownerId}&listing=${listingId}`}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700 hover:shadow-md"
+        <button
+          onClick={handleStartChat}
+          disabled={isInitializing}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700 hover:shadow-md disabled:opacity-50"
         >
           <MessageSquare className="h-4 w-4" />
-          Envoyer un message
-        </Link>
+          {isInitializing ? "Ouverture de la discussion..." : "Envoyer un message"}
+        </button>
 
         {phone ? (
           <a

@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { PropertyService } from "@/lib/properties/property.service";
 import { apiSuccess, apiError } from "@/lib/utils/api-response";
+import { canOwnerPublish } from "@/lib/auth/helpers";
 
 export async function GET(
   _request: NextRequest,
@@ -31,7 +32,49 @@ export async function PATCH(
     return apiError("UNAUTHORIZED", "Non authentifié", 401);
   }
 
+  // Fetch profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) {
+    return apiError("UNAUTHORIZED", "Profil utilisateur introuvable", 401);
+  }
+
+  // Fetch most recent subscription
+  const { data: subscriptions } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("userId", user.id)
+    .order("createdAt", { ascending: false })
+    .limit(1);
+
+  const latestSubscription = subscriptions && subscriptions.length > 0 ? subscriptions[0] : null;
+
+  // Validate owner/agency publishing permissions
+  if (!canOwnerPublish(profile as any, latestSubscription as any)) {
+    return apiError(
+      "SUBSCRIPTION_REQUIRED",
+      "Votre abonnement a expiré. Renouvelez-le pour modifier ou republier une annonce.",
+      403
+    );
+  }
+
   try {
+    const existingProperty = await PropertyService.getProperty(id);
+    if (!existingProperty) {
+      return apiError("NOT_FOUND", "Annonce introuvable", 404);
+    }
+
+    const isOwner = (existingProperty.ownerId || (existingProperty as any).owner_id) === user.id;
+    const isAdmin = (profile.role ?? "").toUpperCase() === "ADMIN";
+
+    if (!isOwner && !isAdmin) {
+      return apiError("FORBIDDEN", "Accès refusé. Vous n'êtes pas le propriétaire de cette annonce.", 403);
+    }
+
     const body = await request.json();
     const updated = await PropertyService.updateProperty(id, body);
     return apiSuccess(updated, "Annonce mise à jour avec succès");

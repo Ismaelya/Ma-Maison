@@ -4,7 +4,7 @@ export const loginSchema = z.object({
   email: z
     .string()
     .min(1, "L'email est requis")
-    .email("Veuillez entrer un email valide"),
+    .email("Veuillez entrer une adresse e-mail valide"),
   password: z
     .string()
     .min(6, "Le mot de passe doit contenir au moins 6 caractères"),
@@ -20,12 +20,20 @@ export const registerSchema = z
       .max(100, "Le nom est trop long"),
     email: z
       .string()
-      .min(1, "L'email est requis")
-      .email("Veuillez entrer un email valide"),
+      .min(1, "L'email est requis (obligatoire pour tous les rôles)")
+      .email("Veuillez entrer une adresse e-mail valide"),
     phone: z
       .string()
       .min(8, "Le numéro de téléphone doit contenir au moins 8 chiffres")
       .regex(/^[+]?[0-9\s-]+$/, "Numéro de téléphone invalide")
+      .optional()
+      .or(z.literal("")),
+    role: z.enum(["TENANT", "OWNER", "AGENCY", "tenant", "owner", "agency"], {
+      errorMap: () => ({ message: "Veuillez sélectionner votre type de profil" }),
+    }),
+    agencyName: z
+      .string()
+      .max(150, "Le nom de l'agence est trop long")
       .optional()
       .or(z.literal("")),
     password: z
@@ -36,9 +44,6 @@ export const registerSchema = z
     confirmPassword: z
       .string()
       .min(1, "Veuillez confirmer votre mot de passe"),
-    role: z.enum(["tenant", "owner", "agency"], {
-      errorMap: () => ({ message: "Veuillez sélectionner votre profil" }),
-    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Les mots de passe ne correspondent pas",
@@ -46,3 +51,12 @@ export const registerSchema = z
   });
 
 export type RegisterFormData = z.infer<typeof registerSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .min(1, "L'email est requis")
+    .email("Veuillez entrer une adresse e-mail valide"),
+});
+
+export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;

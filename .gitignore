@@ -45,3 +45,6 @@ next-env.d.ts
 # Test results
 test-results/
 playwright-report/
+
+# Temporary scratch
+scratch/

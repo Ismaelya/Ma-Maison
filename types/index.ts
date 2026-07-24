@@ -1,76 +1,68 @@
-import type { Database } from "./database";
+// ============================================================
+// MA MAISON — Types centralisés
+// Source de vérité : schema.prisma → @prisma/client
+// Ne jamais redéfinir manuellement les types générés par Prisma.
+// ============================================================
 
-// Profile types
-export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-export type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
-export type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
+// --- Re-export des types Prisma (modèles) ---
+export type {
+  Profile,
+  Property,
+  PropertyImage,
+  Favorite,
+  Subscription,
+  Payment,
+  Conversation,
+  Message,
+  Review,
+  Report,
+  AuditLog,
+  AppSettings,
+} from "@prisma/client";
 
-// Property types (formerly Listing)
-export type Property = Database["public"]["Tables"]["properties"]["Row"];
-export type PropertyInsert = Database["public"]["Tables"]["properties"]["Insert"];
-export type PropertyUpdate = Database["public"]["Tables"]["properties"]["Update"];
+// --- Re-export des enums Prisma ---
+export {
+  UserRole,
+  AccountStatus,
+  SubscriptionStatus,
+  PaymentStatus,
+  PaymentMethod,
+  PropertyStatus,
+  PropertyType,
+  TransactionType,
+  ReportStatus,
+  AuditAction,
+} from "@prisma/client";
 
-// Property Image type
-export type PropertyImage = Database["public"]["Tables"]["property_images"]["Row"];
+// --- Import pour construire les types composites ---
+import type {
+  Profile,
+  Property,
+  PropertyImage,
+  Payment,
+} from "@prisma/client";
 
-// Favorite types
-export type Favorite = Database["public"]["Tables"]["favorites"]["Row"];
-export type FavoriteInsert = Database["public"]["Tables"]["favorites"]["Insert"];
+// --- Types composites (non générés par Prisma) ---
 
-// Messaging & Conversation types
-export type Conversation = Database["public"]["Tables"]["conversations"]["Row"];
-export type Message = Database["public"]["Tables"]["conversation_messages"]["Row"];
-export type MessageInsert = Database["public"]["Tables"]["conversation_messages"]["Insert"];
-
-// Subscription & Payment types
-export type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
-export type Payment = Database["public"]["Tables"]["payments"]["Row"];
-export type PaymentInsert = Database["public"]["Tables"]["payments"]["Insert"];
-export type PaymentUpdate = Database["public"]["Tables"]["payments"]["Update"];
-
-// Review & Report & Audit types
-export type Review = Database["public"]["Tables"]["reviews"]["Row"];
-export type Report = Database["public"]["Tables"]["property_reports"]["Row"];
-export type AuditLog = {
-  id: string;
-  actor_id: string | null;
-  action: AuditAction;
-  target_id: string | null;
-  metadata?: any;
-  created_at: string;
-};
-
-// Enum types
-export type TransactionType = "rent" | "sale";
-export type UserRole = "TENANT" | "OWNER" | "AGENCY" | "ADMIN" | "tenant" | "owner" | "agency" | "admin";
-export type AccountStatus = "ACTIVE" | "SUSPENDED" | "DELETED" | "active" | "suspended" | "deleted";
-export type SubscriptionStatus = "TRIAL" | "ACTIVE" | "EXPIRED" | "trial" | "active" | "expired";
-export type PropertyType = "HOUSE" | "APARTMENT" | "ROOM" | "VILLA" | "OFFICE" | "SHOP" | "LAND" | "apartment" | "house" | "studio" | "land" | "commercial";
-export type PropertyStatus = "DRAFT" | "PENDING" | "APPROVED" | "REJECTED" | "HIDDEN" | "DELETED";
-export type PaymentStatus = "PENDING" | "APPROVED" | "REJECTED" | "pending" | "approved" | "rejected";
-export type PaymentMethod = "AMANATA" | "MYNITA" | "WAVE" | "wave" | "amanata" | "mynita";
-export type ReportStatus = "OPEN" | "IN_REVIEW" | "CLOSED" | "pending" | "resolved" | "dismissed";
-export type AuditAction =
-  | "LOGIN"
-  | "PAYMENT_APPROVED"
-  | "PAYMENT_REJECTED"
-  | "PROPERTY_DELETED"
-  | "PROPERTY_APPROVED"
-  | "PROPERTY_REJECTED"
-  | "ACCOUNT_SUSPENDED"
-  | "ADMIN_ACTION";
-
-// Property with owner profile attached
+/** Annonce avec profil du propriétaire attaché (requête Supabase jointure) */
 export type PropertyWithOwner = Property & {
-  profiles: Pick<Profile, "id" | "name" | "full_name" | "avatar_url" | "phone" | "badge_verified" | "account_status" | "subscription_status">;
+  profiles: Pick<
+    Profile,
+    "id" | "name" | "avatarUrl" | "phone" | "badgeVerified" | "status"
+  >;
   property_images?: PropertyImage[];
 };
 
-// Legacy alias for smooth backwards compatibility
+/** Paiement avec profil du propriétaire attaché */
+export type PaymentWithOwner = Payment & {
+  profiles: Pick<Profile, "id" | "name" | "email" | "phone">;
+};
+
+// --- Alias legacy ---
+/** @deprecated Utiliser Property */
 export type Listing = Property;
+/** @deprecated Utiliser PropertyWithOwner */
 export type ListingWithOwner = PropertyWithOwner;
 
-// Payment with owner profile attached
-export type PaymentWithOwner = Payment & {
-  profiles: Pick<Profile, "id" | "name" | "full_name" | "email" | "phone">;
-};
+/** Insert types for forms */
+export type { Prisma } from "@prisma/client";

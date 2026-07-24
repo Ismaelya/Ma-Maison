@@ -18,23 +18,13 @@ import type { Listing } from "@/types";
 export default async function HomePage() {
   const supabase = await createClient();
 
-  // Fetch featured / latest listings or properties
-  let { data: featuredListings } = await supabase
+  // Fetch featured / latest properties
+  const { data: featuredListings } = await supabase
     .from("properties")
     .select("*, property_images(url)")
     .eq("status", "APPROVED")
-    .order("created_at", { ascending: false })
+    .order("createdAt", { ascending: false })
     .limit(6);
-
-  if (!featuredListings || featuredListings.length === 0) {
-    const { data: legacyListings } = await supabase
-      .from("listings")
-      .select("*")
-      .eq("is_published", true)
-      .order("created_at", { ascending: false })
-      .limit(6);
-    featuredListings = legacyListings as any;
-  }
 
   const listings = (featuredListings ?? []) as any[];
 

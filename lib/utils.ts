@@ -61,6 +61,8 @@ export function formatRelativeTime(date: string | Date): string {
  */
 export function getTransactionTypeLabel(type: string): string {
   const labels: Record<string, string> = {
+    RENT: "Location",
+    SALE: "Vente",
     rent: "Location",
     sale: "Vente",
   };

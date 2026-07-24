@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, XCircle, FileText, Loader2, Eye, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice, formatDate } from "@/lib/utils";
-import type { PaymentWithOwner } from "@/types";
 
 type PaymentVerificationModalProps = {
-  payment: PaymentWithOwner;
+  payment: any;
 };
 
 export function PaymentVerificationModal({
@@ -21,14 +20,24 @@ export function PaymentVerificationModal({
   const router = useRouter();
   const supabase = createClient();
 
+  const receiptPath = payment.receiptUrl || payment.receipt_url;
+
   async function openModal() {
     setIsOpen(true);
 
-    // Get signed URL for private receipt in receipts bucket
-    if (payment.receipt_url) {
-      const { data } = await supabase.storage
-        .from("receipts")
-        .createSignedUrl(payment.receipt_url, 3600);
+    // Get signed URL for private receipt in receipts or payment-receipts bucket
+    if (receiptPath) {
+      // Try payment-receipts bucket first, fallback to receipts
+      let { data } = await supabase.storage
+        .from("payment-receipts")
+        .createSignedUrl(receiptPath, 3600);
+
+      if (!data?.signedUrl) {
+        const fallback = await supabase.storage
+          .from("receipts")
+          .createSignedUrl(receiptPath, 3600);
+        data = fallback.data;
+      }
 
       if (data?.signedUrl) {
         setSignedUrl(data.signedUrl);
@@ -37,52 +46,19 @@ export function PaymentVerificationModal({
   }
 
   async function handleApprove() {
-    if (!confirm("Valider ce paiement ? L'abonnement du propriétaire sera réactivé pour 30 jours et le badge vérifié sera attribué.")) return;
+    if (!confirm("Valider ce paiement ? L'abonnement du propriétaire sera activé pour 30 jours via le trigger Postgres.")) return;
     setIsLoading(true);
 
     try {
-      // 1. Update Payment status -> APPROVED (triggers atomic Postgres handle_payment_approved)
-      const userId = payment.user_id || (payment as any).owner_id;
+      // API call ONLY updates payment.status = APPROVED. Postgres trigger handles atomic subscription activation.
+      const res = await fetch(`/api/admin/payments/${payment.id}/approve`, {
+        method: "PATCH",
+      });
 
-      // Create subscription if none exists yet
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 30);
-
-      const { data: subData } = await supabase
-        .from("subscriptions")
-        .insert({
-          user_id: userId,
-          owner_id: userId,
-          status: "active",
-          price: payment.amount,
-          amount: payment.amount,
-          start_date: new Date().toISOString(),
-          end_date: expiresAt.toISOString(),
-          starts_at: new Date().toISOString(),
-          expires_at: expiresAt.toISOString(),
-        } as any)
-        .select("id")
-        .single();
-
-      const { error: payErr } = await supabase
-        .from("payments")
-        .update({
-          status: "APPROVED" as any,
-          subscription_id: subData?.id ?? payment.subscription_id,
-          validated_at: new Date().toISOString(),
-        } as any)
-        .eq("id", payment.id);
-
-      if (payErr) {
-        // Fallback for legacy status string
-        await supabase
-          .from("payments")
-          .update({ status: "approved" } as any)
-          .eq("id", payment.id);
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || "Erreur de validation");
       }
-
-      setIsOpen(false);
-      router.refresh();
 
       setIsOpen(false);
       router.refresh();
@@ -94,20 +70,20 @@ export function PaymentVerificationModal({
   }
 
   async function handleReject() {
-    if (!confirm("Refuser ce paiement ? Le statut d'abonnement du propriétaire restera inchangé.")) return;
+    if (!confirm("Refuser ce paiement ? L'abonnement du propriétaire restera inchangé.")) return;
     setIsLoading(true);
 
     try {
-      // Update Payment status -> REJECTED (subscription remains unchanged)
-      const { error: payErr } = await supabase
-        .from("payments")
-        .update({
-          status: "rejected",
-          admin_notes: adminNotes || "Reçu de paiement non valide ou illisible",
-        } as any)
-        .eq("id", payment.id);
+      const res = await fetch(`/api/admin/payments/${payment.id}/reject`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: adminNotes || "Reçu de paiement invalide" }),
+      });
 
-      if (payErr) throw payErr;
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || "Erreur de refus");
+      }
 
       setIsOpen(false);
       router.refresh();
@@ -117,6 +93,9 @@ export function PaymentVerificationModal({
       setIsLoading(false);
     }
   }
+
+  const profile = payment.user || payment.profiles || {};
+  const statusStr = String(payment.status || "PENDING").toUpperCase();
 
   return (
     <>
@@ -149,9 +128,9 @@ export function PaymentVerificationModal({
               {/* Owner details */}
               <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
                 <p className="text-xs font-semibold uppercase text-neutral-400">Propriétaire</p>
-                <p className="font-bold text-white mt-1">{payment.profiles.full_name ?? "Sans nom"}</p>
-                <p className="text-xs text-neutral-400">{payment.profiles.email} · {payment.profiles.phone ?? "Pas de téléphone"}</p>
-                <p className="mt-2 text-xs text-neutral-500">Demande créée le {formatDate(payment.created_at)}</p>
+                <p className="font-bold text-white mt-1">{profile.name || profile.full_name || "Sans nom"}</p>
+                <p className="text-xs text-neutral-400">{profile.email} · {profile.phone || "Pas de téléphone"}</p>
+                <p className="mt-2 text-xs text-neutral-500">Demande créée le {formatDate(payment.createdAt || payment.created_at)}</p>
               </div>
 
               {/* Receipt Preview */}
@@ -183,10 +162,10 @@ export function PaymentVerificationModal({
               </div>
 
               {/* Admin notes input */}
-              {payment.status === "pending" && (
+              {statusStr === "PENDING" && (
                 <div>
                   <label htmlFor={`admin-notes-${payment.id}`} className="block text-xs font-semibold uppercase text-neutral-400 mb-1">
-                    Note administrative (facultative)
+                    Note administrative / Motif de refus (facultatif)
                   </label>
                   <input
                     id={`admin-notes-${payment.id}`}
@@ -201,7 +180,7 @@ export function PaymentVerificationModal({
             </div>
 
             {/* Modal Actions */}
-            {payment.status === "pending" ? (
+            {statusStr === "PENDING" ? (
               <div className="flex gap-3 border-t border-neutral-800 p-6 bg-neutral-900">
                 <button
                   onClick={handleReject}
@@ -226,7 +205,7 @@ export function PaymentVerificationModal({
               </div>
             ) : (
               <div className="border-t border-neutral-800 p-4 bg-neutral-900 text-center text-xs text-neutral-400">
-                Demande déjà traitée ({payment.status.toUpperCase()})
+                Demande déjà traitée ({statusStr})
               </div>
             )}
           </div>

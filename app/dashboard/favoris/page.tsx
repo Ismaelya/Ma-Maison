@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Heart, Trash2, ExternalLink } from "lucide-react";
+import { Heart } from "lucide-react";
 import { requireAuth } from "@/lib/auth/helpers";
 import { createClient } from "@/lib/supabase/server";
-import { formatPrice, getPropertyTypeLabel, cn } from "@/lib/utils";
+import { formatPrice, getPropertyTypeLabel } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Mes favoris",
@@ -15,9 +15,9 @@ export default async function FavoritesPage() {
 
   const { data: favorites } = await supabase
     .from("favorites")
-    .select("id, created_at, listings!inner(id, title, price, city, property_type, transaction_type, images, is_published)")
-    .eq("user_id", profile.id)
-    .order("created_at", { ascending: false });
+    .select("id, createdAt, property:properties!inner(id, title, price, city, type, transactionType, property_images(url))")
+    .eq("userId", profile.id)
+    .order("createdAt", { ascending: false });
 
   const items = favorites ?? [];
 
@@ -51,17 +51,11 @@ export default async function FavoritesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {items.map((fav) => {
-            const listing = fav.listings as unknown as {
-              id: string;
-              title: string;
-              price: number;
-              city: string;
-              property_type: string;
-              transaction_type: string;
-              images: string[];
-              is_published: boolean;
-            };
+          {items.map((fav: any) => {
+            const listing = fav.property;
+            if (!listing) return null;
+
+            const images = listing.property_images?.map((img: any) => img.url) || [];
 
             return (
               <Link
@@ -70,9 +64,9 @@ export default async function FavoritesPage() {
                 className="group flex gap-4 rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)]"
               >
                 <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-neutral-100">
-                  {listing.images.length > 0 ? (
+                  {images.length > 0 ? (
                     <img
-                      src={listing.images[0]}
+                      src={images[0]}
                       alt={listing.title}
                       className="h-full w-full object-cover"
                     />
@@ -90,7 +84,7 @@ export default async function FavoritesPage() {
                     {formatPrice(listing.price)}
                   </p>
                   <p className="mt-1 text-xs text-neutral-500">
-                    {listing.city} · {getPropertyTypeLabel(listing.property_type)}
+                    {listing.city} · {getPropertyTypeLabel(listing.type)}
                   </p>
                 </div>
               </Link>

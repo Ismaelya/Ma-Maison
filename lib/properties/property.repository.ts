@@ -5,6 +5,7 @@ export type PropertyFilterOptions = {
   city?: string;
   district?: string;
   type?: string;
+  transactionType?: string;
   minPrice?: number;
   maxPrice?: number;
   rooms?: number;
@@ -15,10 +16,12 @@ export type PropertyFilterOptions = {
 export class PropertyRepository {
   static async search(filters: PropertyFilterOptions = {}): Promise<Property[]> {
     const supabase = await createClient();
+
     let query = supabase
       .from("properties")
-      .select("*, property_images(*), profiles!inner(id, name, full_name, badge_verified, avatar_url, phone)")
-      .order("created_at", { ascending: false });
+      .select("*, property_images(*), profiles!inner(id, name, agencyName, badgeVerified, avatarUrl, phone)", { count: "exact" })
+      .eq("status", "APPROVED")
+      .order("createdAt", { ascending: false });
 
     if (filters.city) {
       query = query.eq("city", filters.city);
@@ -29,6 +32,9 @@ export class PropertyRepository {
     if (filters.type) {
       query = query.eq("type", filters.type.toUpperCase() as any);
     }
+    if (filters.transactionType) {
+      query = query.eq("transactionType", filters.transactionType.toUpperCase() as any);
+    }
     if (filters.minPrice !== undefined) {
       query = query.gte("price", filters.minPrice);
     }
@@ -37,6 +43,12 @@ export class PropertyRepository {
     }
     if (filters.rooms !== undefined) {
       query = query.gte("rooms", filters.rooms);
+    }
+
+    if (filters.page && filters.limit) {
+      const from = (filters.page - 1) * filters.limit;
+      const to = filters.page * filters.limit - 1;
+      query = query.range(from, to);
     }
 
     const { data, error } = await query;
@@ -71,15 +83,27 @@ export class PropertyRepository {
     return data as unknown as Property | null;
   }
 
-  static async create(propertyData: Partial<Property>): Promise<Property> {
+  static async create(propertyData: Partial<Property> & { images?: string[] }): Promise<Property> {
     const supabase = await createClient();
+    const { images, ...dataToInsert } = propertyData as any;
+
     const { data, error } = await supabase
       .from("properties")
-      .insert(propertyData as any)
+      .insert(dataToInsert)
       .select()
       .single();
 
     if (error) throw new Error(error.message);
+
+    if (images && Array.isArray(images) && images.length > 0) {
+      const imageRecords = images.map((url: string, index: number) => ({
+        propertyId: data.id,
+        url,
+        order: index,
+      }));
+      await supabase.from("property_images").insert(imageRecords);
+    }
+
     return data as unknown as Property;
   }
 

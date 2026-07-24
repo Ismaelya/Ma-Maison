@@ -1,22 +1,29 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Bed, Bath, Maximize, Heart } from "lucide-react";
 import { cn, formatPrice, getPropertyTypeLabel, getTransactionTypeLabel, formatRelativeTime } from "@/lib/utils";
-import type { Property } from "@/types";
 
 type PropertyCardProps = {
   listing: any;
   className?: string;
+  isFavoriteInitial?: boolean;
 };
 
-export function PropertyCard({ listing, className }: PropertyCardProps) {
-  // Extract values safely supporting both Property (Part 3) and Listing (Part 1/2)
+export function PropertyCard({ listing, className, isFavoriteInitial = false }: PropertyCardProps) {
+  const [isFavorite, setIsFavorite] = useState(isFavoriteInitial);
+  const [isToggling, setIsToggling] = useState(false);
+
+  // Extract values safely
   const title = listing.title ?? "Annonce immobilière";
   const price = listing.price ?? 0;
   const city = listing.city ?? "";
   const locationText = listing.district ?? listing.neighborhood ?? city;
   const propertyType = listing.type ?? listing.property_type ?? "APARTMENT";
-  const transactionType = listing.transaction_type ?? "rent";
+  const rawTrans = listing.transactionType ?? listing.transaction_type ?? "RENT";
+  const isRent = String(rawTrans).toUpperCase() === "RENT";
   const rooms = listing.rooms ?? listing.bedrooms ?? null;
   const bathrooms = listing.bathrooms ?? null;
   const surface = listing.surface ?? listing.area_sqm ?? null;
@@ -28,6 +35,39 @@ export function PropertyCard({ listing, className }: PropertyCardProps) {
       : Array.isArray(listing.property_images) && listing.property_images.length > 0
         ? listing.property_images[0].url
         : null;
+
+  async function handleFavoriteClick(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isToggling) return;
+    setIsToggling(true);
+
+    const nextState = !isFavorite;
+    setIsFavorite(nextState);
+
+    try {
+      if (nextState) {
+        // Add to favorites
+        const res = await fetch("/api/favorites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ propertyId: listing.id }),
+        });
+        if (!res.ok) setIsFavorite(!nextState);
+      } else {
+        // Remove from favorites
+        const res = await fetch(`/api/favorites?propertyId=${listing.id}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) setIsFavorite(!nextState);
+      }
+    } catch {
+      setIsFavorite(!nextState);
+    } finally {
+      setIsToggling(false);
+    }
+  }
 
   return (
     <Link
@@ -54,45 +94,58 @@ export function PropertyCard({ listing, className }: PropertyCardProps) {
         <div className="absolute left-3 top-3 flex gap-2">
           <span
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold shadow-sm",
-              transactionType === "rent"
-                ? "bg-primary-600 text-white"
-                : "bg-secondary-600 text-white"
+              "rounded-full px-3 py-1 text-xs font-semibold shadow-sm text-white",
+              isRent
+                ? "bg-[var(--color-primary)]"
+                : "bg-[var(--color-warning)]"
             )}
           >
-            {getTransactionTypeLabel(transactionType)}
+            {getTransactionTypeLabel(String(rawTrans))}
           </span>
           <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-neutral-700 shadow-sm backdrop-blur-sm">
             {getPropertyTypeLabel(propertyType)}
           </span>
         </div>
 
-        {/* Favorite button placeholder */}
+        {/* Favorite button */}
         <div className="absolute right-3 top-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition-colors group-hover:bg-white">
-            <Heart className="h-4 w-4 text-neutral-400 transition-colors group-hover:text-red-500" />
-          </div>
+          <button
+            type="button"
+            onClick={handleFavoriteClick}
+            disabled={isToggling}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm transition-transform hover:scale-110 active:scale-95"
+            title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+          >
+            <Heart
+              className={cn(
+                "h-4 w-4 transition-colors",
+                isFavorite
+                  ? "fill-red-500 text-red-500"
+                  : "text-neutral-500 hover:text-red-500"
+              )}
+            />
+          </button>
         </div>
       </div>
 
       {/* Content */}
       <div className="p-4">
         {/* Price */}
-        <p className="text-lg font-bold text-primary-700">
+        <p className="text-lg font-bold text-[var(--color-primary)]">
           {formatPrice(price)}
-          {transactionType === "rent" && (
+          {isRent && (
             <span className="text-sm font-normal text-neutral-500"> /mois</span>
           )}
         </p>
 
         {/* Title */}
-        <h3 className="mt-1 line-clamp-1 text-base font-semibold text-neutral-900 group-hover:text-primary-700 transition-colors">
+        <h3 className="mt-1 line-clamp-1 text-base font-semibold text-neutral-900 group-hover:text-[var(--color-primary)] transition-colors">
           {title}
         </h3>
 
         {/* Location */}
         <p className="mt-1 flex items-center gap-1 text-sm text-neutral-500">
-          <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+          <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-[var(--color-primary)]" />
           <span className="line-clamp-1">
             {locationText !== city ? `${locationText}, ${city}` : city}
           </span>
@@ -118,10 +171,11 @@ export function PropertyCard({ listing, className }: PropertyCardProps) {
               <span>{surface} m²</span>
             </div>
           )}
-          <span className="ml-auto text-xs text-neutral-400">
-            {listing.profiles?.role?.toUpperCase() === "AGENCY" && (listing.profiles?.agency_name || listing.profiles?.agencyName)
-              ? (listing.profiles?.agency_name || listing.profiles?.agencyName)
-              : formatRelativeTime(listing.created_at)}
+          <span className="ml-auto text-xs font-medium text-neutral-500">
+            {(listing.profiles?.role?.toUpperCase() === "AGENCY" || listing.owner?.role?.toUpperCase() === "AGENCY") &&
+            (listing.profiles?.agencyName || listing.profiles?.agency_name || listing.owner?.agencyName)
+              ? (listing.profiles?.agencyName || listing.profiles?.agency_name || listing.owner?.agencyName)
+              : formatRelativeTime(listing.createdAt || listing.created_at)}
           </span>
         </div>
       </div>
