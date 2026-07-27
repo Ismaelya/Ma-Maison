@@ -170,7 +170,15 @@ alter table public.audit_logs enable row level security;
 drop policy if exists "profiles_select_own_or_public_fields" on public.profiles;
 create policy "profiles_select_own_or_public_fields"
   on public.profiles for select
-  using (id = auth.uid()::text or public.is_admin());
+  using (
+    id = auth.uid()::text
+    or public.is_admin()
+    or exists (
+      select 1 from public.properties pr
+      where pr."ownerId" = profiles.id
+        and pr.status = 'APPROVED'
+    )
+  );
 
 drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own"
@@ -208,20 +216,30 @@ create policy "profiles_admin_full_access"
 -- 8. PROPERTIES
 -- ------------------------------------------------------------
 
+create or replace function public.is_approved_owner(owner_id text)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.profiles p
+    left join public.subscriptions s
+      on s."userId" = p.id and s.status in ('TRIAL', 'ACTIVE')
+    where p.id = owner_id
+      and p.status = 'ACTIVE'
+      and s.id is not null
+  );
+$$;
+
 drop policy if exists "properties_public_read" on public.properties;
 create policy "properties_public_read"
   on public.properties for select
   using (
     status = 'APPROVED'
-    and exists (
-      select 1
-      from public.profiles p
-      left join public.subscriptions s
-        on s."userId" = p.id and s.status in ('TRIAL', 'ACTIVE')
-      where p.id = properties."ownerId"
-        and p.status = 'ACTIVE'
-        and s.id is not null
-    )
+    and public.is_approved_owner("ownerId")
   );
 
 drop policy if exists "properties_owner_read_own" on public.properties;
@@ -279,7 +297,8 @@ create policy "property_images_owner_write"
 drop policy if exists "favorites_own_only" on public.favorites;
 create policy "favorites_own_only"
   on public.favorites for all
-  using ("userId" = auth.uid()::text);
+  using ("userId" = auth.uid()::text)
+  with check ("userId" = auth.uid()::text);
 
 -- ------------------------------------------------------------
 -- 10. CONVERSATIONS / MESSAGES
@@ -295,6 +314,12 @@ create policy "conversations_tenant_create"
   on public.conversations for insert
   with check ("tenantId" = auth.uid()::text);
 
+drop policy if exists "conversations_participants_update" on public.conversations;
+create policy "conversations_participants_update"
+  on public.conversations for update
+  using ("tenantId" = auth.uid()::text or "ownerId" = auth.uid()::text or public.is_admin())
+  with check ("tenantId" = auth.uid()::text or "ownerId" = auth.uid()::text or public.is_admin());
+
 drop policy if exists "messages_participants_only" on public.messages;
 create policy "messages_participants_only"
   on public.messages for select
@@ -302,7 +327,7 @@ create policy "messages_participants_only"
     exists (
       select 1 from public.conversations c
       where c.id = messages."conversationId"
-        and (c."tenantId" = auth.uid()::text or c."ownerId" = auth.uid()::text)
+        and (c."tenantId" = auth.uid()::text or c."ownerId" = auth.uid()::text or public.is_admin())
     )
   );
 
@@ -315,6 +340,17 @@ create policy "messages_participants_send"
       select 1 from public.conversations c
       where c.id = messages."conversationId"
         and (c."tenantId" = auth.uid()::text or c."ownerId" = auth.uid()::text)
+    )
+  );
+
+drop policy if exists "messages_participants_update" on public.messages;
+create policy "messages_participants_update"
+  on public.messages for update
+  using (
+    exists (
+      select 1 from public.conversations c
+      where c.id = messages."conversationId"
+        and (c."tenantId" = auth.uid()::text or c."ownerId" = auth.uid()::text or public.is_admin())
     )
   );
 
@@ -332,10 +368,25 @@ create policy "reviews_author_write"
   on public.reviews for insert
   with check ("authorId" = auth.uid()::text);
 
+drop policy if exists "reviews_author_update_delete" on public.reviews;
+create policy "reviews_author_update_delete"
+  on public.reviews for update
+  using ("authorId" = auth.uid()::text or public.is_admin());
+
+drop policy if exists "reviews_author_delete" on public.reviews;
+create policy "reviews_author_delete"
+  on public.reviews for delete
+  using ("authorId" = auth.uid()::text or public.is_admin());
+
 drop policy if exists "reports_create_own" on public.reports;
 create policy "reports_create_own"
   on public.reports for insert
   with check ("userId" = auth.uid()::text);
+
+drop policy if exists "reports_user_read_own" on public.reports;
+create policy "reports_user_read_own"
+  on public.reports for select
+  using ("userId" = auth.uid()::text or public.is_admin());
 
 drop policy if exists "reports_admin_manage" on public.reports;
 create policy "reports_admin_manage"
@@ -398,15 +449,22 @@ create policy "receipts_admin_read"
   on storage.objects for select
   using (bucket_id = 'receipts' and public.is_admin());
 
-drop policy if exists "property_images_public_read" on storage.objects;
-create policy "property_images_public_read"
-  on storage.objects for select
-  using (bucket_id = 'property-images');
+-- ------------------------------------------------------------
+-- 15. NOTIFICATIONS
+-- ------------------------------------------------------------
 
-drop policy if exists "property_images_owner_write" on storage.objects;
-create policy "property_images_owner_write"
-  on storage.objects for insert
-  with check (
-    bucket_id = 'property-images'
-    and (storage.foldername(name))[1] = auth.uid()::text
-  );
+drop policy if exists "notifications_select_own" on public.notifications;
+create policy "notifications_select_own"
+  on public.notifications for select
+  using ("userId" = auth.uid()::text or public.is_admin());
+
+drop policy if exists "notifications_update_own" on public.notifications;
+create policy "notifications_update_own"
+  on public.notifications for update
+  using ("userId" = auth.uid()::text)
+  with check ("userId" = auth.uid()::text);
+
+drop policy if exists "notifications_insert_system" on public.notifications;
+create policy "notifications_insert_system"
+  on public.notifications for insert
+  with check (public.is_admin());

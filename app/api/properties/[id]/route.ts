@@ -96,6 +96,24 @@ export async function DELETE(
   }
 
   try {
+    const existingProperty = await PropertyService.getProperty(id);
+    if (!existingProperty) {
+      return apiError("NOT_FOUND", "Annonce introuvable", 404);
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    const isOwner = (existingProperty.ownerId || (existingProperty as any).owner_id) === user.id;
+    const isAdmin = String(profile?.role || "").toUpperCase() === "ADMIN";
+
+    if (!isOwner && !isAdmin) {
+      return apiError("FORBIDDEN", "Accès refusé. Seul le propriétaire ou un administrateur peut supprimer cette annonce.", 403);
+    }
+
     await PropertyService.deleteProperty(id, user.id);
     return apiSuccess(null, "Annonce supprimée avec succès");
   } catch (err: any) {

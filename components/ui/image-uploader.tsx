@@ -130,14 +130,8 @@ export function ImageUploader({
         newPreviews.push(URL.createObjectURL(compressed));
 
         // Upload using passed handler or default Supabase Storage service
-        try {
-          const publicUrl = await uploader(compressed);
-          newUrls.push(publicUrl);
-        } catch (uploadErr: any) {
-          // If storage bucket isn't available or fails, fallback to blob preview URL
-          console.warn("Storage upload warning, using local preview fallback:", uploadErr);
-          newUrls.push(URL.createObjectURL(compressed));
-        }
+        const publicUrl = await uploader(compressed);
+        newUrls.push(publicUrl);
       }
 
       const updatedFiles = [...files, ...compressedList];

@@ -28,13 +28,25 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false }: 
   const bathrooms = listing.bathrooms ?? null;
   const surface = listing.surface ?? listing.area_sqm ?? null;
 
+  const DEFAULT_PROPERTY_IMAGES: Record<string, string> = {
+    VILLA: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80",
+    APARTMENT: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80",
+    HOUSE: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
+    ROOM: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80",
+    OFFICE: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
+    SHOP: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
+    LAND: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80",
+  };
+
   // Images resolution
-  const imageUrl =
+  const rawImageUrl =
     Array.isArray(listing.images) && listing.images.length > 0
-      ? listing.images[0]
+      ? (typeof listing.images[0] === 'string' ? listing.images[0] : listing.images[0]?.url)
       : Array.isArray(listing.property_images) && listing.property_images.length > 0
         ? listing.property_images[0].url
         : null;
+
+  const imageUrl = rawImageUrl || DEFAULT_PROPERTY_IMAGES[String(propertyType).toUpperCase()] || DEFAULT_PROPERTY_IMAGES.VILLA;
 
   async function handleFavoriteClick(e: React.MouseEvent) {
     e.preventDefault();

@@ -48,3 +48,4 @@ playwright-report/
 
 # Temporary scratch
 scratch/
+coverage/

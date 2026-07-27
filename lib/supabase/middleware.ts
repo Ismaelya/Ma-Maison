@@ -39,13 +39,13 @@ export async function updateSession(request: NextRequest) {
     const { data } = await supabase.auth.getUser();
     user = data.user;
   } catch (error) {
-    if (pathname === "/connexion") {
-      return response;
+    if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/connexion";
+      url.searchParams.set("error", "session_check_failed");
+      return NextResponse.redirect(url);
     }
-    const url = request.nextUrl.clone();
-    url.pathname = "/connexion";
-    url.searchParams.set("error", "session_check_failed");
-    return NextResponse.redirect(url);
+    return response;
   }
 
   // Protect /dashboard and /admin routes

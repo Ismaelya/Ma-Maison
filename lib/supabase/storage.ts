@@ -9,9 +9,15 @@ export async function uploadPropertyImage(
   bucketName: string = "property-images"
 ): Promise<string> {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Utilisateur non authentifié pour le téléversement d'image.");
+  }
+
   const fileExt = file.name.split(".").pop() || "webp";
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-  const filePath = `properties/${fileName}`;
+  const filePath = `${user.id}/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from(bucketName)

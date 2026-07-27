@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, User, ShieldCheck, Mail, Phone, Calendar } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/server";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate, getAvatarUrl } from "@/lib/utils";
 import { UserActionButton } from "@/components/admin/user-action-button";
-import type { Profile } from "@/types";
 
 export const metadata: Metadata = {
   title: "Détail de l'utilisateur — Admin",
@@ -21,7 +20,7 @@ export default async function AdminUserDetailPage({
 
   const { data: userProfile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("*, subscriptions(*)")
     .eq("id", id)
     .single();
 
@@ -29,20 +28,15 @@ export default async function AdminUserDetailPage({
     notFound();
   }
 
-  const u = userProfile as Profile;
+  const u = userProfile as any;
+  const activeSub = (u.subscriptions ?? []).find((s: any) => s.status === "ACTIVE" || s.status === "TRIAL");
+  const subStatus = activeSub ? activeSub.status : "EXPIRED";
 
   // Fetch properties owned by this user
   const { data: userProps } = await supabase
     .from("properties")
     .select("*")
-    .eq("owner_id", u.id);
-
-  // Fetch payment requests submitted by this user
-  const { data: userPayments } = await supabase
-    .from("payments")
-    .select("*")
-    .or(`user_id.eq.${u.id},owner_id.eq.${u.id}`)
-    .order("created_at", { ascending: false });
+    .eq("ownerId", u.id);
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -57,24 +51,29 @@ export default async function AdminUserDetailPage({
       <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-6 shadow-xl space-y-6">
         <div className="flex items-center justify-between border-b border-neutral-800 pb-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-900 text-2xl font-bold text-primary-300 border border-primary-700">
-              {u.full_name ? u.full_name.charAt(0).toUpperCase() : "U"}
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-primary-500 bg-neutral-900 shadow-md">
+              <img
+                src={getAvatarUrl(u.avatarUrl || u.avatar_url, u.name || u.full_name)}
+                alt={u.name || u.full_name || "Avatar"}
+                className="h-full w-full object-cover"
+              />
             </div>
             <div>
               <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                {u.full_name ?? u.name ?? "Utilisateur"}
-                {u.badge_verified && (
+                {u.name || u.full_name || "Utilisateur"}
+                {u.badgeVerified && (
                   <ShieldCheck className="h-5 w-5 text-blue-400" />
                 )}
               </h1>
               <p className="text-xs text-neutral-400">{u.email}</p>
+              {u.phone && <p className="text-xs text-neutral-500">📞 {u.phone}</p>}
             </div>
           </div>
 
           <UserActionButton
             userId={u.id}
-            currentStatus={(u.account_status ?? "active").toLowerCase() as any}
-            userRole={(u.role ?? "tenant").toLowerCase()}
+            currentStatus={(u.status ?? "ACTIVE").toUpperCase() as any}
+            userRole={(u.role ?? "TENANT").toUpperCase()}
           />
         </div>
 
@@ -86,12 +85,12 @@ export default async function AdminUserDetailPage({
 
           <div className="rounded-xl border border-neutral-900 bg-neutral-900/50 p-4">
             <span className="text-xs font-semibold uppercase text-neutral-500">Statut Compte</span>
-            <p className="font-bold text-white mt-1 capitalize">{u.account_status}</p>
+            <p className="font-bold text-white mt-1 capitalize">{u.status}</p>
           </div>
 
           <div className="rounded-xl border border-neutral-900 bg-neutral-900/50 p-4">
             <span className="text-xs font-semibold uppercase text-neutral-500">Abonnement</span>
-            <p className="font-bold text-white mt-1 capitalize">{u.subscription_status ?? "N/A"}</p>
+            <p className="font-bold text-white mt-1 capitalize">{subStatus}</p>
           </div>
         </div>
 

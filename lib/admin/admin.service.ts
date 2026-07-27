@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { AuditService } from "@/lib/audit/audit.service";
+import type { AuditAction } from "@/types";
 
 export class AdminService {
   /**
@@ -13,36 +14,43 @@ export class AdminService {
       .from("profiles")
       .update({
         status: newStatus,
-        account_status: newStatus,
       } as any)
       .eq("id", targetUserId)
       .select()
       .single();
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Fallback try with status column
+      const { data: retryData, error: retryError } = await supabaseAdmin
+        .from("profiles")
+        .update({ status: newStatus } as any)
+        .eq("id", targetUserId)
+        .select()
+        .single();
+      if (retryError) throw new Error(retryError.message);
+    }
 
+    const action: AuditAction = suspend ? "ACCOUNT_SUSPENDED" : "ADMIN_ACTION";
     await AuditService.logAudit(
       adminId,
-      "ACCOUNT_SUSPENDED",
+      action,
       targetUserId,
-      { status: newStatus }
+      { status: newStatus, type: suspend ? "ACCOUNT_SUSPENDED" : "ACCOUNT_REACTIVATED" }
     );
 
     return data;
   }
 
   /**
-   * Approves or rejects property listing moderation.
+   * Approves, rejects, or hides property listing moderation.
    */
-  static async moderateProperty(propertyId: string, approve: boolean, adminId: string) {
+  static async moderateProperty(propertyId: string, status: "APPROVED" | "REJECTED" | "HIDDEN", adminId: string) {
     const supabaseAdmin = await createAdminClient();
-    const newStatus = approve ? "APPROVED" : "REJECTED";
 
     const { data, error } = await supabaseAdmin
       .from("properties")
       .update({
-        status: newStatus,
-        is_published: approve,
+        status,
       } as any)
       .eq("id", propertyId)
       .select()
@@ -52,14 +60,46 @@ export class AdminService {
       // Fallback legacy listings update
       await supabaseAdmin
         .from("listings")
-        .update({ is_published: approve } as any)
+        .update({ status } as any)
         .eq("id", propertyId);
     }
 
+    let auditAction: AuditAction = "ADMIN_ACTION";
+    if (status === "APPROVED") auditAction = "PROPERTY_APPROVED";
+    if (status === "REJECTED") auditAction = "PROPERTY_REJECTED";
+
     await AuditService.logAudit(
       adminId,
-      approve ? "PROPERTY_APPROVED" : "PROPERTY_REJECTED",
-      propertyId
+      auditAction,
+      propertyId,
+      { status }
+    );
+
+    return data;
+  }
+
+  /**
+   * Updates report status (OPEN -> IN_REVIEW -> CLOSED).
+   */
+  static async updateReportStatus(reportId: string, status: "OPEN" | "IN_REVIEW" | "CLOSED", adminId: string) {
+    const supabaseAdmin = await createAdminClient();
+
+    const { data, error } = await supabaseAdmin
+      .from("reports")
+      .update({
+        status,
+      } as any)
+      .eq("id", reportId)
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    await AuditService.logAudit(
+      adminId,
+      "ADMIN_ACTION",
+      reportId,
+      { type: "REPORT_STATUS_CHANGE", status }
     );
 
     return data;

@@ -11,6 +11,7 @@ export type PropertyFilterOptions = {
   rooms?: number;
   page?: number;
   limit?: number;
+  q?: string;
 };
 
 export class PropertyRepository {
@@ -23,6 +24,10 @@ export class PropertyRepository {
       .eq("status", "APPROVED")
       .order("createdAt", { ascending: false });
 
+    if (filters.q && filters.q.trim()) {
+      const kw = filters.q.trim();
+      query = query.or(`title.ilike.%${kw}%,description.ilike.%${kw}%,district.ilike.%${kw}%,city.ilike.%${kw}%`);
+    }
     if (filters.city) {
       query = query.eq("city", filters.city);
     }

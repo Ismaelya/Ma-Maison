@@ -22,9 +22,9 @@ export default async function SubscriptionPage() {
     .maybeSingle();
 
   const rawPhoneNumbers = (appSettings?.paymentPhoneNumbers as any) ?? {};
-  const wavePhone = rawPhoneNumbers.wave ?? "+227 90 00 00 01";
-  const amanataPhone = rawPhoneNumbers.amanata ?? "+227 96 00 00 02";
-  const mynitaPhone = rawPhoneNumbers.mynita ?? "+227 98 00 00 03";
+  const wavePhone = rawPhoneNumbers.wave ?? "+227 96 70 71 16";
+  const amanataPhone = rawPhoneNumbers.amanata ?? "+227 96 70 71 16";
+  const mynitaPhone = rawPhoneNumbers.mynita ?? "+227 96 70 71 16";
   const subPrice = appSettings?.subscriptionPrice ?? 1500;
 
   // 2. Fetch active / trial subscription if available
@@ -89,7 +89,7 @@ export default async function SubscriptionPage() {
                     ? "Essai Gratuit"
                     : "Abonnement Expiré"}
               </span>
-              {(profile.badgeVerified || profile.badge_verified) && (
+              {(profile.badgeVerified || (profile as any).badge_verified) && (
                 <span className="flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
                   <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
                   Badge Vérifié

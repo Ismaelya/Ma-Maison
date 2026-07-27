@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Users, Building2, CreditCard, Flag, ArrowRight, ShieldAlert } from "lucide-react";
+import { Users, Building2, CreditCard, Flag, ArrowRight, ShieldAlert, DollarSign } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/server";
+import { formatPrice } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Administration — Vue globale",
@@ -10,21 +11,34 @@ export const metadata: Metadata = {
 export default async function AdminDashboardPage() {
   const supabase = await createAdminClient();
 
-  // Fetch admin metrics
-  const [usersCount, ownersCount, listingsCount, pendingPaymentsCount, pendingReportsCount] =
-    await Promise.all([
-      supabase.from("profiles").select("id", { count: "exact" }),
-      supabase.from("profiles").select("id", { count: "exact" }).eq("role", "owner"),
-      supabase.from("listings").select("id", { count: "exact" }),
-      supabase.from("payments").select("id", { count: "exact" }).eq("status", "pending"),
-      supabase.from("reports").select("id", { count: "exact" }).eq("status", "pending"),
-    ]);
+  // Fetch admin metrics with exact filters
+  const [
+    usersCount,
+    ownersCount,
+    listingsCount,
+    pendingPaymentsCount,
+    openReportsCount,
+    approvedPaymentsData,
+  ] = await Promise.all([
+    supabase.from("profiles").select("id", { count: "exact" }),
+    supabase.from("profiles").select("id", { count: "exact" }).or("role.eq.OWNER,role.eq.owner,role.eq.AGENCY,role.eq.agency"),
+    supabase.from("properties").select("id", { count: "exact" }),
+    supabase.from("payments").select("id", { count: "exact" }).or("status.eq.PENDING,status.eq.pending"),
+    supabase.from("reports").select("id", { count: "exact" }).or("status.eq.OPEN,status.eq.open,status.eq.pending"),
+    supabase.from("payments").select("amount").or("status.eq.APPROVED,status.eq.approved"),
+  ]);
 
   const totalUsers = usersCount.count ?? 0;
   const totalOwners = ownersCount.count ?? 0;
   const totalListings = listingsCount.count ?? 0;
   const pendingPayments = pendingPaymentsCount.count ?? 0;
-  const pendingReports = pendingReportsCount.count ?? 0;
+  const pendingReports = openReportsCount.count ?? 0;
+
+  // Calculate actual revenue from approved payments
+  const totalRevenue = (approvedPaymentsData.data ?? []).reduce(
+    (sum, p) => sum + (Number(p.amount) || 0),
+    0
+  );
 
   return (
     <div className="animate-fade-in space-y-8">
@@ -63,7 +77,7 @@ export default async function AdminDashboardPage() {
       )}
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <MetricCard
           icon={<Users className="h-5 w-5 text-blue-400" />}
           label="Utilisateurs totaux"
@@ -72,13 +86,13 @@ export default async function AdminDashboardPage() {
         />
         <MetricCard
           icon={<Building2 className="h-5 w-5 text-green-400" />}
-          label="Annonces publiées"
+          label="Annonces créées"
           value={String(totalListings)}
           subtext="Sur tout le territoire"
         />
         <MetricCard
           icon={<CreditCard className="h-5 w-5 text-yellow-400" />}
-          label="Paiements en attente"
+          label="Paiements attente"
           value={String(pendingPayments)}
           subtext="À valider manuellement"
           highlight={pendingPayments > 0}
@@ -88,6 +102,12 @@ export default async function AdminDashboardPage() {
           label="Signalements"
           value={String(pendingReports)}
           subtext="En attente de traitement"
+        />
+        <MetricCard
+          icon={<DollarSign className="h-5 w-5 text-emerald-400" />}
+          label="Revenus Totaux"
+          value={formatPrice(totalRevenue)}
+          subtext="Paiements validés"
         />
       </div>
 
@@ -159,7 +179,7 @@ function MetricCard({
         <span className="text-xs font-semibold uppercase text-neutral-400">{label}</span>
         {icon}
       </div>
-      <p className="mt-3 text-3xl font-extrabold text-white">{value}</p>
+      <p className="mt-3 text-2xl font-extrabold text-white">{value}</p>
       <p className="mt-1 text-xs text-neutral-500">{subtext}</p>
     </div>
   );

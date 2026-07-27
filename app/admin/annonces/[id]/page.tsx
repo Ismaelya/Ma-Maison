@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2, MapPin, Tag } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/server";
 import { formatPrice, formatDate, getPropertyTypeLabel } from "@/lib/utils";
 import { ListingActionButtons } from "@/components/admin/listing-action-buttons";
 
 export const metadata: Metadata = {
-  title: "Détail de la propriété — Admin",
+  title: "Détail de l'annonce — Admin",
 };
 
 export default async function AdminPropertyDetailPage({
@@ -37,7 +37,7 @@ export default async function AdminPropertyDetailPage({
     notFound();
   }
 
-  const owner = property.profiles;
+  const owner = property.profiles || {};
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -64,6 +64,7 @@ export default async function AdminPropertyDetailPage({
 
           <ListingActionButtons
             listingId={property.id}
+            status={property.status}
             isPublished={property.status === "APPROVED" || property.is_published}
             isFeatured={!!property.is_featured}
           />
@@ -83,7 +84,7 @@ export default async function AdminPropertyDetailPage({
 
           <div className="rounded-xl border border-neutral-900 bg-neutral-900/50 p-4">
             <span className="text-xs font-semibold uppercase text-neutral-500">Date de création</span>
-            <p className="font-bold text-white mt-1">{formatDate(property.created_at)}</p>
+            <p className="font-bold text-white mt-1">{formatDate(property.created_at || property.createdAt)}</p>
           </div>
         </div>
 

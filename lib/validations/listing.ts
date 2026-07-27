@@ -46,7 +46,7 @@ export const listingSchema = z.object({
     .max(100_000, "Valeur trop élevée")
     .optional()
     .nullable(),
-  images: z.array(z.string().url()).optional().default([]),
+  images: z.array(z.string()).default([]),
 });
 
 export type ListingFormData = z.infer<typeof listingSchema>;

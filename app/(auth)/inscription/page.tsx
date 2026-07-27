@@ -38,13 +38,10 @@ export default function InscriptionPage() {
   async function onSubmit(data: RegisterFormData) {
     setServerError(null);
     const supabase = createClient();
-
     const normalizedRole = data.role.toUpperCase();
 
-    // Call supabase.auth.signUp with metadata (name, phone, role, agencyName)
-    // SQL triggers on_auth_user_created + on_profile_owner_created will automatically
-    // create the profile and 30-day TRIAL subscription in PostgreSQL.
-    const { data: signUpData, error } = await supabase.auth.signUp({
+    // 1. Attempt client sign up
+    let { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
@@ -57,22 +54,38 @@ export default function InscriptionPage() {
       },
     });
 
-    if (error) {
-      setServerError(error.message || "Erreur lors de la création du compte.");
-      toast.error(error.message || "Erreur lors de la création du compte.");
-      return;
+    // 2. Fallback to API route if client signUp returned error
+    if (error || !signUpData.user) {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          name: data.fullName,
+          phone: data.phone || "",
+          role: normalizedRole,
+          agencyName: normalizedRole === "AGENCY" ? data.agencyName || "" : null,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        const errorMsg = result.error || "Erreur lors de la création du compte.";
+        setServerError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
     }
 
-    // Safety fallback: Ensure agencyName is persisted on profile if provided
-    if (signUpData.user?.id && normalizedRole === "AGENCY" && data.agencyName) {
-      await supabase
-        .from("profiles")
-        .update({ agencyName: data.agencyName })
-        .eq("id", signUpData.user.id);
-    }
+    // 3. Attempt immediate auto sign in
+    await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
 
     setIsSuccess(true);
-    toast.success("Compte créé avec succès ! Période d'essai de 30 jours activée pour les propriétaires/agences.");
+    toast.success("Compte créé avec succès ! Votre espace est prêt.");
   }
 
   return (

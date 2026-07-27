@@ -28,9 +28,10 @@ export default async function DashboardLayout({
   }
 
   const { profile } = authUser;
-  const isOwner = profile.role === "owner";
-  const trialDays = isOwner ? getTrialDaysRemaining(profile.trial_started_at) : null;
-  const isExpired = profile.subscription_status === "expired";
+  const roleStr = String(profile.role ?? "").toUpperCase();
+  const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
+  const trialDays = isOwner ? getTrialDaysRemaining((profile as any).trial_started_at || (profile.trialStartedAt ? profile.trialStartedAt.toISOString() : null)) : null;
+  const isExpired = (profile as any).subscription_status === "expired";
 
   const navItems = [
     {
@@ -97,7 +98,7 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-neutral-900">
-                {profile.full_name ?? "Utilisateur"}
+                {profile.name || (profile as any).full_name || "Utilisateur"}
               </p>
               <p className="text-xs text-neutral-500">
                 {isOwner ? "Propriétaire" : "Locataire"}
@@ -109,9 +110,11 @@ export default async function DashboardLayout({
                 isOwner ? "bg-secondary-600" : "bg-primary-600"
               )}
             >
-              {profile.full_name
-                ? profile.full_name.charAt(0).toUpperCase()
-                : "U"}
+              {profile.name
+                ? profile.name.charAt(0).toUpperCase()
+                : (profile as any).full_name
+                  ? (profile as any).full_name.charAt(0).toUpperCase()
+                  : "U"}
             </div>
           </div>
         </div>

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Users, Search, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/server";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate, cn, getAvatarUrl } from "@/lib/utils";
 import { UserActionButton } from "@/components/admin/user-action-button";
-import type { Profile } from "@/types";
 
 export const metadata: Metadata = {
   title: "Gestion des utilisateurs — Admin",
@@ -14,10 +14,10 @@ export default async function AdminUsersPage() {
 
   const { data: usersData, error } = await supabase
     .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("*, subscriptions(*)")
+    .order("createdAt", { ascending: false });
 
-  const users = (usersData ?? []) as Profile[];
+  const users = (usersData ?? []) as any[];
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -32,7 +32,7 @@ export default async function AdminUsersPage() {
 
       {error && (
         <div className="rounded-xl border border-red-800 bg-red-950/50 p-4 text-sm text-red-300">
-          Erreur lors du chargement des utilisateurs.
+          Erreur lors du chargement des utilisateurs : {error.message}
         </div>
       )}
 
@@ -50,99 +50,108 @@ export default async function AdminUsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800">
-              {users.map((u) => (
-                <tr key={u.id} className="hover:bg-neutral-900/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white",
-                          u.role === "admin"
-                            ? "bg-red-600"
-                            : u.role === "owner"
-                              ? "bg-secondary-600"
-                              : "bg-primary-600"
-                        )}
-                      >
-                        {u.full_name ? u.full_name.charAt(0).toUpperCase() : "U"}
+              {users.map((u) => {
+                const roleStr = String(u.role || "TENANT").toUpperCase();
+                const statusStr = String(u.status || u.account_status || "ACTIVE").toUpperCase();
+                const isSuspended = statusStr === "SUSPENDED";
+                const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
+                const isAdmin = roleStr === "ADMIN";
+
+                const activeSub = (u.subscriptions ?? []).find((s: any) => s.status === "ACTIVE" || s.status === "TRIAL");
+                const subStatus = activeSub ? activeSub.status : "EXPIRED";
+
+                return (
+                  <tr key={u.id} className="hover:bg-neutral-900/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-neutral-700 bg-neutral-800">
+                          <img
+                            src={getAvatarUrl(u.avatarUrl || u.avatar_url, u.name || u.full_name)}
+                            alt={u.name || u.full_name || "Avatar"}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <Link
+                            href={`/admin/utilisateurs/${u.id}`}
+                            className="font-semibold text-white hover:text-primary-400 flex items-center gap-1.5"
+                          >
+                            {u.name || u.full_name || "Sans nom"}
+                            {u.badgeVerified && (
+                              <ShieldCheck className="h-4 w-4 text-blue-400 inline" />
+                            )}
+                          </Link>
+                          <p className="text-xs text-neutral-400">{u.email}</p>
+                          {u.phone && <p className="text-xs text-neutral-500">📞 {u.phone}</p>}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-white flex items-center gap-1.5">
-                          {u.full_name ?? "Sans nom"}
-                          {u.badge_verified && (
-                            <ShieldCheck className="h-4 w-4 text-blue-400 inline" />
-                          )}
-                        </p>
-                        <p className="text-xs text-neutral-400">{u.email}</p>
-                        {u.phone && <p className="text-xs text-neutral-500">📞 {u.phone}</p>}
-                      </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  <td className="px-6 py-4">
-                    <span
-                      className={cn(
-                        "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
-                        u.role === "admin"
-                          ? "bg-red-950 text-red-400 border border-red-800"
-                          : u.role === "owner"
-                            ? "bg-secondary-950 text-secondary-400 border border-secondary-800"
-                            : "bg-blue-950 text-blue-400 border border-blue-800"
-                      )}
-                    >
-                      {u.role === "owner" ? "Propriétaire" : u.role === "admin" ? "Admin" : "Locataire"}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <span
-                      className={cn(
-                        "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
-                        u.account_status === "active"
-                          ? "bg-green-950 text-green-400 border border-green-800"
-                          : "bg-red-950 text-red-400 border border-red-800"
-                      )}
-                    >
-                      {u.account_status === "active" ? "Actif" : "Suspendu"}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {u.role === "owner" ? (
+                    <td className="px-6 py-4">
                       <span
                         className={cn(
                           "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
-                          u.subscription_status === "active"
-                            ? "bg-green-950 text-green-400 border border-green-800"
-                            : u.subscription_status === "trial"
-                              ? "bg-blue-950 text-blue-400 border border-blue-800"
-                              : "bg-red-950 text-red-400 border border-red-800"
+                          isAdmin
+                            ? "bg-red-950 text-red-400 border border-red-800"
+                            : isOwner
+                              ? "bg-secondary-950 text-secondary-400 border border-secondary-800"
+                              : "bg-blue-950 text-blue-400 border border-blue-800"
                         )}
                       >
-                        {u.subscription_status === "active"
-                          ? "Premium"
-                          : u.subscription_status === "trial"
-                            ? "Essai 30j"
-                            : "Expiré"}
+                        {isOwner ? (roleStr === "AGENCY" ? "Agence" : "Propriétaire") : isAdmin ? "Admin" : "Locataire"}
                       </span>
-                    ) : (
-                      <span className="text-xs text-neutral-500">—</span>
-                    )}
-                  </td>
+                    </td>
 
-                  <td className="px-6 py-4 text-xs text-neutral-400">
-                    {formatDate(u.created_at)}
-                  </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={cn(
+                          "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
+                          !isSuspended
+                            ? "bg-green-950 text-green-400 border border-green-800"
+                            : "bg-red-950 text-red-400 border border-red-800"
+                        )}
+                      >
+                        {!isSuspended ? "Actif" : "Suspendu"}
+                      </span>
+                    </td>
 
-                  <td className="px-6 py-4 text-right">
-                    <UserActionButton
-                      userId={u.id}
-                      currentStatus={(u.account_status ?? "active").toLowerCase() as any}
-                      userRole={(u.role ?? "tenant").toLowerCase()}
-                    />
-                  </td>
-                </tr>
-              ))}
+                    <td className="px-6 py-4">
+                      {isOwner ? (
+                        <span
+                          className={cn(
+                            "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
+                            subStatus === "ACTIVE"
+                              ? "bg-green-950 text-green-400 border border-green-800"
+                              : subStatus === "TRIAL"
+                                ? "bg-blue-950 text-blue-400 border border-blue-800"
+                                : "bg-red-950 text-red-400 border border-red-800"
+                          )}
+                        >
+                          {subStatus === "ACTIVE"
+                            ? "Premium"
+                            : subStatus === "TRIAL"
+                              ? "Essai 30j"
+                              : "Expiré"}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-neutral-500">—</span>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4 text-xs text-neutral-400">
+                      {formatDate(u.createdAt || u.created_at)}
+                    </td>
+
+                    <td className="px-6 py-4 text-right">
+                      <UserActionButton
+                        userId={u.id}
+                        currentStatus={statusStr as any}
+                        userRole={roleStr}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -55,7 +55,7 @@ export default async function DashboardPage() {
       {/* Welcome */}
       <div>
         <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">
-          Bienvenue, {profile.full_name?.split(" ")[0] ?? "Utilisateur"} 👋
+          Bienvenue, {(profile.name || (profile as any).full_name)?.split(" ")[0] ?? "Utilisateur"} 👋
         </h1>
         <p className="mt-1 text-neutral-600">
           {isOwner
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {isOwner && profile.subscription_status !== "expired" && (
+        {isOwner && (profile as any).subscription_status !== "expired" && (
           <Link
             href="/dashboard/annonces/nouveau"
             className="group flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)]"

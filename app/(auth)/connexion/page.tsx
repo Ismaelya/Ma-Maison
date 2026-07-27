@@ -30,37 +30,55 @@ export default function ConnexionPage() {
     setServerError(null);
     const supabase = createClient();
 
-    const { data: authData, error } = await supabase.auth.signInWithPassword({
+    // 1. Try browser client sign-in directly for fast session sync
+    const { data: authResult, error: clientAuthError } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     });
 
-    if (error || !authData.user) {
-      const errorMsg =
-        error?.message === "Invalid login credentials"
-          ? "Email ou mot de passe incorrect."
-          : error?.message || "Une erreur est survenue lors de la connexion.";
-      setServerError(errorMsg);
-      toast.error(errorMsg);
+    let loggedUser = authResult?.user;
+
+    // 2. If client sign-in failed, fallback to API route
+    if (clientAuthError || !loggedUser) {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        const errorMsg = result.error || "Email ou mot de passe incorrect.";
+        setServerError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
+      loggedUser = result.user;
+    }
+
+    if (!loggedUser) {
+      setServerError("Impossible de récupérer la session utilisateur.");
       return;
     }
 
-    // Query user profile to determine redirect role (ADMIN -> /admin, others -> /dashboard)
+    // 3. Query user profile to determine redirect role
     const { data: profile } = await supabase
       .from("profiles")
       .select("role, status")
-      .eq("id", authData.user.id)
+      .eq("id", loggedUser.id)
       .single();
 
-    const role = (profile?.role || "").toUpperCase();
-    const status = (profile?.status || "").toUpperCase();
+    const role = String(profile?.role || "").toUpperCase();
+    const status = String(profile?.status || "").toUpperCase();
 
     if (status === "SUSPENDED") {
+      toast.error("Votre compte est suspendu.");
       router.push("/compte-suspendu");
       return;
     }
 
-    toast.success("Connexion réussie ! Redirection en cours...");
+    toast.success("Connexion réussie ! Redirection...");
 
     if (role === "ADMIN") {
       router.push("/admin");

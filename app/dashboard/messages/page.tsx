@@ -52,8 +52,9 @@ export default async function MessagesPage({
     };
   });
 
-  const selectedConvId = params.conv || (formattedConversations.length > 0 ? formattedConversations[0].id : null);
-  const activeConversation = formattedConversations.find((c) => c.id === selectedConvId) || formattedConversations[0];
+  const firstConv = formattedConversations[0];
+  const selectedConvId = params.conv || (firstConv ? firstConv.id : null);
+  const activeConversation = formattedConversations.find((c) => c.id === selectedConvId) || firstConv;
 
   return (
     <div className="animate-fade-in space-y-6">

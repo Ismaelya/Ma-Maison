@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Home, Search, User, Menu, X, Heart, MessageSquare, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { MobileNav } from "./mobile-nav";
-import { cn } from "@/lib/utils";
+import { cn, getAvatarUrl } from "@/lib/utils";
 import { Logo } from "@/components/ui/logo";
 
 export async function Header() {
@@ -11,17 +11,18 @@ export async function Header() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  let profile: { role: string; full_name: string | null; avatar_url: string | null; account_status: string; subscription_status: string } | null = null;
+  let profile: { role: string; name?: string | null; full_name?: string | null; avatarUrl?: string | null } | null = null;
   if (user) {
     const { data } = await supabase
       .from("profiles")
-      .select("role, full_name, avatar_url, account_status, subscription_status")
+      .select("role, name, avatarUrl")
       .eq("id", user.id)
       .single();
     profile = data as any;
   }
 
-  const isOwner = profile?.role === "owner";
+  const roleStr = String(profile?.role || "").toUpperCase();
+  const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-white/80 backdrop-blur-lg">
@@ -66,15 +67,15 @@ export async function Header() {
               </Link>
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+                className="flex items-center gap-2 rounded-lg p-1 transition-transform hover:scale-105"
+                title="Mon Espace"
               >
-                <div className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white",
-                  isOwner ? "bg-secondary-600" : "bg-primary-600"
-                )}>
-                  {profile?.full_name
-                    ? profile.full_name.charAt(0).toUpperCase()
-                    : "U"}
+                <div className="relative h-9 w-9 overflow-hidden rounded-full border-2 border-blue-600 shadow-sm">
+                  <img
+                    src={getAvatarUrl(profile?.avatarUrl, profile?.name || profile?.full_name)}
+                    alt={profile?.name || "Profil"}
+                    className="h-full w-full object-cover"
+                  />
                 </div>
               </Link>
             </>

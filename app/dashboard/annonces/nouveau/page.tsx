@@ -28,7 +28,7 @@ export default function NewListingPage() {
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<ListingFormData>({
+  } = useForm({
     resolver: zodResolver(listingSchema),
     defaultValues: {
       transactionType: "RENT",
@@ -37,12 +37,13 @@ export default function NewListingPage() {
       district: "",
       rooms: 1,
       bathrooms: 1,
+      images: [],
     },
   });
 
   const selectedTransaction = watch("transactionType") || "RENT";
 
-  async function onSubmit(data: ListingFormData) {
+  async function onSubmit(data: any) {
     setServerError(null);
 
     try {

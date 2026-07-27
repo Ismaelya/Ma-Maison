@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CreditCard } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/server";
 import { PaymentVerificationModal } from "@/components/admin/payment-verification-modal";
 import type { PaymentWithOwner } from "@/types";
@@ -20,7 +20,7 @@ export default async function AdminPaymentDetailPage({
 
   const { data: payment } = await supabase
     .from("payments")
-    .select("*, profiles!inner(id, full_name, email, phone)")
+    .select("*, profiles!inner(id, name, email, phone)")
     .eq("id", id)
     .single();
 

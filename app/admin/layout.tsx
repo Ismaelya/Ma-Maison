@@ -8,11 +8,9 @@ import {
   Flag,
   ShieldCheck,
   Home,
-  LogOut,
 } from "lucide-react";
 import { getUser } from "@/lib/auth/helpers";
 import { DashboardSignOut } from "@/components/dashboard/sign-out-button";
-import { cn } from "@/lib/utils";
 
 export default async function AdminLayout({
   children,
@@ -27,8 +25,11 @@ export default async function AdminLayout({
 
   const { profile } = authUser;
 
-  // Strict Admin Guard: role must be 'admin' and account_status must not be 'suspended'
-  if (profile.role !== "admin" || profile.account_status === "suspended") {
+  // Strict Admin Guard: role must be ADMIN and status must not be SUSPENDED
+  const roleStr = String(profile.role ?? "").toUpperCase();
+  const statusStr = String(profile.status ?? (profile as any).account_status ?? "").toUpperCase();
+
+  if (roleStr !== "ADMIN" || statusStr === "SUSPENDED") {
     redirect("/dashboard");
   }
 
@@ -82,7 +83,7 @@ export default async function AdminLayout({
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-sm font-semibold text-white">
-                {profile.full_name ?? "Administrateur"}
+                {profile.name || (profile as any).full_name || "Administrateur"}
               </p>
               <p className="text-xs text-neutral-400">ADMINISTRATEUR SYS</p>
             </div>

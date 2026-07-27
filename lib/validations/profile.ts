@@ -11,6 +11,7 @@ export const profileSchema = z.object({
     .regex(/^[+]?[0-9\s-]+$/, "Numéro de téléphone invalide")
     .optional()
     .or(z.literal("")),
+  avatarUrl: z.string().optional().or(z.literal("")),
 });
 
 export type ProfileFormData = z.infer<typeof profileSchema>;

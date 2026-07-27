@@ -19,14 +19,21 @@ export function formatPrice(price: number): string {
 }
 
 /**
- * Formats a date in French locale.
+ * Formats a date in French locale safely.
  */
-export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(date));
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return "N/A";
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return "N/A";
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(d);
+  } catch {
+    return "N/A";
+  }
 }
 
 /**
@@ -143,3 +150,15 @@ export function getTrialDaysRemaining(trialStartedAt: string | null): number {
   );
   return Math.max(0, remaining);
 }
+
+/**
+ * Returns a valid profile avatar URL. If avatarUrl is missing, generates a high quality avatar based on user name.
+ */
+export function getAvatarUrl(avatarUrl: string | null | undefined, name: string | null | undefined): string {
+  if (avatarUrl && avatarUrl.trim().length > 0) {
+    return avatarUrl;
+  }
+  const cleanName = (name || "Utilisateur").trim();
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName)}&background=2563eb&color=ffffff&bold=true&size=256`;
+}
+

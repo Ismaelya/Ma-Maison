@@ -1,5 +1,6 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { AuditService } from "@/lib/audit/audit.service";
+import { NotificationService } from "@/lib/notifications/notification.service";
 import { randomUUID } from "crypto";
 
 export class PaymentService {
@@ -48,6 +49,15 @@ export class PaymentService {
     if (error) throw new Error(error.message);
 
     await AuditService.logAudit(adminId, "PAYMENT_APPROVED", paymentId, { amount: data?.amount });
+    if (data?.userId) {
+      await NotificationService.createNotification({
+        userId: data.userId,
+        type: "PAYMENT_APPROVED",
+        title: "Paiement approuvé",
+        message: `Votre paiement de ${data.amount} FCFA a été approuvé. Votre abonnement est maintenant actif pour 30 jours.`,
+        link: "/dashboard/abonnement",
+      });
+    }
     return data;
   }
 
@@ -70,6 +80,16 @@ export class PaymentService {
     if (error) throw new Error(error.message);
 
     await AuditService.logAudit(adminId, "PAYMENT_REJECTED", paymentId, { reason });
+    if (data?.userId) {
+      await NotificationService.createNotification({
+        userId: data.userId,
+        type: "PAYMENT_REJECTED",
+        title: "Paiement rejeté",
+        message: `Votre paiement de ${data.amount} FCFA n'a pas pu être validé.${reason ? ` Motif: ${reason}` : ""}`,
+        link: "/dashboard/abonnement",
+      });
+    }
+    return data;
     return data;
   }
 }

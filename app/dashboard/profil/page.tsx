@@ -10,8 +10,9 @@ export const metadata: Metadata = {
 
 export default async function ProfilePage() {
   const { profile } = await requireAuth();
-  const isOwner = profile.role === "owner";
-  const trialDays = isOwner ? getTrialDaysRemaining(profile.trial_started_at) : null;
+  const roleStr = String(profile.role ?? "").toUpperCase();
+  const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
+  const trialDays = isOwner ? getTrialDaysRemaining((profile as any).trial_started_at || (profile.trialStartedAt ? profile.trialStartedAt.toISOString() : null)) : null;
 
   return (
     <div className="animate-fade-in space-y-8">

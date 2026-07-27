@@ -55,7 +55,7 @@ export async function requireAuth(): Promise<AuthUser> {
     redirect("/connexion");
   }
 
-  const accountStatus = (user.profile.status ?? "").toUpperCase();
+  const accountStatus = (user.profile.status ?? (user.profile as any).account_status ?? "").toUpperCase();
 
   if (accountStatus === "SUSPENDED") {
     redirect("/compte-suspendu");
@@ -67,7 +67,7 @@ export async function requireAuth(): Promise<AuthUser> {
 /**
  * Requires a specific role and active account.
  */
-export async function requireRole(role: UserRole): Promise<AuthUser> {
+export async function requireRole(role: UserRole | "tenant" | "owner" | "agency" | "admin" | string): Promise<AuthUser> {
   const user = await requireAuth();
 
   const userRole = (user.profile.role ?? "").toUpperCase();
@@ -89,7 +89,9 @@ export async function requireRole(role: UserRole): Promise<AuthUser> {
  */
 export function canOwnerPublish(profile: Profile, subscription: Subscription | null): boolean {
   const role = profile.role;
-  if (profile.status === "SUSPENDED") return false;
+  const status = profile.status ?? (profile as any).account_status;
+
+  if (status === "SUSPENDED") return false;
   if (role !== "OWNER" && role !== "AGENCY" && role !== "ADMIN") return false;
   if (role === "ADMIN") return true; // admin non soumis à l'abonnement
   if (!subscription) return false;

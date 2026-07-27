@@ -142,6 +142,7 @@ model Profile {
   tenantConversations Conversation[] @relation("ConversationTenant")
   ownerConversations  Conversation[] @relation("ConversationOwner")
   auditLogs         AuditLog[]
+  notifications     Notification[]
 
   @@map("profiles")
 }
@@ -392,4 +393,34 @@ model AppSettings {
   updatedAt DateTime @updatedAt
 
   @@map("app_settings")
+}
+
+// ---------------------------------------------------------
+// NOTIFICATIONS (Partie 5 §58)
+// ---------------------------------------------------------
+
+enum NotificationType {
+  NEW_MESSAGE
+  PAYMENT_APPROVED
+  PAYMENT_REJECTED
+  PROPERTY_APPROVED
+  PROPERTY_REJECTED
+  SUBSCRIPTION_EXPIRING
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+
+  user Profile @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
 }

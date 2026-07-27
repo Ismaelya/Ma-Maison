@@ -26,16 +26,18 @@ type MobileNavProps = {
   user: User | null;
   profile: {
     role: string;
-    full_name: string | null;
-    account_status: string;
-    subscription_status: string;
+    name?: string | null;
+    full_name?: string | null;
+    account_status?: string;
+    subscription_status?: string;
   } | null;
 };
 
 export function MobileNav({ user, profile }: MobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
-  const isOwner = profile?.role === "owner";
+  const roleStr = String(profile?.role || "").toUpperCase();
+  const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -44,6 +46,8 @@ export function MobileNav({ user, profile }: MobileNavProps) {
     router.refresh();
     router.push("/");
   }
+
+  const profileName = (profile?.name || profile?.full_name);
 
   return (
     <div className="md:hidden">
@@ -81,13 +85,13 @@ export function MobileNav({ user, profile }: MobileNavProps) {
                     isOwner ? "bg-secondary-600" : "bg-primary-600"
                   )}
                 >
-                  {profile.full_name
-                    ? profile.full_name.charAt(0).toUpperCase()
+                  {profileName
+                    ? profileName.charAt(0).toUpperCase()
                     : "U"}
                 </div>
                 <div>
                   <p className="font-semibold text-neutral-900">
-                    {profile.full_name ?? "Utilisateur"}
+                    {profileName ?? "Utilisateur"}
                   </p>
                   <p className="text-xs text-neutral-500">
                     {isOwner ? "Propriétaire" : "Locataire"}

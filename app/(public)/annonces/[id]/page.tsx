@@ -209,7 +209,7 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
               <FeatureBox
                 icon={<Calendar className="h-5 w-5" />}
                 label="Publié"
-                value={formatRelativeTime(typedListing.created_at)}
+                value={formatRelativeTime(typedListing.createdAt || typedListing.created_at)}
               />
             </div>
 
@@ -266,23 +266,23 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                 </h3>
                 <div className="mt-4 flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary-100 text-lg font-bold text-secondary-700">
-                    {owner.full_name
-                      ? owner.full_name.charAt(0).toUpperCase()
+                    {(owner.name || owner.full_name)
+                      ? (owner.name || owner.full_name).charAt(0).toUpperCase()
                       : "P"}
                   </div>
                   <div>
                     <p className="font-semibold text-neutral-900">
-                      {owner.full_name ?? "Propriétaire"}
+                      {owner.name ?? owner.full_name ?? "Propriétaire"}
                     </p>
                     <p className="text-xs text-neutral-500">
-                      Membre depuis {formatDate(owner.created_at)}
+                      Membre depuis {formatDate(owner.createdAt || owner.created_at)}
                     </p>
                   </div>
                 </div>
 
                 <ContactProtection
                   phone={owner.phone}
-                  ownerName={owner.full_name ?? "ce propriétaire"}
+                  ownerName={owner.name ?? owner.full_name ?? "ce propriétaire"}
                   ownerId={owner.id}
                   listingId={typedListing.id}
                   isAuthenticated={isAuthenticated}
