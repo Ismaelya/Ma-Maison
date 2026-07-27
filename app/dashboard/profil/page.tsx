@@ -63,16 +63,16 @@ export default async function ProfilePage() {
                 <span
                   className={cn(
                     "rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                    profile.account_status === "active"
+                    profile.status === "ACTIVE"
                       ? "bg-green-100 text-green-700"
-                      : profile.account_status === "suspended"
+                      : profile.status === "SUSPENDED"
                         ? "bg-red-100 text-red-700"
                         : "bg-yellow-100 text-yellow-700"
                   )}
                 >
-                  {profile.account_status === "active"
+                  {profile.status === "ACTIVE"
                     ? "Actif"
-                    : profile.account_status === "suspended"
+                    : profile.status === "SUSPENDED"
                       ? "Suspendu"
                       : "Supprimé"}
                 </span>
@@ -80,7 +80,7 @@ export default async function ProfilePage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-neutral-600">Membre depuis</span>
                 <span className="text-sm font-medium text-neutral-900">
-                  {formatDate(profile.created_at)}
+                  {formatDate(profile.createdAt)}
                 </span>
               </div>
             </div>

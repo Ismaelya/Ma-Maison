@@ -30,8 +30,8 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const currentName = profile.full_name ?? (profile as any).name ?? "";
-  const initialAvatar = profile.avatarUrl ?? (profile as any).avatar_url ?? "";
+  const currentName = profile.name ?? "";
+  const initialAvatar = profile.avatarUrl ?? "";
 
   const {
     register,

@@ -15,12 +15,7 @@ const nextConfig: NextConfig = {
     ],
   },
   eslint: {
-    // Les warnings ESLint ne bloquent pas le build Vercel
     ignoreDuringBuilds: true,
-  },
-  typescript: {
-    // Les erreurs TS ne bloquent pas le build Vercel (corrigées en CI)
-    ignoreBuildErrors: true,
   },
 };
 

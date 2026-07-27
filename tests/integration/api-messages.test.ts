@@ -68,6 +68,7 @@ describe("API Integration: POST /api/messages", () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: "spam-user" } } });
     vi.spyOn(messagingRateLimiter, "check").mockResolvedValue({
       success: false,
+      limit: 10,
       remaining: 0,
       reset: Date.now() + 60000,
     });
@@ -92,6 +93,7 @@ describe("API Integration: POST /api/messages", () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: senderId } } });
     vi.spyOn(messagingRateLimiter, "check").mockResolvedValue({
       success: true,
+      limit: 10,
       remaining: 9,
       reset: Date.now() + 60000,
     });
