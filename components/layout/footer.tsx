@@ -11,7 +11,7 @@ export function Footer() {
           <div className="space-y-4">
             <Logo variant="light" />
             <p className="text-xs leading-relaxed text-neutral-400">
-              La plateforme immobilière de confiance au Niger. Trouvez votre maison, appartement, villa ou bureau idéal en toute sécurité.
+              La plateforme immobilière de confiance au Niger. Trouvez votre maison, terrain, boutique ou bureau idéal en toute sécurité.
             </p>
           </div>
 
@@ -59,11 +59,11 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-secondary-500" />
-                contact@mamaison.ne
+                mamaisonniger@gmail.com
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-secondary-500" />
-                +227 90 00 00 00
+                +227 96 70 71 16
               </li>
             </ul>
           </div>
