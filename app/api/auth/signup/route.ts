@@ -92,8 +92,21 @@ export async function POST(request: Request) {
 
         if (signUpErr) {
           console.error("Signup error detail:", signUpErr);
+          const isUnreachable =
+            signUpErr.name === "AuthRetryableFetchError" ||
+            signUpErr.message === "{}" ||
+            signUpErr.message === "fetch failed" ||
+            (signUpErr as any).status === 0;
+
+          if (isUnreachable) {
+            return NextResponse.json(
+              { error: "Service d'authentification temporairement indisponible." },
+              { status: 503 }
+            );
+          }
+
           const errMsg =
-            typeof signUpErr.message === "string" && signUpErr.message
+            typeof signUpErr.message === "string" && signUpErr.message && signUpErr.message !== "{}"
               ? signUpErr.message
               : (signUpErr as any).error_description
               ? (signUpErr as any).error_description
