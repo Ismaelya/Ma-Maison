@@ -123,6 +123,7 @@ export async function POST(request: Request) {
     });
   } catch (err: any) {
     console.error("Fatal Signup Error:", err);
-    return NextResponse.json({ error: err?.message || String(err) || "Erreur serveur" }, { status: 500 });
+    const msg = typeof err === "string" ? err : (err && typeof err.message === "string" && err.message) ? err.message : String(err || "Erreur serveur");
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
