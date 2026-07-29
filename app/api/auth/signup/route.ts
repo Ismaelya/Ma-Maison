@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { signupRateLimiter } from "@/lib/rate-limit";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getAvatarUrl } from "@/lib/utils";
 
 export async function POST(request: Request) {
@@ -30,34 +30,60 @@ export async function POST(request: Request) {
       );
     }
 
+    const supabase = await createClient();
     const supabaseAdmin = await createAdminClient();
     const normalizedRole = (role || "TENANT").toUpperCase();
     const avatarUrl = getAvatarUrl(null, name);
 
-    // Create auth user with admin client
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email.trim().toLowerCase(),
-      password,
-      email_confirm: true,
-      user_metadata: {
-        name,
-        phone: phone || "",
-        role: normalizedRole,
-        agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-        avatarUrl,
-      },
-    });
+    let user: any = null;
 
-    if (authError) {
-      return NextResponse.json(
-        { error: authError.message || "Erreur lors de la création du compte." },
-        { status: 400 }
-      );
+    // 1. Try admin createUser first inside try/catch
+    try {
+      const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
+        email: email.trim().toLowerCase(),
+        password,
+        email_confirm: true,
+        user_metadata: {
+          name,
+          phone: phone || "",
+          role: normalizedRole,
+          agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+          avatarUrl,
+        },
+      });
+
+      if (!adminAuthErr && adminAuthData?.user) {
+        user = adminAuthData.user;
+      }
+    } catch (e) {
+      console.warn("admin.createUser exception, using auth.signUp fallback");
     }
 
-    const user = authData.user;
+    // 2. Fallback to client signUp if admin auth failed or threw exception
+    if (!user) {
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          data: {
+            name,
+            phone: phone || "",
+            role: normalizedRole,
+            agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+            avatarUrl,
+          },
+        },
+      });
 
-    // Ensure Profile record exists in profiles table
+      if (signUpErr || !signUpData?.user) {
+        const errMsg = signUpErr?.message || "Erreur lors de la création du compte.";
+        return NextResponse.json({ error: errMsg }, { status: 400 });
+      }
+
+      user = signUpData.user;
+    }
+
+    // Ensure Profile record exists in profiles table using service role client
     const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
       id: user.id,
       email: user.email!,
@@ -93,6 +119,7 @@ export async function POST(request: Request) {
       message: "Compte créé avec succès.",
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Erreur serveur" }, { status: 500 });
+    console.error("Fatal Signup Error:", err);
+    return NextResponse.json({ error: err?.message || String(err) || "Erreur serveur" }, { status: 500 });
   }
 }

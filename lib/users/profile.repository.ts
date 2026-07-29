@@ -30,11 +30,9 @@ export class ProfileRepository {
       .from("profiles")
       .update({
         status: "DELETED",
-        account_status: "DELETED",
         name: anonymizedName,
-        full_name: anonymizedName,
         phone: anonymizedPhone,
-        avatar_url: null,
+        avatarUrl: null,
       } as any)
       .eq("id", id);
 

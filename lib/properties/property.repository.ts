@@ -60,8 +60,8 @@ export class PropertyRepository {
     if (error || !data || data.length === 0) {
       const { data: legacy } = await supabase
         .from("listings")
-        .select("*, profiles!inner(id, name, full_name, badge_verified, avatar_url, phone)")
-        .order("created_at", { ascending: false });
+        .select("*, profiles!inner(id, name, badgeVerified, avatarUrl, phone)")
+        .order("createdAt", { ascending: false });
       return (legacy ?? []) as unknown as Property[];
     }
 
@@ -72,14 +72,14 @@ export class PropertyRepository {
     const supabase = await createClient();
     let { data } = await supabase
       .from("properties")
-      .select("*, property_images(*), profiles!inner(id, name, full_name, badge_verified, avatar_url, phone)")
+      .select("*, property_images(*), profiles!inner(id, name, badgeVerified, avatarUrl, phone)")
       .eq("id", id)
       .single();
 
     if (!data) {
       const { data: legacy } = await supabase
         .from("listings")
-        .select("*, profiles!inner(id, name, full_name, badge_verified, avatar_url, phone)")
+        .select("*, profiles!inner(id, name, badgeVerified, avatarUrl, phone)")
         .eq("id", id)
         .single();
       data = legacy as any;
