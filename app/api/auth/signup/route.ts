@@ -30,17 +30,29 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
-    const supabaseAdmin = await createAdminClient();
+    let supabase;
+    let supabaseAdmin;
+    try {
+      supabase = await createClient();
+      supabaseAdmin = await createAdminClient();
+    } catch (e: any) {
+      console.error("Supabase client initialization error:", e);
+      return NextResponse.json(
+        { error: "Service d'authentification temporairement indisponible." },
+        { status: 503 }
+      );
+    }
+
     const normalizedRole = (role || "TENANT").toUpperCase();
     const avatarUrl = getAvatarUrl(null, name);
+    const userEmail = email.trim().toLowerCase();
 
     let user: any = null;
 
-    // 1. Try admin createUser first inside try/catch
+    // 1. Try admin createUser first
     try {
       const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
-        email: email.trim().toLowerCase(),
+        email: userEmail,
         password,
         email_confirm: true,
         user_metadata: {
@@ -54,69 +66,97 @@ export async function POST(request: Request) {
 
       if (!adminAuthErr && adminAuthData?.user) {
         user = adminAuthData.user;
+      } else if (adminAuthErr) {
+        console.warn("admin.createUser returned error, fallback to client signUp:", adminAuthErr.message);
       }
-    } catch (e) {
-      console.warn("admin.createUser exception, using auth.signUp fallback");
+    } catch (adminException: any) {
+      console.warn("admin.createUser threw exception:", adminException?.message || adminException);
     }
 
-    // 2. Fallback to client signUp if admin auth failed or threw exception
+    // 2. Fallback to client signUp if admin auth did not return a user
     if (!user) {
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          data: {
-            name,
-            phone: phone || "",
-            role: normalizedRole,
-            agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-            avatarUrl,
+      try {
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+          email: userEmail,
+          password,
+          options: {
+            data: {
+              name,
+              phone: phone || "",
+              role: normalizedRole,
+              agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+              avatarUrl,
+            },
           },
-        },
-      });
+        });
 
-      if (signUpErr || !signUpData?.user) {
-        console.error("Signup error detail:", signUpErr);
-        const errMsg =
-          (signUpErr && typeof signUpErr.message === "string" && signUpErr.message)
-            ? signUpErr.message
-            : (signUpErr && (signUpErr as any).error_description)
-            ? (signUpErr as any).error_description
-            : "Erreur lors de la création du compte.";
-        return NextResponse.json({ error: String(errMsg) }, { status: 400 });
+        if (signUpErr) {
+          console.error("Signup error detail:", signUpErr);
+          const errMsg =
+            typeof signUpErr.message === "string" && signUpErr.message
+              ? signUpErr.message
+              : (signUpErr as any).error_description
+              ? (signUpErr as any).error_description
+              : "Erreur lors de la création du compte.";
+          return NextResponse.json({ error: String(errMsg) }, { status: 400 });
+        }
+
+        if (signUpData?.user) {
+          user = signUpData.user;
+        }
+      } catch (signUpException: any) {
+        console.error("Supabase auth.signUp exception:", signUpException);
+        return NextResponse.json(
+          { error: "Service d'authentification temporairement indisponible." },
+          { status: 503 }
+        );
       }
+    }
 
-      user = signUpData.user;
+    // If Supabase Auth is unreachable or failed to produce a user object
+    if (!user) {
+      return NextResponse.json(
+        { error: "Service d'authentification temporairement indisponible." },
+        { status: 503 }
+      );
     }
 
     // Ensure Profile record exists in profiles table using service role client
-    const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
-      id: user.id,
-      email: user.email!,
-      name: name,
-      phone: phone || null,
-      role: normalizedRole,
-      agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
-      avatarUrl: avatarUrl,
-      status: "ACTIVE",
-      updatedAt: new Date().toISOString(),
-    });
+    try {
+      const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
+        id: user.id,
+        email: user.email!,
+        name: name,
+        phone: phone || null,
+        role: normalizedRole,
+        agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
+        avatarUrl: avatarUrl,
+        status: "ACTIVE",
+        updatedAt: new Date().toISOString(),
+      });
 
-    if (profileError) {
-      console.error("Profile creation warning:", profileError.message);
+      if (profileError) {
+        console.error("Profile creation warning:", profileError.message);
+      }
+    } catch (profileErr) {
+      console.error("Failed to upsert profile in Supabase database:", profileErr);
     }
 
     // Initial 30-day trial subscription for owners and agencies
     if (normalizedRole === "OWNER" || normalizedRole === "AGENCY") {
-      const now = new Date();
-      const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-      await supabaseAdmin.from("subscriptions").insert({
-        userId: user.id,
-        status: "ACTIVE",
-        price: 0,
-        startDate: now.toISOString(),
-        endDate: expiry.toISOString(),
-      });
+      try {
+        const now = new Date();
+        const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        await supabaseAdmin.from("subscriptions").insert({
+          userId: user.id,
+          status: "ACTIVE",
+          price: 0,
+          startDate: now.toISOString(),
+          endDate: expiry.toISOString(),
+        });
+      } catch (subErr) {
+        console.error("Failed to insert subscription in Supabase database:", subErr);
+      }
     }
 
     return NextResponse.json({
@@ -130,3 +170,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
