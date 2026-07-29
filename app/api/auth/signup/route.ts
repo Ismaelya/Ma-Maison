@@ -76,7 +76,10 @@ export async function POST(request: Request) {
       });
 
       if (signUpErr || !signUpData?.user) {
-        const errMsg = signUpErr?.message || "Erreur lors de la création du compte.";
+        console.error("Signup error detail:", signUpErr);
+        const errMsg = signUpErr
+          ? (typeof signUpErr.message === "string" && signUpErr.message ? signUpErr.message : String(signUpErr.message || signUpErr))
+          : "Erreur lors de la création du compte.";
         return NextResponse.json({ error: errMsg }, { status: 400 });
       }
 
