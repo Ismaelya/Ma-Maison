@@ -16,8 +16,8 @@ export class PaymentService {
         id: randomUUID(),
         userId,
         subscriptionId: payload.subscriptionId ?? null,
-        method: payload.method.toUpperCase(),
-        receiptUrl: payload.receiptUrl,
+        method: (payload.method || (payload as any).operator || "WAVE").toUpperCase(),
+        receiptUrl: payload.receiptUrl || "https://ma-maison-niger.vercel.app/receipts/test.png",
         amount: payload.amount ?? 1500,
         status: "PENDING",
       } as any)

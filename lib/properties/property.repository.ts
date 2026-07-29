@@ -92,9 +92,11 @@ export class PropertyRepository {
     const supabase = await createClient();
     const { images, ...dataToInsert } = propertyData as any;
 
+    const propertyId = crypto.randomUUID();
+
     const { data, error } = await supabase
       .from("properties")
-      .insert(dataToInsert)
+      .insert({ id: propertyId, ...dataToInsert })
       .select()
       .single();
 
@@ -102,6 +104,7 @@ export class PropertyRepository {
 
     if (images && Array.isArray(images) && images.length > 0) {
       const imageRecords = images.map((url: string, index: number) => ({
+        id: crypto.randomUUID(),
         propertyId: data.id,
         url,
         order: index,
