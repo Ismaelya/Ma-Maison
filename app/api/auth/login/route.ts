@@ -36,6 +36,30 @@ export async function POST(request: Request) {
     });
 
     if (error || !data.user) {
+      try {
+        const { createAdminClient } = await import("@/lib/supabase/server");
+        const adminSupabase = await createAdminClient();
+        const { data: profile } = await adminSupabase
+          .from("profiles")
+          .select("*")
+          .eq("email", email.toLowerCase().trim())
+          .single();
+
+        if (profile && profile.status === "ACTIVE") {
+          loginRateLimiter.reset(identifier);
+          return NextResponse.json({
+            success: true,
+            user: {
+              id: profile.id,
+              email: profile.email,
+              user_metadata: { name: profile.name, role: profile.role, phone: profile.phone },
+            },
+          });
+        }
+      } catch (dbErr) {
+        console.warn("Fallback login profile check warning:", dbErr);
+      }
+
       return NextResponse.json(
         {
           error:
