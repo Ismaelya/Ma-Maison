@@ -1,4 +1,5 @@
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma/client";
 import type { Property } from "@/types";
 
 export type PropertyFilterOptions = {
@@ -16,106 +17,135 @@ export type PropertyFilterOptions = {
 
 export class PropertyRepository {
   static async search(filters: PropertyFilterOptions = {}): Promise<Property[]> {
-    const supabase = await createClient();
+    try {
+      const whereClause: any = {
+        status: "APPROVED",
+        owner: {
+          status: "ACTIVE",
+        },
+      };
 
+      if (filters.city) {
+        whereClause.city = filters.city;
+      }
+      if (filters.district) {
+        whereClause.district = { contains: filters.district, mode: "insensitive" };
+      }
+      if (filters.type) {
+        whereClause.type = filters.type.toUpperCase();
+      }
+
+      const results = await prisma.property.findMany({
+        where: whereClause,
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (results && results.length > 0) {
+        return results as unknown as Property[];
+      }
+    } catch {
+      // Ignore Prisma search error
+    }
+
+    const supabase = await createClient();
     let query = supabase
       .from("properties")
-      .select("*, property_images(*), profiles!inner(id, name, agencyName, badgeVerified, avatarUrl, phone)", { count: "exact" })
+      .select("*, property_images(*), profiles!inner(id, name, agencyName, badgeVerified, avatarUrl, phone, status)", { count: "exact" })
       .eq("status", "APPROVED")
+      .eq("profiles.status", "ACTIVE")
       .order("createdAt", { ascending: false });
 
-    if (filters.q && filters.q.trim()) {
-      const kw = filters.q.trim();
-      query = query.or(`title.ilike.%${kw}%,description.ilike.%${kw}%,district.ilike.%${kw}%,city.ilike.%${kw}%`);
-    }
     if (filters.city) {
       query = query.eq("city", filters.city);
     }
-    if (filters.district) {
-      query = query.ilike("district", `%${filters.district}%`);
-    }
-    if (filters.type) {
-      query = query.eq("type", filters.type.toUpperCase() as any);
-    }
-    if (filters.transactionType) {
-      query = query.eq("transactionType", filters.transactionType.toUpperCase() as any);
-    }
-    if (filters.minPrice !== undefined) {
-      query = query.gte("price", filters.minPrice);
-    }
-    if (filters.maxPrice !== undefined) {
-      query = query.lte("price", filters.maxPrice);
-    }
-    if (filters.rooms !== undefined) {
-      query = query.gte("rooms", filters.rooms);
-    }
 
-    if (filters.page && filters.limit) {
-      const from = (filters.page - 1) * filters.limit;
-      const to = filters.page * filters.limit - 1;
-      query = query.range(from, to);
-    }
-
-    const { data, error } = await query;
-    if (error || !data || data.length === 0) {
-      const { data: legacy } = await supabase
-        .from("listings")
-        .select("*, profiles!inner(id, name, badgeVerified, avatarUrl, phone)")
-        .order("createdAt", { ascending: false });
-      return (legacy ?? []) as unknown as Property[];
-    }
-
-    return data as unknown as Property[];
+    const { data } = await query;
+    return (data ?? []) as unknown as Property[];
   }
 
   static async findById(id: string): Promise<Property | null> {
+    try {
+      const res = await prisma.property.findUnique({
+        where: { id },
+        include: { images: true, owner: true },
+      });
+      if (res) return res as unknown as Property;
+    } catch {
+      // Ignore
+    }
+
     const supabase = await createClient();
-    let { data } = await supabase
+    const { data } = await supabase
       .from("properties")
       .select("*, property_images(*), profiles!inner(id, name, badgeVerified, avatarUrl, phone)")
       .eq("id", id)
       .single();
 
-    if (!data) {
-      const { data: legacy } = await supabase
-        .from("listings")
-        .select("*, profiles!inner(id, name, badgeVerified, avatarUrl, phone)")
-        .eq("id", id)
-        .single();
-      data = legacy as any;
-    }
-
     return data as unknown as Property | null;
   }
 
   static async create(propertyData: Partial<Property> & { images?: string[] }): Promise<Property> {
-    const supabase = await createClient();
-    const { images, ...dataToInsert } = propertyData as any;
-
     const propertyId = crypto.randomUUID();
+    const { images, ownerId, ...rest } = propertyData as any;
 
+    try {
+      const created = await prisma.property.create({
+        data: {
+          id: propertyId,
+          ownerId: ownerId,
+          title: rest.title,
+          description: rest.description,
+          type: (rest.type || "HOUSE").toUpperCase() as any,
+          price: Number(rest.price),
+          city: rest.city,
+          district: rest.district || rest.city,
+          address: rest.address || null,
+          rooms: Number(rest.rooms || 1),
+          bathrooms: Number(rest.bathrooms || 1),
+          surface: rest.surface ? Number(rest.surface) : null,
+          status: (rest.status || "PENDING").toUpperCase() as any,
+        },
+      });
+
+      if (images && Array.isArray(images) && images.length > 0) {
+        await prisma.propertyImage.createMany({
+          data: images.map((url: string, index: number) => ({
+            id: crypto.randomUUID(),
+            propertyId: created.id,
+            url,
+            order: index,
+          })),
+        });
+      }
+
+      return created as unknown as Property;
+    } catch (prismaErr) {
+      console.warn("Prisma property creation warning:", prismaErr);
+    }
+
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from("properties")
-      .insert({ id: propertyId, ...dataToInsert })
+      .insert({ id: propertyId, ownerId, ...rest })
       .select()
       .single();
 
     if (error) throw new Error(error.message);
 
-    if (images && Array.isArray(images) && images.length > 0) {
-      const imageRecords = images.map((url: string, index: number) => ({
-        id: crypto.randomUUID(),
-        propertyId: data.id,
-        url,
-        order: index,
-      }));
-      await supabase.from("property_images").insert(imageRecords);
-    }
-
     return data as unknown as Property;
   }
 
   static async update(id: string, updates: Partial<Property>): Promise<Property> {
+    try {
+      const updated = await prisma.property.update({
+        where: { id },
+        data: updates as any,
+      });
+      return updated as unknown as Property;
+    } catch {
+      // Ignore
+    }
+
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("properties")
@@ -129,10 +159,14 @@ export class PropertyRepository {
   }
 
   static async delete(id: string): Promise<void> {
-    const supabaseAdmin = await createAdminClient();
-    const { error } = await supabaseAdmin.from("properties").delete().eq("id", id);
-    if (error) {
-      await supabaseAdmin.from("listings").delete().eq("id", id);
+    try {
+      await prisma.property.delete({ where: { id } });
+      return;
+    } catch {
+      // Ignore
     }
+
+    const supabase = await createClient();
+    await supabase.from("properties").delete().eq("id", id);
   }
 }
