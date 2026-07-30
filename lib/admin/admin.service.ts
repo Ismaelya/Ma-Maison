@@ -12,20 +12,16 @@ export class AdminService {
     let updatedProfile: any = null;
 
     try {
-      await prisma.$executeRawUnsafe(`
-        WITH set_claim AS (
-          SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true)
-        )
-        UPDATE public.profiles
-        SET status = '${newStatus}'::"AccountStatus"
-        WHERE id = '${targetUserId}';
-      `);
+      await prisma.$transaction([
+        prisma.$executeRawUnsafe(`SELECT set_config('request.jwt.claims', '{"sub":"${adminId}","role":"authenticated"}', true);`),
+        prisma.$executeRawUnsafe(`UPDATE public.profiles SET status = '${newStatus}'::"AccountStatus" WHERE id = '${targetUserId}';`),
+      ]);
 
       updatedProfile = await prisma.profile.findUnique({
         where: { id: targetUserId },
       });
     } catch (e) {
-      console.warn("Prisma CTE toggle suspension warning:", e);
+      console.warn("Prisma admin jwt claims toggle suspension warning:", e);
     }
 
     if (!updatedProfile) {
