@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     const avatarUrl = getAvatarUrl(null, name);
     const userEmail = email.trim().toLowerCase();
 
-    let user: any = null;
+    let authErrorMessage = "";
 
     // 1. Try admin createUser first
     try {
@@ -69,10 +69,12 @@ export async function POST(request: Request) {
       if (!adminAuthErr && adminAuthData?.user) {
         user = adminAuthData.user;
       } else if (adminAuthErr) {
-        console.warn("admin.createUser returned error, fallback to client signUp:", adminAuthErr.message);
+        authErrorMessage = adminAuthErr.message;
+        console.warn("admin.createUser returned error:", adminAuthErr.message);
       }
     } catch (adminException: any) {
-      console.warn("admin.createUser threw exception:", adminException?.message || adminException);
+      authErrorMessage = adminException?.message || String(adminException);
+      console.warn("admin.createUser threw exception:", authErrorMessage);
     }
 
     // 2. Fallback to client signUp if admin auth did not return a user
@@ -102,7 +104,7 @@ export async function POST(request: Request) {
 
           if (isUnreachable) {
             return NextResponse.json(
-              { error: "Service d'authentification temporairement indisponible." },
+              { error: "Service d'authentification temporairement indisponible.", details: signUpErr.message },
               { status: 503 }
             );
           }
@@ -112,7 +114,7 @@ export async function POST(request: Request) {
               ? signUpErr.message
               : (signUpErr as any).error_description
               ? (signUpErr as any).error_description
-              : "Erreur lors de la création du compte.";
+              : authErrorMessage || "Erreur lors de la création du compte.";
           return NextResponse.json({ error: String(errMsg) }, { status: 400 });
         }
 
@@ -122,7 +124,7 @@ export async function POST(request: Request) {
       } catch (signUpException: any) {
         console.error("Supabase auth.signUp exception:", signUpException);
         return NextResponse.json(
-          { error: "Service d'authentification temporairement indisponible." },
+          { error: "Service d'authentification temporairement indisponible.", details: signUpException?.message },
           { status: 503 }
         );
       }
@@ -131,8 +133,8 @@ export async function POST(request: Request) {
     // If Supabase Auth is unreachable or failed to produce a user object
     if (!user) {
       return NextResponse.json(
-        { error: "Service d'authentification temporairement indisponible." },
-        { status: 503 }
+        { error: authErrorMessage || "Erreur lors de la création du compte." },
+        { status: 400 }
       );
     }
 
