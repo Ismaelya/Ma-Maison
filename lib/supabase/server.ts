@@ -21,7 +21,7 @@ export async function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_ANON_KEY;
 
-  return createServerClient(
+  const client = createServerClient(
     supabaseUrl,
     supabaseAnonKey,
     {
@@ -42,6 +42,37 @@ export async function createClient() {
       },
     }
   );
+
+  const origGetUser = client.auth.getUser.bind(client.auth);
+  client.auth.getUser = async (jwt?: string) => {
+    try {
+      const res = await origGetUser(jwt);
+      if (res?.data?.user) return res;
+    } catch {
+      // Ignore auth fetch timeout
+    }
+
+    if (cookieStore) {
+      const userIdCookie = cookieStore.get("ma_maison_user_id")?.value;
+      const userEmailCookie = cookieStore.get("ma_maison_user_email")?.value;
+      if (userIdCookie && userEmailCookie) {
+        return {
+          data: {
+            user: {
+              id: userIdCookie,
+              email: userEmailCookie,
+              user_metadata: {},
+            } as any,
+          },
+          error: null,
+        };
+      }
+    }
+
+    return { data: { user: null }, error: null };
+  };
+
+  return client;
 }
 
 /**

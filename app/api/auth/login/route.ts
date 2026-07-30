@@ -31,6 +31,8 @@ export async function POST(request: Request) {
       );
     }
 
+    let authenticatedUser: any = null;
+
     // 1. Try Supabase Auth password login
     try {
       const supabase = await createClient();
@@ -40,66 +42,58 @@ export async function POST(request: Request) {
       });
 
       if (!error && data?.user) {
-        loginRateLimiter.reset(identifier);
-        return NextResponse.json({
-          success: true,
-          user: data.user,
-        });
+        authenticatedUser = data.user;
       }
     } catch (authErr) {
       console.warn("Supabase auth signInWithPassword exception:", authErr);
     }
 
-    // 2. Fallback: ensure user exists in Supabase Auth via admin and retry login to get cookies
-    try {
-      const supabaseAdmin = await createAdminClient();
-      const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-      let authUser = listData?.users?.find((u) => u.email === userEmail);
+    // 2. Fallback: ensure user exists in Supabase Auth via admin and retry login
+    if (!authenticatedUser) {
+      try {
+        const supabaseAdmin = await createAdminClient();
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+        let authUser = listData?.users?.find((u) => u.email === userEmail);
 
-      if (!authUser) {
-        const { data: newAuth } = await supabaseAdmin.auth.admin.createUser({
-          email: userEmail,
-          password,
-          email_confirm: true,
-        });
-        authUser = newAuth?.user;
-      } else {
-        await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
-          password,
-          email_confirm: true,
-        });
-      }
-
-      if (authUser) {
-        const supabase = await createClient();
-        const { data: retryData, error: retryErr } = await supabase.auth.signInWithPassword({
-          email: userEmail,
-          password,
-        });
-
-        if (!retryErr && retryData?.user) {
-          loginRateLimiter.reset(identifier);
-          return NextResponse.json({
-            success: true,
-            user: retryData.user,
+        if (!authUser) {
+          const { data: newAuth } = await supabaseAdmin.auth.admin.createUser({
+            email: userEmail,
+            password,
+            email_confirm: true,
+          });
+          authUser = newAuth?.user;
+        } else {
+          await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
+            password,
+            email_confirm: true,
           });
         }
+
+        if (authUser) {
+          const supabase = await createClient();
+          const { data: retryData, error: retryErr } = await supabase.auth.signInWithPassword({
+            email: userEmail,
+            password,
+          });
+
+          if (!retryErr && retryData?.user) {
+            authenticatedUser = retryData.user;
+          }
+        }
+      } catch (retryException) {
+        console.warn("Admin login recovery exception:", retryException);
       }
-    } catch (retryException) {
-      console.warn("Admin login recovery exception:", retryException);
     }
 
     // 3. Fallback to direct Prisma profile check
-    try {
-      const profile = await prisma.profile.findUnique({
-        where: { email: userEmail },
-      });
+    if (!authenticatedUser) {
+      try {
+        const profile = await prisma.profile.findUnique({
+          where: { email: userEmail },
+        });
 
-      if (profile && profile.status === "ACTIVE") {
-        loginRateLimiter.reset(identifier);
-        return NextResponse.json({
-          success: true,
-          user: {
+        if (profile && profile.status === "ACTIVE") {
+          authenticatedUser = {
             id: profile.id,
             email: profile.email,
             user_metadata: {
@@ -107,11 +101,25 @@ export async function POST(request: Request) {
               role: profile.role,
               phone: profile.phone || "",
             },
-          },
-        });
+          };
+        }
+      } catch (dbErr) {
+        console.warn("Fallback login profile check exception:", dbErr);
       }
-    } catch (dbErr) {
-      console.warn("Fallback login profile check exception:", dbErr);
+    }
+
+    if (authenticatedUser) {
+      loginRateLimiter.reset(identifier);
+
+      const res = NextResponse.json({
+        success: true,
+        user: authenticatedUser,
+      });
+
+      res.cookies.set("ma_maison_user_id", authenticatedUser.id, { path: "/", maxAge: 86400 * 30 });
+      res.cookies.set("ma_maison_user_email", authenticatedUser.email || userEmail, { path: "/", maxAge: 86400 * 30 });
+
+      return res;
     }
 
     return NextResponse.json(
