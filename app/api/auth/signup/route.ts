@@ -190,8 +190,14 @@ export async function POST(request: Request) {
       message: "Compte créé avec succès.",
     });
 
-    response.headers.append("Set-Cookie", `ma_maison_user_id=${user.id}; Path=/; Max-Age=2592000; SameSite=Lax`);
-    response.headers.append("Set-Cookie", `ma_maison_user_email=${encodeURIComponent(user.email || userEmail)}; Path=/; Max-Age=2592000; SameSite=Lax`);
+    const existingCookie = response.headers.get("set-cookie");
+    response.headers.delete("set-cookie");
+
+    if (existingCookie) {
+      response.headers.append("set-cookie", existingCookie);
+    }
+    response.headers.append("set-cookie", `ma_maison_user_id=${user.id}; Path=/; Max-Age=2592000; SameSite=Lax`);
+    response.headers.append("set-cookie", `ma_maison_user_email=${encodeURIComponent(user.email || userEmail)}; Path=/; Max-Age=2592000; SameSite=Lax`);
 
     return response;
   } catch (err: any) {

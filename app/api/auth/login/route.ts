@@ -163,8 +163,14 @@ export async function POST(request: Request) {
         user: authenticatedUser,
       });
 
-      response.headers.append("Set-Cookie", `ma_maison_user_id=${authenticatedUser.id}; Path=/; Max-Age=2592000; SameSite=Lax`);
-      response.headers.append("Set-Cookie", `ma_maison_user_email=${encodeURIComponent(authenticatedUser.email || userEmail)}; Path=/; Max-Age=2592000; SameSite=Lax`);
+      const existingCookie = response.headers.get("set-cookie");
+      response.headers.delete("set-cookie");
+
+      if (existingCookie) {
+        response.headers.append("set-cookie", existingCookie);
+      }
+      response.headers.append("set-cookie", `ma_maison_user_id=${authenticatedUser.id}; Path=/; Max-Age=2592000; SameSite=Lax`);
+      response.headers.append("set-cookie", `ma_maison_user_email=${encodeURIComponent(authenticatedUser.email || userEmail)}; Path=/; Max-Age=2592000; SameSite=Lax`);
 
       return response;
     }
