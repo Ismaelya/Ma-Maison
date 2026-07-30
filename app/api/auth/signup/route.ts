@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { signupRateLimiter } from "@/lib/rate-limit";
 import { createClient, createAdminClient } from "@/lib/supabase/server";

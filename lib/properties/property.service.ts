@@ -28,6 +28,8 @@ export class PropertyService {
       surface: payload.surface ? Number(payload.surface) : null,
       status,
       images: payload.images || [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     const newProperty = await PropertyRepository.create(propertyRecord as any);
