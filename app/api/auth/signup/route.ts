@@ -1,10 +1,8 @@
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { signupRateLimiter } from "@/lib/rate-limit";
-import { createAdminClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getAvatarUrl } from "@/lib/utils";
 
 export async function POST(request: Request) {
@@ -34,18 +32,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wvxojyoblzlvbedtorwq.supabase.co";
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_a1ER7sJx5Apvn-sc0-ZIrA_HtuJsVL1";
-
-    const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-
-    let supabaseAdmin = null;
+    let supabase;
+    let supabaseAdmin;
     try {
+      supabase = await createClient();
       supabaseAdmin = await createAdminClient();
-    } catch (adminInitErr: any) {
-      console.warn("Supabase admin client initialization warning:", adminInitErr?.message || adminInitErr);
+    } catch (e: any) {
+      console.error("Supabase client initialization error:", e);
+      return NextResponse.json(
+        { error: "Service d'authentification temporairement indisponible." },
+        { status: 503 }
+      );
     }
 
     const normalizedRole = (role || "TENANT").toUpperCase();
@@ -53,145 +50,95 @@ export async function POST(request: Request) {
     const userEmail = email.trim().toLowerCase();
 
     let user: any = null;
-    let lastAuthError: string = "";
 
-    // 1. Try admin createUser first (if supabaseAdmin is available)
-    if (supabaseAdmin) {
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
-            email: userEmail,
-            password,
-            email_confirm: true,
-            user_metadata: {
+    // 1. Try admin createUser first
+    try {
+      const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
+        email: userEmail,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          name,
+          phone: phone || "",
+          role: normalizedRole,
+          agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+          avatarUrl,
+        },
+      });
+
+      if (!adminAuthErr && adminAuthData?.user) {
+        user = adminAuthData.user;
+      } else if (adminAuthErr) {
+        console.warn("admin.createUser returned error, fallback to client signUp:", adminAuthErr.message);
+      }
+    } catch (adminException: any) {
+      console.warn("admin.createUser threw exception:", adminException?.message || adminException);
+    }
+
+    // 2. Fallback to client signUp if admin auth did not return a user
+    if (!user) {
+      try {
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+          email: userEmail,
+          password,
+          options: {
+            data: {
               name,
               phone: phone || "",
               role: normalizedRole,
               agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
               avatarUrl,
             },
-          });
+          },
+        });
 
-          if (!adminAuthErr && adminAuthData?.user) {
-            user = adminAuthData.user;
-            break;
+        if (signUpErr) {
+          console.error("Signup error detail:", signUpErr);
+          const isUnreachable =
+            signUpErr.name === "AuthRetryableFetchError" ||
+            signUpErr.message === "{}" ||
+            signUpErr.message === "fetch failed" ||
+            (signUpErr as any).status === 0;
+
+          if (isUnreachable) {
+            return NextResponse.json(
+              { error: "Service d'authentification temporairement indisponible." },
+              { status: 503 }
+            );
           }
 
-          if (adminAuthErr) {
-            const isUnreachable =
-              adminAuthErr.name === "AuthRetryableFetchError" ||
-              adminAuthErr.message === "{}" ||
-              adminAuthErr.message === "fetch failed" ||
-              (adminAuthErr as any).status === 0;
-
-            if (isUnreachable && attempt < 2) {
-              console.warn(`admin.createUser unreachable, retrying in 1.5s (attempt ${attempt + 1})...`);
-              await new Promise((r) => setTimeout(r, 1500));
-              continue;
-            }
-
-            if (isUnreachable) {
-              return NextResponse.json(
-                { error: "Service d'authentification temporairement indisponible." },
-                { status: 503 }
-              );
-            }
-
-            console.error("admin.createUser error:", adminAuthErr);
-            return NextResponse.json({ error: adminAuthErr.message || "Erreur de création de compte." }, { status: 400 });
-          }
-        } catch (adminException: any) {
-          if (attempt < 2) {
-            await new Promise((r) => setTimeout(r, 1500));
-            continue;
-          }
-          console.error("admin.createUser exception:", adminException);
-          return NextResponse.json({ error: adminException?.message || "Erreur de création de compte." }, { status: 400 });
+          const errMsg =
+            typeof signUpErr.message === "string" && signUpErr.message && signUpErr.message !== "{}"
+              ? signUpErr.message
+              : (signUpErr as any).error_description
+              ? (signUpErr as any).error_description
+              : "Erreur lors de la création du compte.";
+          return NextResponse.json({ error: String(errMsg) }, { status: 400 });
         }
-      }
-    }
 
-    // 2. Fallback to client signUp if admin auth did not return a user
-    if (!user) {
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-            email: userEmail,
-            password,
-            options: {
-              data: {
-                name,
-                phone: phone || "",
-                role: normalizedRole,
-                agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-                avatarUrl,
-              },
-            },
-          });
-
-          if (signUpErr) {
-            console.error(`Signup error detail (attempt ${attempt + 1}):`, signUpErr);
-            lastAuthError = signUpErr.message || (signUpErr as any).error_description || JSON.stringify(signUpErr);
-
-            const isUnreachable =
-              signUpErr.name === "AuthRetryableFetchError" ||
-              signUpErr.message === "{}" ||
-              signUpErr.message === "fetch failed" ||
-              (signUpErr as any).status === 0;
-
-            if (isUnreachable && attempt < 2) {
-              console.warn(`Supabase signUp unreachable, retrying in 1.5s (attempt ${attempt + 1})...`);
-              await new Promise((r) => setTimeout(r, 1500));
-              continue;
-            }
-
-            if (isUnreachable) {
-              return NextResponse.json(
-                {
-                  error: "Service d'authentification temporairement indisponible.",
-                  details: lastAuthError,
-                },
-                { status: 503 }
-              );
-            }
-
-            return NextResponse.json({ error: String(lastAuthError) }, { status: 400 });
-          }
-
-          if (signUpData?.user) {
-            user = signUpData.user;
-            break;
-          }
-        } catch (signUpException: any) {
-          lastAuthError = signUpException?.message || String(signUpException);
-          if (attempt < 2) {
-            await new Promise((r) => setTimeout(r, 1500));
-            continue;
-          }
-          console.error("Supabase auth.signUp exception:", signUpException);
-          return NextResponse.json(
-            { error: "Service d'authentification temporairement indisponible.", details: lastAuthError },
-            { status: 503 }
-          );
+        if (signUpData?.user) {
+          user = signUpData.user;
         }
+      } catch (signUpException: any) {
+        console.error("Supabase auth.signUp exception:", signUpException);
+        return NextResponse.json(
+          { error: "Service d'authentification temporairement indisponible." },
+          { status: 503 }
+        );
       }
     }
 
     // If Supabase Auth is unreachable or failed to produce a user object
     if (!user) {
       return NextResponse.json(
-        {
-          error: "Service d'authentification temporairement indisponible.",
-          details: "Impossible d'initialiser ou de créer l'utilisateur via Supabase Auth.",
-        },
+        { error: "Service d'authentification temporairement indisponible." },
         { status: 503 }
       );
     }
 
-    // Ensure Profile record exists in profiles table
-    const dbClient = supabaseAdmin || supabase;
+    // Ensure Profile record exists in profiles table using service role client
     try {
-      const { error: profileError } = await dbClient.from("profiles").upsert({
+      const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
         id: user.id,
         email: user.email!,
         name: name,
@@ -215,7 +162,7 @@ export async function POST(request: Request) {
       try {
         const now = new Date();
         const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        await dbClient.from("subscriptions").insert({
+        await supabaseAdmin.from("subscriptions").insert({
           userId: user.id,
           status: "ACTIVE",
           price: 0,

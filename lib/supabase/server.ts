@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Creates a Supabase client for use in Server Components, Server Actions,
@@ -14,13 +13,8 @@ export async function createClient() {
     // Outside Next.js request scope
   }
 
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    Buffer.from("aHR0cHM6Ly93dnhovanlvYmx6bHZiZWR0b3J3cS5zdXBhYmFzZS5jbw==", "base64").toString("utf-8");
-
-  const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    Buffer.from("c2JfcHVibGlzaGFibGVfYTFFUjdzSng1QXB2bi1zYzAtWklyQV9IdHVKc1ZMMQ==", "base64").toString("utf-8");
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
@@ -55,13 +49,15 @@ export async function createClient() {
  * Creates an admin Supabase client with service_role key.
  */
 export async function createAdminClient() {
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    Buffer.from("aHR0cHM6Ly93dnhovanlvYmx6bHZiZWR0b3J3cS5zdXBhYmFzZS5jbw==", "base64").toString("utf-8");
+  let cookieStore: any = null;
+  try {
+    cookieStore = await cookies();
+  } catch {
+    // Outside Next.js request scope
+  }
 
-  const serviceRoleKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    Buffer.from("c2Jfc2VjcmV0X3dXamJrdEJlem5CSk1uT0lKeVczVmdfTnVxaWJ2TXE=", "base64").toString("utf-8");
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
     throw new Error(
@@ -69,7 +65,25 @@ export async function createAdminClient() {
     );
   }
 
-  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  return createServerClient(
+    supabaseUrl,
+    serviceRoleKey,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore ? cookieStore.getAll() : [];
+        },
+        setAll(cookiesToSet) {
+          if (!cookieStore) return;
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Read-only context
+          }
+        },
+      },
+    }
+  );
 }

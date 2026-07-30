@@ -20,7 +20,7 @@ begin
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'name', ''),
-    coalesce(new.raw_user_meta_data->>'phone', ''),
+    nullif(new.raw_user_meta_data->>'phone', ''),
     coalesce((new.raw_user_meta_data->>'role')::"UserRole", 'TENANT'),
     nullif(trim(new.raw_user_meta_data->>'agencyName'), ''),
     'ACTIVE',
