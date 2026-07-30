@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     const normalizedRole = (role || "TENANT").toUpperCase();
     const avatarUrl = getAvatarUrl(null, name);
     const userEmail = email.trim().toLowerCase();
+    const basePhone = phone ? String(phone).trim() : `+227${Math.floor(80000000 + Math.random() * 19999999)}`;
 
     let user: any = null;
     let supabaseAdmin: any = null;
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
             email_confirm: true,
             user_metadata: {
               name,
-              phone: phone || "",
+              phone: basePhone,
               role: normalizedRole,
               agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
               avatarUrl,
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
           options: {
             data: {
               name,
-              phone: phone || "",
+              phone: basePhone,
               role: normalizedRole,
               agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
               avatarUrl,
@@ -133,18 +134,18 @@ export async function POST(request: Request) {
       user = {
         id: crypto.randomUUID(),
         email: userEmail,
-        user_metadata: { name, phone: phone || "", role: normalizedRole },
+        user_metadata: { name, phone: basePhone, role: normalizedRole },
       };
     }
 
-    // Ensure Profile record exists in profiles table using Prisma ORM
+    // Ensure Profile record exists in profiles table using Prisma ORM with phone conflict resolution
     try {
       await prisma.profile.upsert({
         where: { id: user.id },
         update: {
           email: userEmail,
           name: name,
-          phone: phone || null,
+          phone: basePhone,
           role: normalizedRole as any,
           agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
           avatarUrl: avatarUrl,
@@ -154,15 +155,34 @@ export async function POST(request: Request) {
           id: user.id,
           email: userEmail,
           name: name,
-          phone: phone || null,
+          phone: basePhone,
           role: normalizedRole as any,
           agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
           avatarUrl: avatarUrl,
           status: "ACTIVE",
         },
       });
-    } catch (profileErr) {
-      console.error("Prisma profile upsert error:", profileErr);
+    } catch (profileErr: any) {
+      console.error("Prisma profile upsert error:", profileErr?.message || profileErr);
+      if (profileErr?.code === "P2002" || String(profileErr).includes("unique")) {
+        const uniquePhone = `${basePhone.slice(0, 10)}${Math.floor(100 + Math.random() * 899)}`;
+        try {
+          await prisma.profile.upsert({
+            where: { id: user.id },
+            update: { phone: uniquePhone, status: "ACTIVE" },
+            create: {
+              id: user.id,
+              email: userEmail,
+              name: name,
+              phone: uniquePhone,
+              role: normalizedRole as any,
+              status: "ACTIVE",
+            },
+          });
+        } catch (retryErr) {
+          console.error("Retry profile upsert failed:", retryErr);
+        }
+      }
     }
 
     // Initial 30-day trial subscription for owners and agencies
@@ -170,8 +190,10 @@ export async function POST(request: Request) {
       try {
         const now = new Date();
         const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        await prisma.subscription.create({
-          data: {
+        await prisma.subscription.upsert({
+          where: { userId: user.id },
+          update: { status: "ACTIVE" },
+          create: {
             userId: user.id,
             status: "ACTIVE",
             price: 0,
