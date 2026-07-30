@@ -104,4 +104,48 @@ export class AdminService {
 
     return updatedProperty;
   }
+
+  /**
+   * Updates report status.
+   */
+  static async updateReportStatus(reportId: string, status: "OPEN" | "IN_REVIEW" | "CLOSED", adminId: string) {
+    let updatedReport: any = null;
+
+    try {
+      updatedReport = await prisma.report.update({
+        where: { id: reportId },
+        data: { status: status as any },
+      });
+    } catch {
+      // Ignore Prisma error
+    }
+
+    if (!updatedReport) {
+      const supabaseAdmin = await createAdminClient();
+      const { data, error } = await supabaseAdmin
+        .from("reports")
+        .update({ status } as any)
+        .eq("id", reportId)
+        .select()
+        .single();
+
+      if (error && !updatedReport) {
+        throw new Error(error.message);
+      }
+      updatedReport = data;
+    }
+
+    try {
+      await AuditService.logAudit(
+        adminId,
+        "ADMIN_ACTION",
+        reportId,
+        { status, type: "REPORT_STATUS_UPDATED" }
+      );
+    } catch {
+      // Audit log optional fallback
+    }
+
+    return updatedReport;
+  }
 }
