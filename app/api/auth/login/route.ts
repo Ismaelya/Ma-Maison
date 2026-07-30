@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { loginRateLimiter } from "@/lib/rate-limit";
-import { prisma } from "@/lib/prisma/client";
 
 export async function POST(request: Request) {
   try {
@@ -53,7 +52,7 @@ export async function POST(request: Request) {
       try {
         const supabaseAdmin = await createAdminClient();
         const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-        let authUser = listData?.users?.find((u) => u.email === userEmail);
+        let authUser = listData?.users?.find((u: any) => u.email === userEmail);
 
         if (!authUser) {
           const { data: newAuth } = await supabaseAdmin.auth.admin.createUser({
@@ -85,12 +84,15 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Fallback to direct Prisma profile check
+    // 3. Fallback to direct Supabase PostgREST profile check
     if (!authenticatedUser) {
       try {
-        const profile = await prisma.profile.findUnique({
-          where: { email: userEmail },
-        });
+        const supabaseAdmin = await createAdminClient();
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("*")
+          .eq("email", userEmail)
+          .single();
 
         if (profile && profile.status === "ACTIVE") {
           authenticatedUser = {

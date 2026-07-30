@@ -4,7 +4,6 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { signupRateLimiter } from "@/lib/rate-limit";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma/client";
 import { getAvatarUrl } from "@/lib/utils";
 
 export async function POST(request: Request) {
@@ -39,10 +38,16 @@ export async function POST(request: Request) {
     const userEmail = email.trim().toLowerCase();
 
     let user: any = null;
+    let supabaseAdmin: any = null;
 
-    // 1. Try Supabase Auth Admin creation with retry loop
     try {
-      const supabaseAdmin = await createAdminClient();
+      supabaseAdmin = await createAdminClient();
+    } catch (e) {
+      console.warn("createAdminClient error:", e);
+    }
+
+    // 1. Try Supabase Auth Admin creation
+    if (supabaseAdmin) {
       for (let attempt = 0; attempt < 4; attempt++) {
         try {
           const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
@@ -68,7 +73,7 @@ export async function POST(request: Request) {
             if (msg.includes("already") || msg.includes("déjà") || (adminAuthErr as any).status === 422) {
               try {
                 const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-                const existing = listData?.users?.find((u) => u.email === userEmail);
+                const existing = listData?.users?.find((u: any) => u.email === userEmail);
                 if (existing) {
                   await supabaseAdmin.auth.admin.updateUserById(existing.id, {
                     password,
@@ -94,8 +99,6 @@ export async function POST(request: Request) {
           }
         }
       }
-    } catch (adminErr) {
-      console.warn("Supabase Auth admin createUser skipped/timed out:", adminErr);
     }
 
     // 2. Fallback to client signUp if admin auth did not return a user
@@ -133,50 +136,43 @@ export async function POST(request: Request) {
       };
     }
 
-    // Ensure Profile record exists in profiles table using Prisma ORM
-    try {
-      await prisma.profile.upsert({
-        where: { id: user.id },
-        update: {
-          email: userEmail,
-          name: name,
-          phone: phone || null,
-          role: normalizedRole as any,
-          agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
-          avatarUrl: avatarUrl,
-          status: "ACTIVE",
-        },
-        create: {
+    // Ensure Profile record exists in profiles table using Supabase PostgREST Client
+    if (supabaseAdmin) {
+      try {
+        const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
           id: user.id,
           email: userEmail,
           name: name,
           phone: phone || null,
-          role: normalizedRole as any,
+          role: normalizedRole,
           agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
           avatarUrl: avatarUrl,
           status: "ACTIVE",
-        },
-      });
-    } catch (profileErr) {
-      console.error("Prisma profile upsert error:", profileErr);
-    }
+          updatedAt: new Date().toISOString(),
+        });
 
-    // Initial 30-day trial subscription for owners and agencies
-    if (normalizedRole === "OWNER" || normalizedRole === "AGENCY") {
-      try {
-        const now = new Date();
-        const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        await prisma.subscription.create({
-          data: {
+        if (profileError) {
+          console.error("Profile upsert warning:", profileError.message);
+        }
+      } catch (profileErr) {
+        console.error("Failed to upsert profile in database:", profileErr);
+      }
+
+      // Initial 30-day trial subscription for owners and agencies
+      if (normalizedRole === "OWNER" || normalizedRole === "AGENCY") {
+        try {
+          const now = new Date();
+          const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+          await supabaseAdmin.from("subscriptions").insert({
             userId: user.id,
             status: "ACTIVE",
             price: 0,
-            startDate: now,
-            endDate: expiry,
-          },
-        });
-      } catch (subErr) {
-        console.error("Prisma subscription create error:", subErr);
+            startDate: now.toISOString(),
+            endDate: expiry.toISOString(),
+          });
+        } catch (subErr) {
+          console.error("Failed to insert subscription in database:", subErr);
+        }
       }
     }
 
