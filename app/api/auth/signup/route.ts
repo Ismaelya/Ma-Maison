@@ -33,10 +33,9 @@ export async function POST(request: Request) {
     }
 
     let supabase;
-    let supabaseAdmin;
+    let supabaseAdmin = null;
     try {
       supabase = await createClient();
-      supabaseAdmin = await createAdminClient();
     } catch (e: any) {
       console.error("Supabase client initialization error:", e);
       return NextResponse.json(
@@ -45,34 +44,42 @@ export async function POST(request: Request) {
       );
     }
 
+    try {
+      supabaseAdmin = await createAdminClient();
+    } catch (adminInitErr: any) {
+      console.warn("Supabase admin client initialization warning:", adminInitErr?.message || adminInitErr);
+    }
+
     const normalizedRole = (role || "TENANT").toUpperCase();
     const avatarUrl = getAvatarUrl(null, name);
     const userEmail = email.trim().toLowerCase();
 
     let user: any = null;
 
-    // 1. Try admin createUser first
-    try {
-      const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
-        email: userEmail,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          name,
-          phone: phone || "",
-          role: normalizedRole,
-          agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-          avatarUrl,
-        },
-      });
+    // 1. Try admin createUser first (if supabaseAdmin is available)
+    if (supabaseAdmin) {
+      try {
+        const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
+          email: userEmail,
+          password,
+          email_confirm: true,
+          user_metadata: {
+            name,
+            phone: phone || "",
+            role: normalizedRole,
+            agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+            avatarUrl,
+          },
+        });
 
-      if (!adminAuthErr && adminAuthData?.user) {
-        user = adminAuthData.user;
-      } else if (adminAuthErr) {
-        console.warn("admin.createUser returned error, fallback to client signUp:", adminAuthErr.message);
+        if (!adminAuthErr && adminAuthData?.user) {
+          user = adminAuthData.user;
+        } else if (adminAuthErr) {
+          console.warn("admin.createUser returned error, fallback to client signUp:", adminAuthErr.message);
+        }
+      } catch (adminException: any) {
+        console.warn("admin.createUser threw exception:", adminException?.message || adminException);
       }
-    } catch (adminException: any) {
-      console.warn("admin.createUser threw exception:", adminException?.message || adminException);
     }
 
     // 2. Fallback to client signUp if admin auth did not return a user
@@ -136,9 +143,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Ensure Profile record exists in profiles table using service role client
+    // Ensure Profile record exists in profiles table
+    const dbClient = supabaseAdmin || supabase;
     try {
-      const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
+      const { error: profileError } = await dbClient.from("profiles").upsert({
         id: user.id,
         email: user.email!,
         name: name,
@@ -162,7 +170,7 @@ export async function POST(request: Request) {
       try {
         const now = new Date();
         const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        await supabaseAdmin.from("subscriptions").insert({
+        await dbClient.from("subscriptions").insert({
           userId: user.id,
           status: "ACTIVE",
           price: 0,
