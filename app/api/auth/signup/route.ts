@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
     let user: any = null;
 
-    // 1. Try Supabase Auth Admin creation with quick 2s timeout
+    // 1. Try Supabase Auth Admin creation with 8s timeout
     try {
       const supabaseAdmin = await createAdminClient();
       const createPromise = supabaseAdmin.auth.admin.createUser({
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       });
 
       const timeoutPromise = new Promise<{ data: null; error: any }>((resolve) =>
-        setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 2000)
+        setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 8000)
       );
 
       const { data: adminAuthData, error: adminAuthErr } = await Promise.race([
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Fallback UUID generation if Auth APIs are unreachable within timeout
+    // 3. Fallback UUID generation if Auth APIs are completely unreachable within timeout
     if (!user) {
       user = {
         id: crypto.randomUUID(),
