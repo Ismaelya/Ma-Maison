@@ -1,8 +1,10 @@
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { signupRateLimiter } from "@/lib/rate-limit";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { getAvatarUrl } from "@/lib/utils";
 
 export async function POST(request: Request) {
@@ -32,18 +34,14 @@ export async function POST(request: Request) {
       );
     }
 
-    let supabase;
-    let supabaseAdmin = null;
-    try {
-      supabase = await createClient();
-    } catch (e: any) {
-      console.error("Supabase client initialization error:", e);
-      return NextResponse.json(
-        { error: "Service d'authentification temporairement indisponible." },
-        { status: 503 }
-      );
-    }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wvxojyoblzlvbedtorwq.supabase.co";
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_a1ER7sJx5Apvn-sc0-ZIrA_HtuJsVL1";
 
+    const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    let supabaseAdmin = null;
     try {
       supabaseAdmin = await createAdminClient();
     } catch (adminInitErr: any) {
