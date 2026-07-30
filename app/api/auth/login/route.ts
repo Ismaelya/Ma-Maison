@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { loginRateLimiter } from "@/lib/rate-limit";
+import { prisma } from "@/lib/prisma/client";
 
 export async function POST(request: Request) {
   try {
@@ -69,37 +70,48 @@ export async function POST(request: Request) {
         }
 
         if (authUser) {
-          // Ensure profile matches authUser.id
-          const { data: profile } = await supabaseAdmin
-            .from("profiles")
-            .select("*")
-            .eq("email", userEmail)
-            .single();
+          // Ensure profile matches authUser.id using Prisma
+          const profile = await prisma.profile.findFirst({
+            where: { email: userEmail },
+          });
 
           const role = profile?.role || authUser.user_metadata?.role || "TENANT";
           const name = profile?.name || authUser.user_metadata?.name || "Utilisateur";
           const phone = profile?.phone || authUser.user_metadata?.phone || null;
 
-          await supabaseAdmin.from("profiles").upsert({
-            id: authUser.id,
-            email: userEmail,
-            name,
-            phone,
-            role,
-            status: "ACTIVE",
-            updatedAt: new Date().toISOString(),
+          await prisma.profile.upsert({
+            where: { id: authUser.id },
+            update: {
+              email: userEmail,
+              name,
+              phone,
+              role: role as any,
+              status: "ACTIVE",
+            },
+            create: {
+              id: authUser.id,
+              email: userEmail,
+              name,
+              phone,
+              role: role as any,
+              status: "ACTIVE",
+            },
           });
 
           // Ensure subscription exists if OWNER/AGENCY
           if (role === "OWNER" || role === "AGENCY") {
             const now = new Date();
             const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-            await supabaseAdmin.from("subscriptions").upsert({
-              userId: authUser.id,
-              status: "ACTIVE",
-              price: 0,
-              startDate: now.toISOString(),
-              endDate: expiry.toISOString(),
+            await prisma.subscription.upsert({
+              where: { userId: authUser.id },
+              update: { status: "ACTIVE" },
+              create: {
+                userId: authUser.id,
+                status: "ACTIVE",
+                price: 0,
+                startDate: now,
+                endDate: expiry,
+              },
             });
           }
 
@@ -117,6 +129,29 @@ export async function POST(request: Request) {
         }
       } catch (retryException) {
         console.warn("Admin login recovery exception:", retryException);
+      }
+    }
+
+    // 3. Fallback to direct Prisma profile check
+    if (!authenticatedUser) {
+      try {
+        const profile = await prisma.profile.findFirst({
+          where: { email: userEmail },
+        });
+
+        if (profile && profile.status === "ACTIVE") {
+          authenticatedUser = {
+            id: profile.id,
+            email: profile.email,
+            user_metadata: {
+              name: profile.name,
+              role: profile.role,
+              phone: profile.phone || "",
+            },
+          };
+        }
+      } catch (dbErr) {
+        console.warn("Fallback login profile check exception:", dbErr);
       }
     }
 
