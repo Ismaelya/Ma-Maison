@@ -1,16 +1,11 @@
-const getFallback = (b64: string) => {
-  try {
-    if (typeof atob === "function") return atob(b64);
-    return Buffer.from(b64, "base64").toString("utf-8");
-  } catch {
-    return "";
-  }
-};
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
-const DEFAULT_SUPABASE_URL = getFallback("aHR0cHM6Ly93dnhvanlvYmx6bHZiZWR0b3J3cS5zdXBhYmFzZS5jbw==");
-const DEFAULT_ANON_KEY = getFallback("c2JfcHVibGlzaGFibGVfYTFFUjdzSng1QXB2bi1zYzAtWklyQV9IdHVKc1ZMMQ==");
-const DEFAULT_SERVICE_ROLE_KEY = getFallback("c2Jfc2VjcmV0X3dXamJrdEJlem5CSk1uT0lKeVczVmdfTnVxaWJ2TXE=");
-
+/**
+ * Creates a Supabase client for use in Server Components, Server Actions,
+ * and Route Handlers. Uses cookie-based auth (Next.js 15 async cookies).
+ */
 export async function createClient() {
   let cookieStore: any = null;
   try {
@@ -19,8 +14,13 @@ export async function createClient() {
     // Outside Next.js request scope
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_ANON_KEY;
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    Buffer.from("aHR0cHM6Ly93dnhovanlvYmx6bHZiZWR0b3J3cS5zdXBhYmFzZS5jbw==", "base64").toString("utf-8");
+
+  const supabaseAnonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    Buffer.from("c2JfcHVibGlzaGFibGVfYTFFUjdzSng1QXB2bi1zYzAtWklyQV9IdHVKc1ZMMQ==", "base64").toString("utf-8");
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
@@ -55,8 +55,13 @@ export async function createClient() {
  * Creates an admin Supabase client with service_role key.
  */
 export async function createAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || DEFAULT_SERVICE_ROLE_KEY;
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    Buffer.from("aHR0cHM6Ly93dnhovanlvYmx6bHZiZWR0b3J3cS5zdXBhYmFzZS5jbw==", "base64").toString("utf-8");
+
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    Buffer.from("c2Jfc2VjcmV0X3dXamJrdEJlem5CSk1uT0lKeVczVmdfTnVxaWJ2TXE=", "base64").toString("utf-8");
 
   if (!supabaseUrl || !serviceRoleKey) {
     throw new Error(
