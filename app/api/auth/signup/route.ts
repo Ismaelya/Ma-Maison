@@ -112,7 +112,16 @@ export async function POST(request: Request) {
 
             if (isUnreachable) {
               return NextResponse.json(
-                { error: "Service d'authentification temporairement indisponible." },
+                {
+                  error: "Service d'authentification temporairement indisponible.",
+                  debug: {
+                    name: adminAuthErr.name,
+                    message: adminAuthErr.message,
+                    status: (adminAuthErr as any).status,
+                    code: (adminAuthErr as any).code,
+                    raw: String(adminAuthErr)
+                  }
+                },
                 { status: 503 }
               );
             }
