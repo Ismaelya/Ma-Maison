@@ -84,54 +84,70 @@ export async function POST(request: Request) {
 
     // 2. Fallback to client signUp if admin auth did not return a user
     if (!user) {
-      try {
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-          email: userEmail,
-          password,
-          options: {
-            data: {
-              name,
-              phone: phone || "",
-              role: normalizedRole,
-              agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-              avatarUrl,
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+            email: userEmail,
+            password,
+            options: {
+              data: {
+                name,
+                phone: phone || "",
+                role: normalizedRole,
+                agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+                avatarUrl,
+              },
             },
-          },
-        });
+          });
 
-        if (signUpErr) {
-          console.error("Signup error detail:", signUpErr);
-          const isUnreachable =
-            signUpErr.name === "AuthRetryableFetchError" ||
-            signUpErr.message === "{}" ||
-            signUpErr.message === "fetch failed" ||
-            (signUpErr as any).status === 0;
+          if (signUpErr) {
+            console.error(`Signup error detail (attempt ${attempt + 1}):`, signUpErr);
+            const isUnreachable =
+              signUpErr.name === "AuthRetryableFetchError" ||
+              signUpErr.message === "{}" ||
+              signUpErr.message === "fetch failed" ||
+              (signUpErr as any).status === 0;
 
-          if (isUnreachable) {
-            return NextResponse.json(
-              { error: "Service d'authentification temporairement indisponible." },
-              { status: 503 }
-            );
+            if (isUnreachable && attempt < 2) {
+              console.warn(`Supabase signUp unreachable, retrying in 1.5s (attempt ${attempt + 1})...`);
+              await new Promise((r) => setTimeout(r, 1500));
+              continue;
+            }
+
+            if (isUnreachable) {
+              return NextResponse.json(
+                {
+                  error: "Service d'authentification temporairement indisponible.",
+                  details: signUpErr.message || "AuthRetryableFetchError",
+                },
+                { status: 503 }
+              );
+            }
+
+            const errMsg =
+              typeof signUpErr.message === "string" && signUpErr.message && signUpErr.message !== "{}"
+                ? signUpErr.message
+                : (signUpErr as any).error_description
+                ? (signUpErr as any).error_description
+                : "Erreur lors de la création du compte.";
+            return NextResponse.json({ error: String(errMsg) }, { status: 400 });
           }
 
-          const errMsg =
-            typeof signUpErr.message === "string" && signUpErr.message && signUpErr.message !== "{}"
-              ? signUpErr.message
-              : (signUpErr as any).error_description
-              ? (signUpErr as any).error_description
-              : "Erreur lors de la création du compte.";
-          return NextResponse.json({ error: String(errMsg) }, { status: 400 });
+          if (signUpData?.user) {
+            user = signUpData.user;
+            break;
+          }
+        } catch (signUpException: any) {
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 1500));
+            continue;
+          }
+          console.error("Supabase auth.signUp exception:", signUpException);
+          return NextResponse.json(
+            { error: "Service d'authentification temporairement indisponible." },
+            { status: 503 }
+          );
         }
-
-        if (signUpData?.user) {
-          user = signUpData.user;
-        }
-      } catch (signUpException: any) {
-        console.error("Supabase auth.signUp exception:", signUpException);
-        return NextResponse.json(
-          { error: "Service d'authentification temporairement indisponible." },
-          { status: 503 }
-        );
       }
     }
 
