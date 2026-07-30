@@ -83,6 +83,21 @@ export async function POST(request: Request) {
           }
 
           if (adminAuthErr) {
+            const isAlreadyRegistered =
+              adminAuthErr.message?.toLowerCase().includes("already") ||
+              adminAuthErr.message?.toLowerCase().includes("déjà") ||
+              (adminAuthErr as any).status === 422;
+
+            if (isAlreadyRegistered) {
+              console.log("User already registered, fetching user record...");
+              const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+              const existing = listData?.users?.find((u) => u.email === userEmail);
+              if (existing) {
+                user = existing;
+                break;
+              }
+            }
+
             const isUnreachable =
               adminAuthErr.name === "AuthRetryableFetchError" ||
               adminAuthErr.message === "{}" ||
