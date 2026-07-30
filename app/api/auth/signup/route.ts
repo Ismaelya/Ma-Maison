@@ -69,12 +69,18 @@ export async function POST(request: Request) {
       if (!adminAuthErr && adminAuthData?.user) {
         user = adminAuthData.user;
       } else if (adminAuthErr) {
-        authErrorMessage = adminAuthErr.message;
         console.warn("admin.createUser returned error:", adminAuthErr.message);
+        return NextResponse.json(
+          { error: adminAuthErr.message || "Erreur de création de compte." },
+          { status: 400 }
+        );
       }
     } catch (adminException: any) {
-      authErrorMessage = adminException?.message || String(adminException);
-      console.warn("admin.createUser threw exception:", authErrorMessage);
+      console.warn("admin.createUser threw exception:", adminException?.message || adminException);
+      return NextResponse.json(
+        { error: adminException?.message || "Erreur de création de compte." },
+        { status: 400 }
+      );
     }
 
     // 2. Fallback to client signUp if admin auth did not return a user
