@@ -2,6 +2,7 @@ import { type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { PaymentService } from "@/lib/payments/payment.service";
 import { apiSuccess, apiError } from "@/lib/utils/api-response";
+import { prisma } from "@/lib/prisma/client";
 
 export async function PATCH(
   _request: NextRequest,
@@ -15,8 +16,26 @@ export async function PATCH(
     return apiError("UNAUTHORIZED", "Non authentifié", 401);
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "ADMIN" && profile?.role !== "admin") {
+  let profileRole = "";
+  try {
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    profileRole = profile?.role || "";
+  } catch {
+    // Ignore Supabase REST error
+  }
+
+  if (!profileRole) {
+    try {
+      const p = await prisma.profile.findUnique({ where: { id: user.id } });
+      profileRole = p?.role || "";
+    } catch {
+      // Ignore DB error
+    }
+  }
+
+  const userRole = String(profileRole || user.user_metadata?.role || "").toUpperCase();
+
+  if (userRole !== "ADMIN") {
     return apiError("FORBIDDEN", "Accès interdit", 403);
   }
 
