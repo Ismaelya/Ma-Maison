@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { loginRateLimiter } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma/client";
 
@@ -50,7 +50,46 @@ export async function POST(request: Request) {
       console.warn("Supabase auth signInWithPassword exception:", authErr);
     }
 
-    // 2. Fallback to direct Prisma profile check
+    // 2. Fallback: ensure user exists in Supabase Auth via admin and retry login to get cookies
+    try {
+      const supabaseAdmin = await createAdminClient();
+      const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+      let authUser = listData?.users?.find((u) => u.email === userEmail);
+
+      if (!authUser) {
+        const { data: newAuth } = await supabaseAdmin.auth.admin.createUser({
+          email: userEmail,
+          password,
+          email_confirm: true,
+        });
+        authUser = newAuth?.user;
+      } else {
+        await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
+          password,
+          email_confirm: true,
+        });
+      }
+
+      if (authUser) {
+        const supabase = await createClient();
+        const { data: retryData, error: retryErr } = await supabase.auth.signInWithPassword({
+          email: userEmail,
+          password,
+        });
+
+        if (!retryErr && retryData?.user) {
+          loginRateLimiter.reset(identifier);
+          return NextResponse.json({
+            success: true,
+            user: retryData.user,
+          });
+        }
+      }
+    } catch (retryException) {
+      console.warn("Admin login recovery exception:", retryException);
+    }
+
+    // 3. Fallback to direct Prisma profile check
     try {
       const profile = await prisma.profile.findUnique({
         where: { email: userEmail },

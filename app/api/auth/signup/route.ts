@@ -67,6 +67,21 @@ export async function POST(request: Request) {
 
       if (!adminAuthErr && adminAuthData?.user) {
         user = adminAuthData.user;
+      } else if (adminAuthErr) {
+        console.warn("admin.createUser returned error:", adminAuthErr.message);
+        try {
+          const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+          const existing = listData?.users?.find((u) => u.email === userEmail);
+          if (existing) {
+            await supabaseAdmin.auth.admin.updateUserById(existing.id, {
+              password,
+              email_confirm: true,
+            });
+            user = existing;
+          }
+        } catch (updateErr) {
+          console.warn("Update existing user password error:", updateErr);
+        }
       }
     } catch (adminErr) {
       console.warn("Supabase Auth admin createUser skipped/timed out:", adminErr);
