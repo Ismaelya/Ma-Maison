@@ -138,7 +138,10 @@ export async function POST(request: Request) {
     // If Supabase Auth is unreachable or failed to produce a user object
     if (!user) {
       return NextResponse.json(
-        { error: "Service d'authentification temporairement indisponible." },
+        {
+          error: "Service d'authentification temporairement indisponible.",
+          details: "Impossible d'initialiser ou de créer l'utilisateur via Supabase Auth.",
+        },
         { status: 503 }
       );
     }

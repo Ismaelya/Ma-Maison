@@ -45,17 +45,12 @@ export async function createClient() {
   );
 }
 
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+
 /**
  * Creates an admin Supabase client with service_role key.
  */
 export async function createAdminClient() {
-  let cookieStore: any = null;
-  try {
-    cookieStore = await cookies();
-  } catch {
-    // Outside Next.js request scope
-  }
-
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -65,25 +60,7 @@ export async function createAdminClient() {
     );
   }
 
-  return createServerClient(
-    supabaseUrl,
-    serviceRoleKey,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore ? cookieStore.getAll() : [];
-        },
-        setAll(cookiesToSet) {
-          if (!cookieStore) return;
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Read-only context
-          }
-        },
-      },
-    }
-  );
+  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 }
