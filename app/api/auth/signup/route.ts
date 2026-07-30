@@ -32,15 +32,23 @@ export async function POST(request: Request) {
       );
     }
 
-    let supabase;
-    let supabaseAdmin;
+    let supabaseAdmin = null;
     try {
-      supabase = await createClient();
       supabaseAdmin = await createAdminClient();
     } catch (e: any) {
-      console.error("Supabase client initialization error:", e);
+      console.warn("createAdminClient error:", e?.message || e);
+    }
+
+    let supabase = null;
+    try {
+      supabase = await createClient();
+    } catch (e: any) {
+      console.warn("createClient error:", e?.message || e);
+    }
+
+    if (!supabaseAdmin && !supabase) {
       return NextResponse.json(
-        { error: "Service d'authentification temporairement indisponible.", details: String(e?.message || e) },
+        { error: "Service d'authentification temporairement indisponible." },
         { status: 503 }
       );
     }
@@ -84,7 +92,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Fallback to client signUp if admin auth did not return a user
-    if (!user) {
+    if (!user && supabase) {
       try {
         const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
           email: userEmail,
