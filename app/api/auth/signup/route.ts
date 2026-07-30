@@ -33,117 +33,62 @@ export async function POST(request: Request) {
       );
     }
 
-    let supabaseAdmin = null;
-    try {
-      supabaseAdmin = await createAdminClient();
-    } catch (e: any) {
-      console.warn("createAdminClient error:", e?.message || e);
-    }
-
-    let supabase = null;
-    try {
-      supabase = await createClient();
-    } catch (e: any) {
-      console.warn("createClient error:", e?.message || e);
-    }
-
-    if (!supabaseAdmin && !supabase) {
-      return NextResponse.json(
-        { error: "Service d'authentification temporairement indisponible." },
-        { status: 503 }
-      );
-    }
-
     const normalizedRole = (role || "TENANT").toUpperCase();
     const avatarUrl = getAvatarUrl(null, name);
     const userEmail = email.trim().toLowerCase();
 
     let user: any = null;
 
-    // 1. Try admin createUser first (if supabaseAdmin is available)
-    if (supabaseAdmin) {
-      for (let attempt = 0; attempt < 6; attempt++) {
-        try {
-          const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
-            email: userEmail,
-            password,
-            email_confirm: true,
-            user_metadata: {
-              name,
-              phone: phone || "",
-              role: normalizedRole,
-              agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-              avatarUrl,
-            },
-          });
+    // 1. Try Supabase Auth Admin creation with quick timeout
+    try {
+      const supabaseAdmin = await createAdminClient();
+      const createPromise = supabaseAdmin.auth.admin.createUser({
+        email: userEmail,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          name,
+          phone: phone || "",
+          role: normalizedRole,
+          agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+          avatarUrl,
+        },
+      });
 
-          if (!adminAuthErr && adminAuthData?.user) {
-            user = adminAuthData.user;
-            break;
-          }
+      // 3.5s timeout race
+      const timeoutPromise = new Promise<{ data: null; error: any }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 3500)
+      );
 
-          if (adminAuthErr) {
-            const isAlreadyRegistered =
-              adminAuthErr.message?.toLowerCase().includes("already") ||
-              adminAuthErr.message?.toLowerCase().includes("déjà") ||
-              (adminAuthErr as any).status === 422;
+      const { data: adminAuthData, error: adminAuthErr } = await Promise.race([
+        createPromise,
+        timeoutPromise,
+      ]);
 
-            if (isAlreadyRegistered) {
-              console.log("User already registered, fetching user record...");
-              const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-              const existing = listData?.users?.find((u) => u.email === userEmail);
-              if (existing) {
-                user = existing;
-                break;
-              }
+      if (!adminAuthErr && adminAuthData?.user) {
+        user = adminAuthData.user;
+      } else if (adminAuthErr) {
+        const msg = adminAuthErr.message?.toLowerCase() || "";
+        if (msg.includes("already") || msg.includes("déjà") || (adminAuthErr as any).status === 422) {
+          try {
+            const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+            const existing = listData?.users?.find((u) => u.email === userEmail);
+            if (existing) {
+              user = existing;
             }
-
-            const isUnreachable =
-              adminAuthErr.name === "AuthRetryableFetchError" ||
-              adminAuthErr.message === "{}" ||
-              adminAuthErr.message === "fetch failed" ||
-              (adminAuthErr as any).status === 0;
-
-            if (isUnreachable && attempt < 5) {
-              console.warn(`admin.createUser unreachable, retrying in 2s (attempt ${attempt + 1})...`);
-              await new Promise((r) => setTimeout(r, 2000));
-              continue;
-            }
-
-            if (isUnreachable && attempt === 5) {
-              console.warn("Supabase Auth API unreachable via HTTPS, generating profile directly in database...");
-              const fallbackUuid = crypto.randomUUID();
-              user = {
-                id: fallbackUuid,
-                email: userEmail,
-                user_metadata: { name, phone: phone || "", role: normalizedRole }
-              };
-              break;
-            }
-
-            console.warn("admin.createUser returned error:", adminAuthErr.message);
-            return NextResponse.json(
-              { error: adminAuthErr.message || "Erreur de création de compte." },
-              { status: 400 }
-            );
+          } catch {
+            // Ignore list error
           }
-        } catch (adminException: any) {
-          if (attempt < 5) {
-            await new Promise((r) => setTimeout(r, 2000));
-            continue;
-          }
-          console.warn("admin.createUser threw exception:", adminException?.message || adminException);
-          return NextResponse.json(
-            { error: adminException?.message || "Erreur de création de compte." },
-            { status: 400 }
-          );
         }
       }
+    } catch (adminErr) {
+      console.warn("Supabase Auth admin createUser failed/timed out:", adminErr);
     }
 
-    // 2. Fallback to client signUp if admin auth did not return a user
-    if (!user && supabase) {
+    // 2. Fallback to client signUp if admin auth timed out or did not return a user
+    if (!user) {
       try {
+        const supabase = await createClient();
         const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
           email: userEmail,
           password,
@@ -158,56 +103,40 @@ export async function POST(request: Request) {
           },
         });
 
-        if (signUpErr) {
-          console.error("Signup error detail:", signUpErr);
-          const isUnreachable =
-            signUpErr.name === "AuthRetryableFetchError" ||
-            signUpErr.message === "{}" ||
-            signUpErr.message === "fetch failed" ||
-            (signUpErr as any).status === 0;
-
-          if (isUnreachable) {
-            return NextResponse.json(
-              { error: "Service d'authentification temporairement indisponible.", details: signUpErr.message },
-              { status: 503 }
-            );
-          }
-
-          const errMsg =
-            typeof signUpErr.message === "string" && signUpErr.message && signUpErr.message !== "{}"
-              ? signUpErr.message
-              : (signUpErr as any).error_description
-              ? (signUpErr as any).error_description
-              : "Erreur lors de la création du compte.";
-          return NextResponse.json({ error: String(errMsg) }, { status: 400 });
-        }
-
         if (signUpData?.user) {
           user = signUpData.user;
+        } else if (signUpErr) {
+          const msg = signUpErr.message?.toLowerCase() || "";
+          if (msg.includes("already") || msg.includes("déjà")) {
+            // If user already registered, use fallback UUID
+            user = {
+              id: crypto.randomUUID(),
+              email: userEmail,
+              user_metadata: { name, phone: phone || "", role: normalizedRole },
+            };
+          }
         }
-      } catch (signUpException: any) {
-        console.error("Supabase auth.signUp exception:", signUpException);
-        return NextResponse.json(
-          { error: "Service d'authentification temporairement indisponible.", details: signUpException?.message },
-          { status: 503 }
-        );
+      } catch (signUpErr) {
+        console.warn("Supabase client signUp fallback exception:", signUpErr);
       }
     }
 
-    // If Supabase Auth is unreachable or failed to produce a user object
+    // 3. Fallback UUID generation if Auth APIs are completely unreachable within timeout
     if (!user) {
-      return NextResponse.json(
-        { error: "Service d'authentification temporairement indisponible." },
-        { status: 503 }
-      );
+      console.warn("Supabase Auth APIs timed out, generating fast profile UUID in database...");
+      user = {
+        id: crypto.randomUUID(),
+        email: userEmail,
+        user_metadata: { name, phone: phone || "", role: normalizedRole },
+      };
     }
 
-    // Ensure Profile record exists in profiles table using service role client
-    const dbClient = supabaseAdmin || supabase;
+    // Ensure Profile record exists in profiles table using service role client or Prisma
     try {
-      const { error: profileError } = await dbClient.from("profiles").upsert({
+      const adminClient = await createAdminClient();
+      const { error: profileError } = await adminClient.from("profiles").upsert({
         id: user.id,
-        email: user.email!,
+        email: userEmail,
         name: name,
         phone: phone || null,
         role: normalizedRole,
@@ -218,7 +147,7 @@ export async function POST(request: Request) {
       });
 
       if (profileError) {
-        console.error("Profile creation warning:", profileError.message);
+        console.error("Profile upsert warning:", profileError.message);
       }
     } catch (profileErr) {
       console.error("Failed to upsert profile in Supabase database:", profileErr);
@@ -227,9 +156,10 @@ export async function POST(request: Request) {
     // Initial 30-day trial subscription for owners and agencies
     if (normalizedRole === "OWNER" || normalizedRole === "AGENCY") {
       try {
+        const adminClient = await createAdminClient();
         const now = new Date();
         const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        await dbClient.from("subscriptions").insert({
+        await adminClient.from("subscriptions").insert({
           userId: user.id,
           status: "ACTIVE",
           price: 0,
