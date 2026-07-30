@@ -1,4 +1,5 @@
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { signupRateLimiter } from "@/lib/rate-limit";
@@ -57,38 +58,68 @@ export async function POST(request: Request) {
     const avatarUrl = getAvatarUrl(null, name);
     const userEmail = email.trim().toLowerCase();
 
-    let authErrorMessage = "";
+    let user: any = null;
 
-    // 1. Try admin createUser first
-    try {
-      const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
-        email: userEmail,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          name,
-          phone: phone || "",
-          role: normalizedRole,
-          agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-          avatarUrl,
-        },
-      });
+    // 1. Try admin createUser first (if supabaseAdmin is available)
+    if (supabaseAdmin) {
+      for (let attempt = 0; attempt < 6; attempt++) {
+        try {
+          const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
+            email: userEmail,
+            password,
+            email_confirm: true,
+            user_metadata: {
+              name,
+              phone: phone || "",
+              role: normalizedRole,
+              agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+              avatarUrl,
+            },
+          });
 
-      if (!adminAuthErr && adminAuthData?.user) {
-        user = adminAuthData.user;
-      } else if (adminAuthErr) {
-        console.warn("admin.createUser returned error:", adminAuthErr.message);
-        return NextResponse.json(
-          { error: adminAuthErr.message || "Erreur de création de compte." },
-          { status: 400 }
-        );
+          if (!adminAuthErr && adminAuthData?.user) {
+            user = adminAuthData.user;
+            break;
+          }
+
+          if (adminAuthErr) {
+            const isUnreachable =
+              adminAuthErr.name === "AuthRetryableFetchError" ||
+              adminAuthErr.message === "{}" ||
+              adminAuthErr.message === "fetch failed" ||
+              (adminAuthErr as any).status === 0;
+
+            if (isUnreachable && attempt < 5) {
+              console.warn(`admin.createUser unreachable, retrying in 2s (attempt ${attempt + 1})...`);
+              await new Promise((r) => setTimeout(r, 2000));
+              continue;
+            }
+
+            if (isUnreachable) {
+              return NextResponse.json(
+                { error: "Service d'authentification temporairement indisponible." },
+                { status: 503 }
+              );
+            }
+
+            console.warn("admin.createUser returned error:", adminAuthErr.message);
+            return NextResponse.json(
+              { error: adminAuthErr.message || "Erreur de création de compte." },
+              { status: 400 }
+            );
+          }
+        } catch (adminException: any) {
+          if (attempt < 5) {
+            await new Promise((r) => setTimeout(r, 2000));
+            continue;
+          }
+          console.warn("admin.createUser threw exception:", adminException?.message || adminException);
+          return NextResponse.json(
+            { error: adminException?.message || "Erreur de création de compte." },
+            { status: 400 }
+          );
+        }
       }
-    } catch (adminException: any) {
-      console.warn("admin.createUser threw exception:", adminException?.message || adminException);
-      return NextResponse.json(
-        { error: adminException?.message || "Erreur de création de compte." },
-        { status: 400 }
-      );
     }
 
     // 2. Fallback to client signUp if admin auth did not return a user
@@ -128,7 +159,7 @@ export async function POST(request: Request) {
               ? signUpErr.message
               : (signUpErr as any).error_description
               ? (signUpErr as any).error_description
-              : authErrorMessage || "Erreur lors de la création du compte.";
+              : "Erreur lors de la création du compte.";
           return NextResponse.json({ error: String(errMsg) }, { status: 400 });
         }
 
@@ -147,14 +178,15 @@ export async function POST(request: Request) {
     // If Supabase Auth is unreachable or failed to produce a user object
     if (!user) {
       return NextResponse.json(
-        { error: authErrorMessage || "Erreur lors de la création du compte." },
-        { status: 400 }
+        { error: "Service d'authentification temporairement indisponible." },
+        { status: 503 }
       );
     }
 
     // Ensure Profile record exists in profiles table using service role client
+    const dbClient = supabaseAdmin || supabase;
     try {
-      const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
+      const { error: profileError } = await dbClient.from("profiles").upsert({
         id: user.id,
         email: user.email!,
         name: name,
@@ -178,7 +210,7 @@ export async function POST(request: Request) {
       try {
         const now = new Date();
         const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        await supabaseAdmin.from("subscriptions").insert({
+        await dbClient.from("subscriptions").insert({
           userId: user.id,
           status: "ACTIVE",
           price: 0,
@@ -201,4 +233,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
-
