@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     } catch (e: any) {
       console.error("Supabase client initialization error:", e);
       return NextResponse.json(
-        { error: "Service d'authentification temporairement indisponible." },
+        { error: "Service d'authentification temporairement indisponible.", details: String(e?.message || e) },
         { status: 503 }
       );
     }
