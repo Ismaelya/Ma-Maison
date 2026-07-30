@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { signupRateLimiter } from "@/lib/rate-limit";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma/client";
@@ -184,16 +185,19 @@ export async function POST(request: Request) {
       }
     }
 
-    const res = NextResponse.json({
+    try {
+      const cookieStore = await cookies();
+      cookieStore.set("ma_maison_user_id", user.id, { path: "/", maxAge: 86400 * 30 });
+      cookieStore.set("ma_maison_user_email", user.email || userEmail, { path: "/", maxAge: 86400 * 30 });
+    } catch (cErr) {
+      console.warn("Cookie set error:", cErr);
+    }
+
+    return NextResponse.json({
       success: true,
       user,
       message: "Compte créé avec succès.",
     });
-
-    res.cookies.set("ma_maison_user_id", user.id, { path: "/", maxAge: 86400 * 30 });
-    res.cookies.set("ma_maison_user_email", user.email || userEmail, { path: "/", maxAge: 86400 * 30 });
-
-    return res;
   } catch (err: any) {
     console.error("Fatal Signup Error:", err);
     const msg = typeof err === "string" ? err : (err && typeof err.message === "string" && err.message) ? err.message : String(err || "Erreur serveur");

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { loginRateLimiter } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma/client";
@@ -158,15 +159,18 @@ export async function POST(request: Request) {
     if (authenticatedUser) {
       loginRateLimiter.reset(identifier);
 
-      const res = NextResponse.json({
+      try {
+        const cookieStore = await cookies();
+        cookieStore.set("ma_maison_user_id", authenticatedUser.id, { path: "/", maxAge: 86400 * 30 });
+        cookieStore.set("ma_maison_user_email", authenticatedUser.email || userEmail, { path: "/", maxAge: 86400 * 30 });
+      } catch (cErr) {
+        console.warn("Cookie set error:", cErr);
+      }
+
+      return NextResponse.json({
         success: true,
         user: authenticatedUser,
       });
-
-      res.cookies.set("ma_maison_user_id", authenticatedUser.id, { path: "/", maxAge: 86400 * 30 });
-      res.cookies.set("ma_maison_user_email", authenticatedUser.email || userEmail, { path: "/", maxAge: 86400 * 30 });
-
-      return res;
     }
 
     return NextResponse.json(
