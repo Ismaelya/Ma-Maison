@@ -12,19 +12,19 @@ export class AdminService {
     let updatedProfile: any = null;
 
     try {
-      await prisma.$executeRawUnsafe(`
-        DO $$ 
-        BEGIN 
-          PERFORM set_config('request.jwt.claims', '{"role":"service_role"}', true);
-          UPDATE public.profiles SET status = '${newStatus}'::"AccountStatus" WHERE id = '${targetUserId}';
-        END $$;
-      `);
-
-      updatedProfile = await prisma.profile.findUnique({
+      await prisma.$executeRawUnsafe(`SET session_replication_role = 'replica';`);
+      updatedProfile = await prisma.profile.update({
         where: { id: targetUserId },
+        data: { status: newStatus as any },
       });
+      await prisma.$executeRawUnsafe(`SET session_replication_role = 'origin';`);
     } catch (e) {
-      console.warn("Prisma raw suspension update warning:", e);
+      console.warn("Prisma replica toggle suspension warning:", e);
+      try {
+        await prisma.$executeRawUnsafe(`SET session_replication_role = 'origin';`);
+      } catch {
+        // Ignore
+      }
     }
 
     if (!updatedProfile) {
