@@ -57,29 +57,57 @@ export async function POST(request: Request) {
 
     // 1. Try admin createUser first (if supabaseAdmin is available)
     if (supabaseAdmin) {
-      try {
-        const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
-          email: userEmail,
-          password,
-          email_confirm: true,
-          user_metadata: {
-            name,
-            phone: phone || "",
-            role: normalizedRole,
-            agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-            avatarUrl,
-          },
-        });
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
+            email: userEmail,
+            password,
+            email_confirm: true,
+            user_metadata: {
+              name,
+              phone: phone || "",
+              role: normalizedRole,
+              agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+              avatarUrl,
+            },
+          });
 
-        if (!adminAuthErr && adminAuthData?.user) {
-          user = adminAuthData.user;
-        } else if (adminAuthErr) {
-          console.error("admin.createUser error:", adminAuthErr);
-          return NextResponse.json({ error: adminAuthErr.message || "Erreur de création de compte." }, { status: 400 });
+          if (!adminAuthErr && adminAuthData?.user) {
+            user = adminAuthData.user;
+            break;
+          }
+
+          if (adminAuthErr) {
+            const isUnreachable =
+              adminAuthErr.name === "AuthRetryableFetchError" ||
+              adminAuthErr.message === "{}" ||
+              adminAuthErr.message === "fetch failed" ||
+              (adminAuthErr as any).status === 0;
+
+            if (isUnreachable && attempt < 2) {
+              console.warn(`admin.createUser unreachable, retrying in 1.5s (attempt ${attempt + 1})...`);
+              await new Promise((r) => setTimeout(r, 1500));
+              continue;
+            }
+
+            if (isUnreachable) {
+              return NextResponse.json(
+                { error: "Service d'authentification temporairement indisponible." },
+                { status: 503 }
+              );
+            }
+
+            console.error("admin.createUser error:", adminAuthErr);
+            return NextResponse.json({ error: adminAuthErr.message || "Erreur de création de compte." }, { status: 400 });
+          }
+        } catch (adminException: any) {
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 1500));
+            continue;
+          }
+          console.error("admin.createUser exception:", adminException);
+          return NextResponse.json({ error: adminException?.message || "Erreur de création de compte." }, { status: 400 });
         }
-      } catch (adminException: any) {
-        console.error("admin.createUser exception:", adminException);
-        return NextResponse.json({ error: adminException?.message || "Erreur de création de compte." }, { status: 400 });
       }
     }
 
