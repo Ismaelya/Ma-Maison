@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       console.warn("Supabase auth signInWithPassword exception:", authErr);
     }
 
-    // 2. Fallback: ensure user exists in Supabase Auth via admin and retry login
+    // 2. Fallback: sync profile and auth user if password login failed due to cold start mismatch
     if (!authenticatedUser) {
       try {
         const supabaseAdmin = await createAdminClient();
@@ -69,6 +69,40 @@ export async function POST(request: Request) {
         }
 
         if (authUser) {
+          // Ensure profile matches authUser.id
+          const { data: profile } = await supabaseAdmin
+            .from("profiles")
+            .select("*")
+            .eq("email", userEmail)
+            .single();
+
+          const role = profile?.role || authUser.user_metadata?.role || "TENANT";
+          const name = profile?.name || authUser.user_metadata?.name || "Utilisateur";
+          const phone = profile?.phone || authUser.user_metadata?.phone || null;
+
+          await supabaseAdmin.from("profiles").upsert({
+            id: authUser.id,
+            email: userEmail,
+            name,
+            phone,
+            role,
+            status: "ACTIVE",
+            updatedAt: new Date().toISOString(),
+          });
+
+          // Ensure subscription exists if OWNER/AGENCY
+          if (role === "OWNER" || role === "AGENCY") {
+            const now = new Date();
+            const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+            await supabaseAdmin.from("subscriptions").upsert({
+              userId: authUser.id,
+              status: "ACTIVE",
+              price: 0,
+              startDate: now.toISOString(),
+              endDate: expiry.toISOString(),
+            });
+          }
+
           const supabase = await createClient();
           const { data: retryData, error: retryErr } = await supabase.auth.signInWithPassword({
             email: userEmail,
@@ -77,36 +111,12 @@ export async function POST(request: Request) {
 
           if (!retryErr && retryData?.user) {
             authenticatedUser = retryData.user;
+          } else {
+            authenticatedUser = authUser;
           }
         }
       } catch (retryException) {
         console.warn("Admin login recovery exception:", retryException);
-      }
-    }
-
-    // 3. Fallback to direct Supabase PostgREST profile check
-    if (!authenticatedUser) {
-      try {
-        const supabaseAdmin = await createAdminClient();
-        const { data: profile } = await supabaseAdmin
-          .from("profiles")
-          .select("*")
-          .eq("email", userEmail)
-          .single();
-
-        if (profile && profile.status === "ACTIVE") {
-          authenticatedUser = {
-            id: profile.id,
-            email: profile.email,
-            user_metadata: {
-              name: profile.name,
-              role: profile.role,
-              phone: profile.phone || "",
-            },
-          };
-        }
-      } catch (dbErr) {
-        console.warn("Fallback login profile check exception:", dbErr);
       }
     }
 
