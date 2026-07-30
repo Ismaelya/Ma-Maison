@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { signupRateLimiter } from "@/lib/rate-limit";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma/client";
 import { getAvatarUrl } from "@/lib/utils";
 
 export async function POST(request: Request) {
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
 
     let user: any = null;
 
-    // 1. Try Supabase Auth Admin creation with quick timeout
+    // 1. Try Supabase Auth Admin creation with quick 2s timeout
     try {
       const supabaseAdmin = await createAdminClient();
       const createPromise = supabaseAdmin.auth.admin.createUser({
@@ -55,9 +56,8 @@ export async function POST(request: Request) {
         },
       });
 
-      // 3.5s timeout race
       const timeoutPromise = new Promise<{ data: null; error: any }>((resolve) =>
-        setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 3500)
+        setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 2000)
       );
 
       const { data: adminAuthData, error: adminAuthErr } = await Promise.race([
@@ -67,29 +67,16 @@ export async function POST(request: Request) {
 
       if (!adminAuthErr && adminAuthData?.user) {
         user = adminAuthData.user;
-      } else if (adminAuthErr) {
-        const msg = adminAuthErr.message?.toLowerCase() || "";
-        if (msg.includes("already") || msg.includes("déjà") || (adminAuthErr as any).status === 422) {
-          try {
-            const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-            const existing = listData?.users?.find((u) => u.email === userEmail);
-            if (existing) {
-              user = existing;
-            }
-          } catch {
-            // Ignore list error
-          }
-        }
       }
     } catch (adminErr) {
-      console.warn("Supabase Auth admin createUser failed/timed out:", adminErr);
+      console.warn("Supabase Auth admin createUser skipped/timed out:", adminErr);
     }
 
     // 2. Fallback to client signUp if admin auth timed out or did not return a user
     if (!user) {
       try {
         const supabase = await createClient();
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        const { data: signUpData } = await supabase.auth.signUp({
           email: userEmail,
           password,
           options: {
@@ -105,25 +92,14 @@ export async function POST(request: Request) {
 
         if (signUpData?.user) {
           user = signUpData.user;
-        } else if (signUpErr) {
-          const msg = signUpErr.message?.toLowerCase() || "";
-          if (msg.includes("already") || msg.includes("déjà")) {
-            // If user already registered, use fallback UUID
-            user = {
-              id: crypto.randomUUID(),
-              email: userEmail,
-              user_metadata: { name, phone: phone || "", role: normalizedRole },
-            };
-          }
         }
       } catch (signUpErr) {
         console.warn("Supabase client signUp fallback exception:", signUpErr);
       }
     }
 
-    // 3. Fallback UUID generation if Auth APIs are completely unreachable within timeout
+    // 3. Fallback UUID generation if Auth APIs are unreachable within timeout
     if (!user) {
-      console.warn("Supabase Auth APIs timed out, generating fast profile UUID in database...");
       user = {
         id: crypto.randomUUID(),
         email: userEmail,
@@ -131,43 +107,50 @@ export async function POST(request: Request) {
       };
     }
 
-    // Ensure Profile record exists in profiles table using service role client or Prisma
+    // Ensure Profile record exists in profiles table using Prisma ORM
     try {
-      const adminClient = await createAdminClient();
-      const { error: profileError } = await adminClient.from("profiles").upsert({
-        id: user.id,
-        email: userEmail,
-        name: name,
-        phone: phone || null,
-        role: normalizedRole,
-        agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
-        avatarUrl: avatarUrl,
-        status: "ACTIVE",
-        updatedAt: new Date().toISOString(),
+      await prisma.profile.upsert({
+        where: { id: user.id },
+        update: {
+          email: userEmail,
+          name: name,
+          phone: phone || null,
+          role: normalizedRole as any,
+          agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
+          avatarUrl: avatarUrl,
+          status: "ACTIVE",
+        },
+        create: {
+          id: user.id,
+          email: userEmail,
+          name: name,
+          phone: phone || null,
+          role: normalizedRole as any,
+          agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
+          avatarUrl: avatarUrl,
+          status: "ACTIVE",
+        },
       });
-
-      if (profileError) {
-        console.error("Profile upsert warning:", profileError.message);
-      }
     } catch (profileErr) {
-      console.error("Failed to upsert profile in Supabase database:", profileErr);
+      console.error("Prisma profile upsert error:", profileErr);
     }
 
     // Initial 30-day trial subscription for owners and agencies
     if (normalizedRole === "OWNER" || normalizedRole === "AGENCY") {
       try {
-        const adminClient = await createAdminClient();
         const now = new Date();
         const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        await adminClient.from("subscriptions").insert({
-          userId: user.id,
-          status: "ACTIVE",
-          price: 0,
-          startDate: now.toISOString(),
-          endDate: expiry.toISOString(),
+        await prisma.subscription.create({
+          data: {
+            userId: user.id,
+            status: "ACTIVE",
+            price: 0,
+            startDate: now,
+            endDate: expiry,
+          },
         });
       } catch (subErr) {
-        console.error("Failed to insert subscription in Supabase database:", subErr);
+        console.error("Prisma subscription create error:", subErr);
       }
     }
 
