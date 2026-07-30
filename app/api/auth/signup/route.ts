@@ -184,20 +184,34 @@ export async function POST(request: Request) {
       }
     }
 
+    // Generate active session via MagicLink OTP + verifyOtp
+    if (supabaseAdmin) {
+      try {
+        const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+          type: "magiclink",
+          email: userEmail,
+        });
+
+        if (linkData?.properties?.hashed_token) {
+          const supabase = await createClient();
+          await supabase.auth.verifyOtp({
+            token_hash: linkData.properties.hashed_token,
+            type: "magiclink",
+          });
+        }
+      } catch (sessionErr) {
+        console.warn("Session OTP generation warning:", sessionErr);
+      }
+    }
+
     const response = NextResponse.json({
       success: true,
       user,
       message: "Compte créé avec succès.",
     });
 
-    const existingCookie = response.headers.get("set-cookie");
-    response.headers.delete("set-cookie");
-
-    if (existingCookie) {
-      response.headers.append("set-cookie", existingCookie);
-    }
-    response.headers.append("set-cookie", `ma_maison_user_id=${user.id}; Path=/; Max-Age=2592000; SameSite=Lax`);
-    response.headers.append("set-cookie", `ma_maison_user_email=${encodeURIComponent(user.email || userEmail)}; Path=/; Max-Age=2592000; SameSite=Lax`);
+    response.headers.append("Set-Cookie", `ma_maison_user_id=${user.id}; Path=/; Max-Age=2592000; SameSite=Lax`);
+    response.headers.append("Set-Cookie", `ma_maison_user_email=${encodeURIComponent(user.email || userEmail)}; Path=/; Max-Age=2592000; SameSite=Lax`);
 
     return response;
   } catch (err: any) {
