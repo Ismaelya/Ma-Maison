@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Creates a Supabase client for use in Server Components, Server Actions,
@@ -44,8 +45,6 @@ export async function createClient() {
     }
   );
 }
-
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Creates an admin Supabase client with service_role key.
