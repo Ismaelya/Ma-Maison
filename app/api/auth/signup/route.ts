@@ -53,6 +53,7 @@ export async function POST(request: Request) {
     const userEmail = email.trim().toLowerCase();
 
     let user: any = null;
+    let lastAuthError: string = "";
 
     // 1. Try admin createUser first (if supabaseAdmin is available)
     if (supabaseAdmin) {
@@ -73,10 +74,12 @@ export async function POST(request: Request) {
         if (!adminAuthErr && adminAuthData?.user) {
           user = adminAuthData.user;
         } else if (adminAuthErr) {
-          console.warn("admin.createUser returned error, fallback to client signUp:", adminAuthErr.message);
+          lastAuthError = adminAuthErr.message || JSON.stringify(adminAuthErr);
+          console.warn("admin.createUser returned error, fallback to client signUp:", lastAuthError);
         }
       } catch (adminException: any) {
-        console.warn("admin.createUser threw exception:", adminException?.message || adminException);
+        lastAuthError = adminException?.message || String(adminException);
+        console.warn("admin.createUser threw exception:", lastAuthError);
       }
     }
 
@@ -100,6 +103,8 @@ export async function POST(request: Request) {
 
           if (signUpErr) {
             console.error(`Signup error detail (attempt ${attempt + 1}):`, signUpErr);
+            lastAuthError = signUpErr.message || (signUpErr as any).error_description || JSON.stringify(signUpErr);
+
             const isUnreachable =
               signUpErr.name === "AuthRetryableFetchError" ||
               signUpErr.message === "{}" ||
@@ -116,19 +121,13 @@ export async function POST(request: Request) {
               return NextResponse.json(
                 {
                   error: "Service d'authentification temporairement indisponible.",
-                  details: signUpErr.message || "AuthRetryableFetchError",
+                  details: lastAuthError,
                 },
                 { status: 503 }
               );
             }
 
-            const errMsg =
-              typeof signUpErr.message === "string" && signUpErr.message && signUpErr.message !== "{}"
-                ? signUpErr.message
-                : (signUpErr as any).error_description
-                ? (signUpErr as any).error_description
-                : "Erreur lors de la création du compte.";
-            return NextResponse.json({ error: String(errMsg) }, { status: 400 });
+            return NextResponse.json({ error: String(lastAuthError) }, { status: 400 });
           }
 
           if (signUpData?.user) {
@@ -136,13 +135,14 @@ export async function POST(request: Request) {
             break;
           }
         } catch (signUpException: any) {
+          lastAuthError = signUpException?.message || String(signUpException);
           if (attempt < 2) {
             await new Promise((r) => setTimeout(r, 1500));
             continue;
           }
           console.error("Supabase auth.signUp exception:", signUpException);
           return NextResponse.json(
-            { error: "Service d'authentification temporairement indisponible." },
+            { error: "Service d'authentification temporairement indisponible.", details: lastAuthError },
             { status: 503 }
           );
         }
