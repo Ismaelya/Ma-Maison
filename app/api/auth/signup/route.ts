@@ -40,54 +40,65 @@ export async function POST(request: Request) {
 
     let user: any = null;
 
-    // 1. Try Supabase Auth Admin creation with 8s timeout
+    // 1. Try Supabase Auth Admin creation with retry loop
     try {
       const supabaseAdmin = await createAdminClient();
-      const createPromise = supabaseAdmin.auth.admin.createUser({
-        email: userEmail,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          name,
-          phone: phone || "",
-          role: normalizedRole,
-          agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-          avatarUrl,
-        },
-      });
-
-      const timeoutPromise = new Promise<{ data: null; error: any }>((resolve) =>
-        setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 8000)
-      );
-
-      const { data: adminAuthData, error: adminAuthErr } = await Promise.race([
-        createPromise,
-        timeoutPromise,
-      ]);
-
-      if (!adminAuthErr && adminAuthData?.user) {
-        user = adminAuthData.user;
-      } else if (adminAuthErr) {
-        console.warn("admin.createUser returned error:", adminAuthErr.message);
+      for (let attempt = 0; attempt < 4; attempt++) {
         try {
-          const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-          const existing = listData?.users?.find((u) => u.email === userEmail);
-          if (existing) {
-            await supabaseAdmin.auth.admin.updateUserById(existing.id, {
-              password,
-              email_confirm: true,
-            });
-            user = existing;
+          const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
+            email: userEmail,
+            password,
+            email_confirm: true,
+            user_metadata: {
+              name,
+              phone: phone || "",
+              role: normalizedRole,
+              agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+              avatarUrl,
+            },
+          });
+
+          if (!adminAuthErr && adminAuthData?.user) {
+            user = adminAuthData.user;
+            break;
           }
-        } catch (updateErr) {
-          console.warn("Update existing user password error:", updateErr);
+
+          if (adminAuthErr) {
+            const msg = adminAuthErr.message?.toLowerCase() || "";
+            if (msg.includes("already") || msg.includes("déjà") || (adminAuthErr as any).status === 422) {
+              try {
+                const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+                const existing = listData?.users?.find((u) => u.email === userEmail);
+                if (existing) {
+                  await supabaseAdmin.auth.admin.updateUserById(existing.id, {
+                    password,
+                    email_confirm: true,
+                  });
+                  user = existing;
+                  break;
+                }
+              } catch {
+                // Ignore list error
+              }
+            }
+
+            if (attempt < 3) {
+              await new Promise((r) => setTimeout(r, 1200));
+              continue;
+            }
+          }
+        } catch (attemptErr) {
+          if (attempt < 3) {
+            await new Promise((r) => setTimeout(r, 1200));
+            continue;
+          }
         }
       }
     } catch (adminErr) {
       console.warn("Supabase Auth admin createUser skipped/timed out:", adminErr);
     }
 
-    // 2. Fallback to client signUp if admin auth timed out or did not return a user
+    // 2. Fallback to client signUp if admin auth did not return a user
     if (!user) {
       try {
         const supabase = await createClient();
@@ -113,7 +124,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Fallback UUID generation if Auth APIs are completely unreachable within timeout
+    // 3. Fallback UUID generation if Auth APIs are completely unreachable
     if (!user) {
       user = {
         id: crypto.randomUUID(),
