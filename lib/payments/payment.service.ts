@@ -99,20 +99,29 @@ export class PaymentService {
       try {
         const now = new Date();
         const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        await prisma.subscription.upsert({
+        const existingSub = await prisma.subscription.findFirst({
           where: { userId: payment.userId },
-          update: {
-            status: "ACTIVE",
-            endDate: expiry,
-          },
-          create: {
-            userId: payment.userId,
-            status: "ACTIVE",
-            price: payment.amount || 25000,
-            startDate: now,
-            endDate: expiry,
-          },
         });
+
+        if (existingSub) {
+          await prisma.subscription.update({
+            where: { id: existingSub.id },
+            data: {
+              status: "ACTIVE",
+              endDate: expiry,
+            },
+          });
+        } else {
+          await prisma.subscription.create({
+            data: {
+              userId: payment.userId,
+              status: "ACTIVE",
+              price: payment.amount || 25000,
+              startDate: now,
+              endDate: expiry,
+            },
+          });
+        }
 
         await prisma.profile.update({
           where: { id: payment.userId },

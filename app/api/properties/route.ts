@@ -24,14 +24,9 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get("limit") ? Number(searchParams.get("limit")) : 12,
     };
 
-    const result = await PropertyService.getProperties(filters);
+    const properties = await PropertyService.getProperties(filters);
 
-    return apiSuccess(result.data, "Annonces récupérées avec succès", 200, {
-      total: result.total,
-      page: result.page,
-      limit: result.limit,
-      totalPages: result.totalPages,
-    });
+    return apiSuccess(properties, "Annonces récupérées avec succès", 200);
   } catch (err: any) {
     return apiError("SERVER_ERROR", err.message || "Erreur de recherche", 500);
   }

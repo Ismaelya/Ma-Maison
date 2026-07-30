@@ -89,11 +89,12 @@ export async function POST(request: Request) {
 
         const role = profile?.role || "TENANT";
         const name = profile?.name || "Utilisateur";
+        const phone = profile?.phone || `+227${Math.floor(80000000 + Math.random() * 19999999)}`;
 
         await prisma.profile.upsert({
           where: { id: userId },
           update: { email: userEmail, status: "ACTIVE" },
-          create: { id: userId, email: userEmail, name, role: role as any, status: "ACTIVE" },
+          create: { id: userId, email: userEmail, name, phone, role: role as any, status: "ACTIVE" },
         });
 
         // Generate magic link token for instant passwordless session creation

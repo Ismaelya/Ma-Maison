@@ -7,6 +7,10 @@ export class PropertyService {
     return PropertyRepository.search(filters);
   }
 
+  static async getProperties(filters: PropertyFilterOptions = {}) {
+    return this.searchProperties(filters);
+  }
+
   static async getProperty(id: string) {
     return PropertyRepository.findById(id);
   }

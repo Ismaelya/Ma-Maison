@@ -190,17 +190,26 @@ export async function POST(request: Request) {
       try {
         const now = new Date();
         const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        await prisma.subscription.upsert({
+        const existingSub = await prisma.subscription.findFirst({
           where: { userId: user.id },
-          update: { status: "ACTIVE" },
-          create: {
-            userId: user.id,
-            status: "ACTIVE",
-            price: 0,
-            startDate: now,
-            endDate: expiry,
-          },
         });
+
+        if (existingSub) {
+          await prisma.subscription.update({
+            where: { id: existingSub.id },
+            data: { status: "ACTIVE" },
+          });
+        } else {
+          await prisma.subscription.create({
+            data: {
+              userId: user.id,
+              status: "ACTIVE",
+              price: 0,
+              startDate: now,
+              endDate: expiry,
+            },
+          });
+        }
       } catch (subErr) {
         console.error("Prisma subscription create error:", subErr);
       }
