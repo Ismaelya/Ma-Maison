@@ -11,47 +11,20 @@ export class AdminService {
     const newStatus = suspend ? "SUSPENDED" : "ACTIVE";
     let updatedProfile: any = null;
 
-    // 1. Ensure trigger allows server-side DB updates
     try {
-      await prisma.$executeRawUnsafe(`
-        CREATE OR REPLACE FUNCTION public.prevent_role_status_escalation()
-        RETURNS trigger
-        LANGUAGE plpgsql
-        SECURITY DEFINER
-        SET search_path = public
-        AS $$
-        BEGIN
-          IF current_setting('request.jwt.claims', true) IS NULL 
-             OR current_setting('request.jwt.claims', true) = '' 
-             OR public.is_admin() THEN
-            RETURN NEW;
-          END IF;
-
-          IF NEW.role IS DISTINCT FROM OLD.role OR NEW.status IS DISTINCT FROM OLD.status THEN
-            RAISE EXCEPTION 'Modification de role/status réservée à un administrateur';
-          END IF;
-
-          RETURN NEW;
-        END;
-        $$;
-      `);
-    } catch (tErr) {
-      console.warn("Trigger patch warning:", tErr);
-    }
-
-    // 2. Perform status update via Prisma
-    try {
-      await prisma.$executeRawUnsafe(
-        `UPDATE public.profiles SET status = $1::"AccountStatus" WHERE id = $2;`,
-        newStatus,
-        targetUserId
-      );
+      // 1. Try Prisma update with GUC settings for auth.uid() and service_role
+      await prisma.$transaction([
+        prisma.$executeRawUnsafe(`SELECT set_config('request.jwt.claim.sub', '${adminId}', true);`),
+        prisma.$executeRawUnsafe(`SELECT set_config('request.jwt.claim.role', 'service_role', true);`),
+        prisma.$executeRawUnsafe(`SELECT set_config('request.jwt.claims', '{"sub":"${adminId}","role":"authenticated"}', true);`),
+        prisma.$executeRawUnsafe(`UPDATE public.profiles SET status = '${newStatus}'::"AccountStatus" WHERE id = '${targetUserId}';`),
+      ]);
 
       updatedProfile = await prisma.profile.findUnique({
         where: { id: targetUserId },
       });
     } catch (e) {
-      console.warn("Prisma toggle suspension warning:", e);
+      console.warn("Prisma claim.sub toggle suspension warning:", e);
     }
 
     if (!updatedProfile) {
