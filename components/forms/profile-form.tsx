@@ -115,7 +115,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
     const { error } = await supabase
       .from("profiles")
       .update({
-        full_name: data.fullName,
+        name: data.fullName,
         phone: data.phone || null,
         avatarUrl: avatarToSave,
       })
