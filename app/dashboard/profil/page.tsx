@@ -12,7 +12,8 @@ export default async function ProfilePage() {
   const { profile } = await requireAuth();
   const roleStr = String(profile.role ?? "").toUpperCase();
   const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
-  const trialDays = isOwner ? getTrialDaysRemaining((profile as any).trial_started_at || (profile.trialStartedAt ? profile.trialStartedAt.toISOString() : null)) : null;
+  const trialRaw = (profile as any).trial_started_at || profile.trialStartedAt;
+  const trialDays = isOwner && trialRaw ? getTrialDaysRemaining(typeof trialRaw === "string" ? trialRaw : (trialRaw as Date).toISOString()) : null;
 
   return (
     <div className="animate-fade-in space-y-8">
