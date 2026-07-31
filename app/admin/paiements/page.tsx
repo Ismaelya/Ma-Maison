@@ -26,7 +26,7 @@ export default async function AdminPaymentsPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">Vérification des paiements</h1>
         <p className="mt-1 text-sm text-neutral-400">
-          Validez les demandes d&apos;abonnement Premium (1 500 FCFA) après vérification du reçu
+          Validez les demandes d'abonnement Premium (1 500 FCFA) après vérification du reçu
         </p>
       </div>
 
@@ -110,7 +110,7 @@ export default async function AdminPaymentsPage() {
 
         {processedPayments.length === 0 ? (
           <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-8 text-center text-sm text-neutral-500">
-            Aucun paiement traité pour l&apos;instant.
+            Aucun paiement traité pour l'instant.
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 shadow-xl">

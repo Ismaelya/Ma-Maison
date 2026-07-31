@@ -425,3 +425,21 @@ create policy "property_images_owner_write"
     bucket_id = 'property-images'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+drop policy if exists "avatars_public_read" on storage.objects;
+create policy "avatars_public_read"
+  on storage.objects for select
+  using (bucket_id = 'avatars');
+
+drop policy if exists "avatars_owner_write" on storage.objects;
+create policy "avatars_owner_write"
+  on storage.objects for all
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  )
+  with check (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+

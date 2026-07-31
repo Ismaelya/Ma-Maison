@@ -76,9 +76,17 @@ export function ProfileForm({ profile }: ProfileFormProps) {
 
     try {
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id || profile.id;
+
+      if (!userId) {
+        setUploadError("Utilisateur non authentifié.");
+        return;
+      }
+
       const ext = file.name.split(".").pop() || "jpg";
       const fileName = `${Date.now()}.${ext}`;
-      const filePath = `${profile.id}/${fileName}`;
+      const filePath = `${userId}/${fileName}`;
 
       const { error: storageError } = await supabase.storage
         .from("avatars")

@@ -91,7 +91,7 @@ export async function Header() {
                 href="/inscription"
                 className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-primary-700 hover:shadow-md"
               >
-                S&apos;inscrire
+                S'inscrire
               </Link>
             </>
           )}
