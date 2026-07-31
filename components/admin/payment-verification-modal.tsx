@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, XCircle, FileText, Loader2, Eye, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice, formatDate } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 
 type PaymentVerificationModalProps = {
   payment: any;
@@ -17,6 +18,7 @@ export function PaymentVerificationModal({
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -45,8 +47,7 @@ export function PaymentVerificationModal({
     }
   }
 
-  async function handleApprove() {
-    if (!confirm("Valider ce paiement ? L'abonnement du propriétaire sera activé pour 30 jours via le trigger Postgres.")) return;
+  async function executeApprove() {
     setIsLoading(true);
 
     try {
@@ -60,6 +61,7 @@ export function PaymentVerificationModal({
         throw new Error(json.message || "Erreur de validation");
       }
 
+      setConfirmAction(null);
       setIsOpen(false);
       router.refresh();
     } catch (err: any) {
@@ -69,8 +71,7 @@ export function PaymentVerificationModal({
     }
   }
 
-  async function handleReject() {
-    if (!confirm("Refuser ce paiement ? L'abonnement du propriétaire restera inchangé.")) return;
+  async function executeReject() {
     setIsLoading(true);
 
     try {
@@ -85,6 +86,7 @@ export function PaymentVerificationModal({
         throw new Error(json.message || "Erreur de refus");
       }
 
+      setConfirmAction(null);
       setIsOpen(false);
       router.refresh();
     } catch (err: any) {
@@ -183,7 +185,7 @@ export function PaymentVerificationModal({
             {statusStr === "PENDING" ? (
               <div className="flex gap-3 border-t border-neutral-800 p-6 bg-neutral-900">
                 <button
-                  onClick={handleReject}
+                  onClick={() => setConfirmAction("reject")}
                   disabled={isLoading}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-800 bg-red-950 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-900 disabled:opacity-50"
                 >
@@ -191,15 +193,11 @@ export function PaymentVerificationModal({
                   Refuser le paiement
                 </button>
                 <button
-                  onClick={handleApprove}
+                  onClick={() => setConfirmAction("approve")}
                   disabled={isLoading}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700 shadow-md disabled:opacity-50"
                 >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4" />
-                  )}
+                  <CheckCircle2 className="h-4 w-4" />
                   Valider l&apos;abonnement (+30j)
                 </button>
               </div>
@@ -211,6 +209,66 @@ export function PaymentVerificationModal({
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal - Approve */}
+      <Modal
+        isOpen={confirmAction === "approve"}
+        onClose={() => setConfirmAction(null)}
+        title="Confirmer la validation du paiement"
+        description="L'abonnement du propriétaire sera automatiquement activé pour 30 jours."
+        footer={
+          <>
+            <button
+              onClick={() => setConfirmAction(null)}
+              className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-300 hover:bg-neutral-800"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={executeApprove}
+              disabled={isLoading}
+              className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 shadow-md disabled:opacity-50"
+            >
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              Confirmer la validation (+30j)
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-neutral-300">
+          Êtes-vous sûr de vouloir valider ce paiement de <strong>{formatPrice(payment.amount)}</strong> pour <strong>{profile.name || profile.email}</strong> ?
+        </p>
+      </Modal>
+
+      {/* Confirmation Modal - Reject */}
+      <Modal
+        isOpen={confirmAction === "reject"}
+        onClose={() => setConfirmAction(null)}
+        title="Confirmer le refus du paiement"
+        description="Le paiement sera marqué comme refusé et le propriétaire sera notifié."
+        footer={
+          <>
+            <button
+              onClick={() => setConfirmAction(null)}
+              className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-300 hover:bg-neutral-800"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={executeReject}
+              disabled={isLoading}
+              className="flex items-center gap-2 rounded-xl border border-red-800 bg-red-950 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-900 disabled:opacity-50"
+            >
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+              Confirmer le refus
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-neutral-300">
+          Motif du refus : <strong>{adminNotes || "Reçu de paiement invalide"}</strong>
+        </p>
+      </Modal>
     </>
   );
 }
