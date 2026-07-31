@@ -77,23 +77,20 @@ export function ProfileForm({ profile }: ProfileFormProps) {
     try {
       const supabase = createClient();
       const ext = file.name.split(".").pop() || "jpg";
-      const fileName = `${profile.id}-${Date.now()}.${ext}`;
-      const filePath = `avatars/${fileName}`;
+      const fileName = `${Date.now()}.${ext}`;
+      const filePath = `${profile.id}/${fileName}`;
 
       const { error: storageError } = await supabase.storage
-        .from("property-images")
+        .from("avatars")
         .upload(filePath, file, { contentType: file.type, upsert: true });
 
       if (storageError) {
-        // Fallback: use local object URL as preview (will be saved as URL reference)
-        const localUrl = URL.createObjectURL(file);
-        setValue("avatarUrl", localUrl, { shouldDirty: true });
-        setUploadError("Stockage distant indisponible — photo en prévisualisation locale uniquement. Sauvegardez pour conserver.");
+        setUploadError(`Erreur lors de l'envoi de la photo : ${storageError.message}`);
         return;
       }
 
       const { data: publicData } = supabase.storage
-        .from("property-images")
+        .from("avatars")
         .getPublicUrl(filePath);
 
       if (publicData?.publicUrl) {
