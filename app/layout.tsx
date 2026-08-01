@@ -4,6 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastProvider } from "@/components/ui/toast-notification";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import InstallPrompt from "@/components/ui/InstallPrompt";
 import "./globals.css";
 
 const geist = {
@@ -63,6 +64,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={geist.variable} suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
+        <meta name="theme-color" content="#2563eb" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="Ma Maison" />
+      </head>
       <body className={`${geist.className} min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] transition-colors duration-200 antialiased`}>
         <ThemeProvider defaultTheme="system">
           <QueryProvider>
@@ -73,6 +82,7 @@ export default function RootLayout({
             </ToastProvider>
           </QueryProvider>
         </ThemeProvider>
+        <InstallPrompt />
         <Analytics />
         <SpeedInsights />
       </body>
