@@ -32,11 +32,9 @@ export default async function HomePage() {
   let homepageStats = [
     { value: "500+", label: "Annonces" },
     { value: "8", label: "Villes" },
-    { value: "1000+", label: "Utilisateurs" },
   ];
 
   try {
-    // Exclude obvious test fixtures by title pattern (case-insensitive)
     const { data: activeSubs } = await supabase
       .from("subscriptions")
       .select("userId")
@@ -58,14 +56,8 @@ export default async function HomePage() {
     const citiesCount = citySet.size;
     const MAIN_CITIES_COUNT = 8;
 
-    const { data: profilesData, count: profilesCount } = await supabase
-      .from("profiles")
-      .select("id", { count: "exact" })
-      .eq("status", "ACTIVE");
-
     const rawProperties = Number(propertiesCount ?? 0);
     const rawCities = Number(citiesCount || MAIN_CITIES_COUNT);
-    const rawUsers = Number(profilesCount ?? 0);
 
     const formatAnnouncements = (n: number) => {
       if (n < 10) return `Nouveau — soyez parmi les premiers`;
@@ -74,16 +66,9 @@ export default async function HomePage() {
       return `1000+`;
     };
 
-    const formatUsers = (n: number) => {
-      if (n < 50) return `${n}`;
-      if (n < 1000) return `${n}`;
-      return `1000+`;
-    };
-
     const stats = [
       { value: formatAnnouncements(rawProperties), label: "Annonces" },
       { value: `${rawCities}`, label: "Villes" },
-      { value: formatUsers(rawUsers), label: "Utilisateurs" },
     ];
 
     // override the hardcoded stats for rendering below
