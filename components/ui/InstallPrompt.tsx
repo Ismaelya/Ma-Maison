@@ -83,6 +83,9 @@ export default function InstallPrompt(): JSX.Element | null {
         <button onClick={onInstall} style={{ padding: "8px 12px", background: "#2563eb", color: "white", borderRadius: 6, border: "none" }}>
           Installer
         </button>
+        <a href="/aide-ios" style={{ display: "inline-flex", alignItems: "center", padding: "8px 12px", background: "transparent", borderRadius: 6, border: "1px solid #ccc", textDecoration: "none", color: "#111" }}>
+          Aide iOS
+        </a>
         <button onClick={() => setVisible(false)} style={{ padding: "8px 12px", background: "transparent", borderRadius: 6, border: "1px solid #ccc" }}>
           Fermer
         </button>
