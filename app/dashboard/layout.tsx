@@ -36,7 +36,8 @@ export default async function DashboardLayout({
 
   const roleStr = String(profile.role || "").toUpperCase();
   const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
-  const trialDays = getTrialDaysRemaining(profile.createdAt || (profile as any).created_at);
+  const rawDate = profile.createdAt || (profile as any).created_at;
+  const trialDays = getTrialDaysRemaining(typeof rawDate === "string" ? rawDate : (rawDate ? new Date(rawDate).toISOString() : ""));
   const isExpired = isOwner && (profile as any).subscriptionStatus !== "ACTIVE" && trialDays <= 0;
 
   const navItems = [
