@@ -60,7 +60,7 @@ export default async function HomePage() {
             </h1>
 
             <p className="mt-6 text-lg leading-relaxed text-white/80 sm:text-xl">
-              Parcourez des centaines d&apos;annonces immobilières à Niamey et dans
+              Parcourez des centaines d'annonces immobilières à Niamey et dans
               tout le Niger. Location, achat, terrains — Ma Maison simplifie
               votre recherche.
             </p>
