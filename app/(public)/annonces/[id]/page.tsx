@@ -11,8 +11,6 @@ import {
   ArrowLeft,
   Share2,
   Heart,
-  MessageSquare,
-  User,
   CheckCircle2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -59,9 +57,9 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: listing, error } = await supabase
+  const { data: listing } = await supabase
     .from("properties")
-    .select("*, profiles!inner(id, name, agencyName, badgeVerified, avatarUrl, phone, createdAt), property_images(url)")
+    .select("*, profiles(id, name, agencyName, badgeVerified, avatarUrl, phone, createdAt), property_images(url)")
     .eq("id", id)
     .single();
 

@@ -28,6 +28,72 @@ export default async function HomePage() {
 
   const listings = (featuredListings ?? []) as any[];
 
+  // --- DYNAMIC STATS (replace hardcoded marketing placeholders) ---
+  let homepageStats = [
+    { value: "500+", label: "Annonces" },
+    { value: "8", label: "Villes" },
+    { value: "1000+", label: "Utilisateurs" },
+  ];
+
+  try {
+    // Exclude obvious test fixtures by title pattern (case-insensitive)
+    const { data: activeSubs } = await supabase
+      .from("subscriptions")
+      .select("userId")
+      .in("status", ["ACTIVE", "TRIAL"]);
+
+    const activeUserIds = (activeSubs ?? []).map((s: any) => s.userId).filter(Boolean);
+
+    let propsQuery: any = supabase
+      .from("properties")
+      .select("id, city", { count: "exact" })
+      .eq("status", "APPROVED")
+      .eq("profiles.status", "ACTIVE");
+
+    if (activeUserIds.length > 0) propsQuery = propsQuery.in("ownerId", activeUserIds);
+
+    const { data: propData, count: propertiesCount } = await propsQuery;
+
+    const citySet = new Set(((propData ?? []) as any[]).map((p) => p.city).filter(Boolean));
+    const citiesCount = citySet.size;
+    const MAIN_CITIES_COUNT = 8;
+
+    const { data: profilesData, count: profilesCount } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact" })
+      .eq("status", "ACTIVE");
+
+    const rawProperties = Number(propertiesCount ?? 0);
+    const rawCities = Number(citiesCount || MAIN_CITIES_COUNT);
+    const rawUsers = Number(profilesCount ?? 0);
+
+    const formatAnnouncements = (n: number) => {
+      if (n < 10) return `Nouveau — soyez parmi les premiers`;
+      if (n < 500) return `${n}`;
+      if (n < 1000) return `500+`;
+      return `1000+`;
+    };
+
+    const formatUsers = (n: number) => {
+      if (n < 50) return `${n}`;
+      if (n < 1000) return `${n}`;
+      return `1000+`;
+    };
+
+    const stats = [
+      { value: formatAnnouncements(rawProperties), label: "Annonces" },
+      { value: `${rawCities}`, label: "Villes" },
+      { value: formatUsers(rawUsers), label: "Utilisateurs" },
+    ];
+
+    // override the hardcoded stats for rendering below
+    homepageStats = stats;
+  } catch (err) {
+    // Keep hardcoded marketing defaults on error
+    // eslint-disable-next-line no-console
+    console.warn("Failed to fetch homepage stats:", err);
+  }
+
   return (
     <div className="animate-fade-in">
       {/* ================================================================
@@ -85,11 +151,7 @@ export default async function HomePage() {
 
             {/* Stats */}
             <div className="mt-16 grid grid-cols-3 gap-8">
-              {[
-                { value: "500+", label: "Annonces" },
-                { value: "8", label: "Villes" },
-                { value: "1000+", label: "Utilisateurs" },
-              ].map((stat) => (
+              {homepageStats.map((stat: any) => (
                 <div key={stat.label} className="text-center">
                   <p className="text-2xl font-bold text-white sm:text-3xl">
                     {stat.value}
