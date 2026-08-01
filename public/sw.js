@@ -1,5 +1,5 @@
 const CACHE_NAME = "ma-maison-v1";
-const URLS_TO_CACHE = ["/", "/icon.png", "/favicon.png"];
+const URLS_TO_CACHE = ["/", "/logo.png", "/favicon.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
