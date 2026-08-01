@@ -82,6 +82,22 @@
   --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
+.dark {
+  --color-bg: #0f172a;        /* Dark Slate 900 */
+  --color-text: #f8fafc;      /* Light Slate 50 */
+  --color-muted: #1e293b;     /* Slate 800 */
+  --color-border: #334155;    /* Slate 700 */
+  --color-ring: #3b82f6;
+
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --border: #334155;
+  --input: #334155;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 10px 25px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
 /* ============================================================================
    Typography Scale (Partie 8 : H1 36px, H2 30px, H3 24px, H4 20px, body 16px, small 14px)
    ============================================================================ */

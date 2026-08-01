@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MobileNav } from "./mobile-nav";
 import { cn, getAvatarUrl } from "@/lib/utils";
 import { Logo } from "@/components/ui/logo";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export async function Header() {
   const supabase = await createClient();
@@ -25,7 +26,7 @@ export async function Header() {
   const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-white/80 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg)]/85 backdrop-blur-lg transition-colors">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Logo />
@@ -78,12 +79,13 @@ export async function Header() {
                   />
                 </div>
               </Link>
+              <ThemeToggle />
             </>
           ) : (
             <>
               <Link
                 href="/connexion"
-                className="rounded-lg px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-slate-800"
               >
                 Se connecter
               </Link>
@@ -93,6 +95,7 @@ export async function Header() {
               >
                 S'inscrire
               </Link>
+              <ThemeToggle />
             </>
           )}
         </nav>

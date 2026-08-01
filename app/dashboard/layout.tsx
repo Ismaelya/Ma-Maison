@@ -16,6 +16,7 @@ import { getUser } from "@/lib/auth/helpers";
 import { getTrialDaysRemaining, cn, getAvatarUrl } from "@/lib/utils";
 import { DashboardSignOut } from "@/components/dashboard/sign-out-button";
 import { Logo } from "@/components/ui/logo";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default async function DashboardLayout({
   children,
@@ -28,36 +29,33 @@ export default async function DashboardLayout({
     redirect("/connexion");
   }
 
-  const { profile } = authUser;
-  const roleStr = String(profile.role ?? "").toUpperCase();
-  const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
-  const trialRaw = (profile as any).trial_started_at || profile.trialStartedAt;
-  const trialDays = isOwner && trialRaw ? getTrialDaysRemaining(typeof trialRaw === "string" ? trialRaw : (trialRaw as Date).toISOString()) : null;
-  const isExpired = (profile as any).subscription_status === "expired";
+  const profile = authUser.profile;
+  if (!profile) {
+    redirect("/connexion");
+  }
 
-  const navItems = [
+  const roleStr = String(profile.role || "").toUpperCase();
+  const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
+  const daysRemaining = getTrialDaysRemaining(profile.created_at || (profile as any).createdAt);
+  const isExpired = isOwner && (profile as any).subscriptionStatus !== "ACTIVE" && daysRemaining <= 0;
+
+  const navigation = [
     {
       href: "/dashboard",
       icon: LayoutDashboard,
-      label: "Tableau de bord",
+      label: "Vue d'ensemble",
       show: true,
     },
     {
       href: "/dashboard/annonces",
       icon: Building2,
-      label: "Mes annonces",
+      label: "Mes biens",
       show: isOwner,
-    },
-    {
-      href: "/dashboard/annonces/nouveau",
-      icon: Plus,
-      label: "Nouvelle annonce",
-      show: isOwner && !isExpired,
     },
     {
       href: "/dashboard/abonnement",
       icon: CreditCard,
-      label: "Mon abonnement",
+      label: "Abonnement",
       show: isOwner,
     },
     {
@@ -81,18 +79,19 @@ export default async function DashboardLayout({
   ].filter((item) => item.show);
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] transition-colors">
       {/* Top bar */}
-      <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-white/80 backdrop-blur-lg">
+      <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg)]/85 backdrop-blur-lg transition-colors">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Logo />
 
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium text-neutral-900">
+              <p className="text-sm font-medium text-[var(--color-text)]">
                 {profile.name || "Utilisateur"}
               </p>
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 {isOwner ? "Propriétaire" : "Locataire"}
               </p>
             </div>

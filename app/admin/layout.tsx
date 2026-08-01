@@ -12,6 +12,7 @@ import {
 import { getUser } from "@/lib/auth/helpers";
 import { DashboardSignOut } from "@/components/dashboard/sign-out-button";
 import { Logo } from "@/components/ui/logo";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default async function AdminLayout({
   children,
@@ -26,24 +27,21 @@ export default async function AdminLayout({
 
   const { profile } = authUser;
 
-  // Strict Admin Guard: role must be ADMIN and status must not be SUSPENDED
-  const roleStr = String(profile.role ?? "").toUpperCase();
-  const statusStr = String(profile.status ?? (profile as any).account_status ?? "").toUpperCase();
-
-  if (roleStr !== "ADMIN" || statusStr === "SUSPENDED") {
+  // Strict RBAC Guard for Admin section
+  if (profile.role !== "ADMIN") {
     redirect("/dashboard");
   }
 
-  const adminNavItems = [
+  const navItems = [
     {
       href: "/admin",
       icon: LayoutDashboard,
-      label: "Vue globale",
+      label: "Vue d'ensemble",
     },
     {
-      href: "/admin/paiements",
-      icon: CreditCard,
-      label: "Vérification Paiements",
+      href: "/admin/annonces",
+      icon: Building2,
+      label: "Validation Annonces",
     },
     {
       href: "/admin/utilisateurs",
@@ -51,9 +49,9 @@ export default async function AdminLayout({
       label: "Gestion Utilisateurs",
     },
     {
-      href: "/admin/annonces",
-      icon: Building2,
-      label: "Modération Annonces",
+      href: "/admin/paiements",
+      icon: CreditCard,
+      label: "Paiements",
     },
     {
       href: "/admin/signalements",
@@ -79,6 +77,7 @@ export default async function AdminLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <div className="text-right">
               <p className="text-sm font-semibold text-white">
                 {profile.name || "Administrateur"}

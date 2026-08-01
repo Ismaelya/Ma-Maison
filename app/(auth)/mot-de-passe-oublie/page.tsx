@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { useToast } from "@/components/ui/toast-notification";
+import { formatAuthError } from "@/lib/utils";
 
 export default function MotDePasseOubliePage() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -36,8 +37,9 @@ export default function MotDePasseOubliePage() {
     });
 
     if (error) {
-      setServerError(error.message || "Une erreur est survenue.");
-      toast.error(error.message || "Une erreur est survenue.");
+      const formatted = formatAuthError(error.message);
+      setServerError(formatted);
+      toast.error(formatted);
       return;
     }
 

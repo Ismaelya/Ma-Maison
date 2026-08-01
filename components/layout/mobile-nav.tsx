@@ -21,6 +21,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { cn, getAvatarUrl } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 type MobileNavProps = {
   user: User | null;
@@ -71,7 +72,7 @@ export function MobileNav({ user, profile }: MobileNavProps) {
       {/* Slide-out panel */}
       <div
         className={cn(
-          "fixed right-0 top-16 z-50 h-[calc(100vh-4rem)] w-72 transform bg-white shadow-xl transition-transform duration-300 ease-in-out",
+          "fixed right-0 top-16 z-50 h-[calc(100vh-4rem)] w-72 transform bg-[var(--color-bg)] border-l border-[var(--color-border)] shadow-xl transition-transform duration-300 ease-in-out",
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
@@ -171,11 +172,15 @@ export function MobileNav({ user, profile }: MobileNavProps) {
                 Mon profil
               </NavLink>
 
-              <div className="my-2 h-px bg-neutral-200" />
+              <div className="my-2 h-px bg-[var(--color-border)]" />
+              <div className="px-3 py-1 flex items-center justify-between">
+                <span className="text-sm font-medium text-[var(--color-text)]">Thème</span>
+                <ThemeToggle showLabel />
+              </div>
 
               <button
                 onClick={handleSignOut}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
               >
                 <LogOut className="h-4 w-4" />
                 Se déconnecter
@@ -183,7 +188,7 @@ export function MobileNav({ user, profile }: MobileNavProps) {
             </>
           ) : (
             <>
-              <div className="my-2 h-px bg-neutral-200" />
+              <div className="my-2 h-px bg-[var(--color-border)]" />
 
               <NavLink
                 href="/connexion"
@@ -201,6 +206,12 @@ export function MobileNav({ user, profile }: MobileNavProps) {
               >
                 S&apos;inscrire
               </NavLink>
+
+              <div className="my-2 h-px bg-[var(--color-border)]" />
+              <div className="px-3 py-1 flex items-center justify-between">
+                <span className="text-sm font-medium text-[var(--color-text)]">Thème</span>
+                <ThemeToggle showLabel />
+              </div>
             </>
           )}
         </div>

@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastProvider } from "@/components/ui/toast-notification";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import "./globals.css";
 
 const geist = {
@@ -61,15 +62,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={geist.variable}>
-      <body className={`${geist.className} min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] antialiased`}>
-        <QueryProvider>
-          <ToastProvider>
-            <div className="flex min-h-screen flex-col">
-              {children}
-            </div>
-          </ToastProvider>
-        </QueryProvider>
+    <html lang="fr" className={geist.variable} suppressHydrationWarning>
+      <body className={`${geist.className} min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] transition-colors duration-200 antialiased`}>
+        <ThemeProvider defaultTheme="system">
+          <QueryProvider>
+            <ToastProvider>
+              <div className="flex min-h-screen flex-col">
+                {children}
+              </div>
+            </ToastProvider>
+          </QueryProvider>
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

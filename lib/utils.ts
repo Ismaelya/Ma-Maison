@@ -162,3 +162,26 @@ export function getAvatarUrl(avatarUrl: string | null | undefined, name: string 
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName)}&background=2563eb&color=ffffff&bold=true&size=256`;
 }
 
+/**
+ * Translates Supabase auth error messages into friendly French text.
+ */
+export function formatAuthError(errorMsg?: string | null): string {
+  if (!errorMsg) return "Une erreur est survenue.";
+  const lower = errorMsg.toLowerCase();
+
+  if (lower.includes("email rate limit exceeded") || lower.includes("rate limit") || lower.includes("too many requests")) {
+    return "Trop d'e-mails envoyés en peu de temps (limite de sécurité atteinte). Veuillez patienter quelques minutes avant de réessayer.";
+  }
+  if (lower.includes("invalid login credentials") || lower.includes("invalid credentials")) {
+    return "Adresse e-mail ou mot de passe incorrect.";
+  }
+  if (lower.includes("user already registered") || lower.includes("already exists")) {
+    return "Un compte existe déjà avec cette adresse e-mail.";
+  }
+  if (lower.includes("email not confirmed")) {
+    return "Veuillez confirmer votre adresse e-mail avant de vous connecter.";
+  }
+
+  return errorMsg;
+}
+
