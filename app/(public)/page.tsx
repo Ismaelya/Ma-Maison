@@ -128,7 +128,7 @@ export default async function HomePage() {
               Comment ça marche ?
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-neutral-600">
-              Ma Maison simplifie la recherche et la publication d&apos;annonces
+              Ma Maison simplifie la recherche et la publication d'annonces
               immobilières au Niger.
             </p>
           </div>

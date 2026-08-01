@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { AuditService } from "@/lib/audit/audit.service";
+import { NotificationService } from "@/lib/notifications/notification.service";
 import type { AuditAction } from "@/types";
 import { prisma } from "@/lib/prisma/client";
 
@@ -100,6 +101,29 @@ export class AdminService {
       );
     } catch {
       // Audit log optional fallback
+    }
+
+    // Send notification to the property owner
+    const ownerId = updatedProperty?.ownerId || updatedProperty?.owner_id;
+    if (ownerId && (status === "APPROVED" || status === "REJECTED")) {
+      try {
+        const title = status === "APPROVED" ? "Annonce validée !" : "Annonce refusée";
+        const message =
+          status === "APPROVED"
+            ? `Votre annonce "${updatedProperty.title}" a été validée par la modération et est maintenant visible en ligne.`
+            : `Votre annonce "${updatedProperty.title}" a été refusée par la modération.`;
+        const notifType = status === "APPROVED" ? "PROPERTY_APPROVED" : "PROPERTY_REJECTED";
+
+        await NotificationService.createNotification({
+          userId: ownerId,
+          type: notifType,
+          title,
+          message,
+          link: status === "APPROVED" ? `/recherche` : `/dashboard/annonces`,
+        });
+      } catch (notifErr) {
+        console.warn("Property moderation notification warning:", notifErr);
+      }
     }
 
     return updatedProperty;

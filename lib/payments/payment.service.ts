@@ -155,6 +155,7 @@ export class PaymentService {
    */
   static async rejectPayment(paymentId: string, adminId: string, reason?: string) {
     let payment: any = null;
+    const rejectionReason = reason || "Reçu de paiement invalide";
 
     try {
       payment = await prisma.payment.update({
@@ -163,6 +164,7 @@ export class PaymentService {
           status: "REJECTED",
           validatedBy: adminId,
           validatedAt: new Date(),
+          reference: rejectionReason,
         },
       });
     } catch {
@@ -177,6 +179,7 @@ export class PaymentService {
           status: "REJECTED",
           validatedBy: adminId,
           validatedAt: new Date().toISOString(),
+          reference: rejectionReason,
         } as any)
         .eq("id", paymentId)
         .select()
@@ -184,6 +187,21 @@ export class PaymentService {
 
       if (error && !payment) throw new Error(error.message);
       payment = data;
+    }
+
+    // Send notification to owner with rejection motif
+    if (payment?.userId) {
+      try {
+        await NotificationService.createNotification({
+          userId: payment.userId,
+          type: "PAYMENT_REJECTED",
+          title: "Paiement d'abonnement refusé",
+          message: `Votre paiement de ${payment.amount || 1500} FCFA a été refusé. Motif : ${rejectionReason}`,
+          link: "/dashboard/abonnement",
+        });
+      } catch (notifErr) {
+        console.warn("Payment rejected notification warning:", notifErr);
+      }
     }
 
     return payment;

@@ -16,6 +16,7 @@ export default async function AdminDashboardPage() {
     usersCount,
     ownersCount,
     listingsCount,
+    pendingListingsCount,
     pendingPaymentsCount,
     openReportsCount,
     approvedPaymentsData,
@@ -23,6 +24,7 @@ export default async function AdminDashboardPage() {
     supabase.from("profiles").select("id", { count: "exact" }),
     supabase.from("profiles").select("id", { count: "exact" }).or("role.eq.OWNER,role.eq.owner,role.eq.AGENCY,role.eq.agency"),
     supabase.from("properties").select("id", { count: "exact" }),
+    supabase.from("properties").select("id", { count: "exact" }).or("status.eq.PENDING,status.eq.pending"),
     supabase.from("payments").select("id", { count: "exact" }).or("status.eq.PENDING,status.eq.pending"),
     supabase.from("reports").select("id", { count: "exact" }).or("status.eq.OPEN,status.eq.open,status.eq.pending"),
     supabase.from("payments").select("amount").or("status.eq.APPROVED,status.eq.approved"),
@@ -31,6 +33,7 @@ export default async function AdminDashboardPage() {
   const totalUsers = usersCount.count ?? 0;
   const totalOwners = ownersCount.count ?? 0;
   const totalListings = listingsCount.count ?? 0;
+  const pendingListings = pendingListingsCount.count ?? 0;
   const pendingPayments = pendingPaymentsCount.count ?? 0;
   const pendingReports = openReportsCount.count ?? 0;
 
@@ -52,6 +55,30 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Action required banners */}
+      {pendingListings > 0 && (
+        <div className="rounded-2xl border border-blue-800 bg-blue-950/50 p-4 text-blue-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-6 w-6 text-blue-400 flex-shrink-0" />
+              <div>
+                <p className="font-semibold text-sm">
+                  {pendingListings} demande{pendingListings > 1 ? "s" : ""} d&apos;annonce en attente de modération / validation
+                </p>
+                <p className="text-xs text-blue-400/80">
+                  Examinez et validez les annonces soumises par les propriétaires.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/admin/annonces"
+              className="flex items-center gap-1 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-500"
+            >
+              Modérer <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
+
       {pendingPayments > 0 && (
         <div className="rounded-2xl border border-yellow-800 bg-yellow-950/50 p-4 text-yellow-200">
           <div className="flex items-center justify-between">
@@ -88,7 +115,8 @@ export default async function AdminDashboardPage() {
           icon={<Building2 className="h-5 w-5 text-green-400" />}
           label="Annonces créées"
           value={String(totalListings)}
-          subtext="Sur tout le territoire"
+          subtext={pendingListings > 0 ? `${pendingListings} en attente de validation` : "Sur tout le territoire"}
+          highlight={pendingListings > 0}
         />
         <MetricCard
           icon={<CreditCard className="h-5 w-5 text-yellow-400" />}
