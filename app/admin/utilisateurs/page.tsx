@@ -66,8 +66,8 @@ export default async function AdminUsersPage() {
                       <div className="flex items-center gap-3">
                         <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-neutral-700 bg-neutral-800">
                           <img
-                            src={getAvatarUrl(u.avatarUrl || u.avatar_url, u.name || u.full_name)}
-                            alt={u.name || u.full_name || "Avatar"}
+                            src={getAvatarUrl(u.avatarUrl || u.avatar_url, u.name)}
+                            alt={u.name || "Avatar"}
                             className="h-full w-full object-cover"
                           />
                         </div>
@@ -76,7 +76,7 @@ export default async function AdminUsersPage() {
                             href={`/admin/utilisateurs/${u.id}`}
                             className="font-semibold text-white hover:text-primary-400 flex items-center gap-1.5"
                           >
-                            {u.name || u.full_name || "Sans nom"}
+                            {u.name || "Sans nom"}
                             {u.badgeVerified && (
                               <ShieldCheck className="h-4 w-4 text-blue-400 inline" />
                             )}

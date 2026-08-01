@@ -119,7 +119,7 @@ export default async function AdminListingsPage() {
 
                         <td className="px-6 py-4">
                           <p className="font-semibold text-white">
-                            {owner.name || owner.full_name || "Propriétaire"}
+                            {owner.name || "Propriétaire"}
                           </p>
                           <p className="text-xs text-neutral-400">{owner.email}</p>
                         </td>
@@ -205,7 +205,7 @@ export default async function AdminListingsPage() {
 
                         <td className="px-6 py-4">
                           <p className="font-semibold text-white">
-                            {owner.name || owner.full_name || "Propriétaire"}
+                            {owner.name || "Propriétaire"}
                           </p>
                           <p className="text-xs text-neutral-400">{owner.email}</p>
                         </td>

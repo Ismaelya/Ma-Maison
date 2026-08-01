@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Send, Loader2, Check, CheckCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { formatRelativeTime, cn } from "@/lib/utils";
+import { formatRelativeTime, cn, getAvatarUrl } from "@/lib/utils";
 
 type ChatBoxProps = {
   currentUserId: string;
@@ -106,12 +106,8 @@ export function ChatBox({
     <div className="flex h-[600px] flex-col rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)] overflow-hidden">
       {/* Chat Header */}
       <div className="flex items-center gap-3 border-b border-[var(--border)] bg-neutral-50 px-6 py-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 font-bold text-primary-700">
-          {partnerAvatar ? (
-            <img src={partnerAvatar} alt={partnerName} className="h-full w-full rounded-full object-cover" />
-          ) : (
-            partnerName.charAt(0).toUpperCase()
-          )}
+        <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-neutral-200 shadow-sm">
+          <img src={getAvatarUrl(partnerAvatar, partnerName)} alt={partnerName} className="h-full w-full rounded-full object-cover" />
         </div>
         <div>
           <h3 className="font-bold text-neutral-900 text-sm">{partnerName}</h3>

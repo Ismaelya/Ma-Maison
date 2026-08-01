@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Bed, Bath, Maximize, Heart } from "lucide-react";
-import { cn, formatPrice, getPropertyTypeLabel, getTransactionTypeLabel, formatRelativeTime } from "@/lib/utils";
+import { cn, formatPrice, getPropertyTypeLabel, getTransactionTypeLabel, formatRelativeTime, getAvatarUrl } from "@/lib/utils";
 
 type PropertyCardProps = {
   listing: any;
@@ -27,6 +27,12 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false }: 
   const rooms = listing.rooms ?? listing.bedrooms ?? null;
   const bathrooms = listing.bathrooms ?? null;
   const surface = listing.surface ?? listing.area_sqm ?? null;
+
+  const ownerProfile = listing.profiles || listing.owner || {};
+  const ownerAvatarUrl = getAvatarUrl(ownerProfile.avatarUrl || ownerProfile.avatar_url, ownerProfile.name || ownerProfile.agencyName || ownerProfile.agency_name);
+  const ownerDisplayName = (ownerProfile.role?.toUpperCase() === "AGENCY" && (ownerProfile.agencyName || ownerProfile.agency_name))
+    ? (ownerProfile.agencyName || ownerProfile.agency_name)
+    : (ownerProfile.name || "Annonceur");
 
   const DEFAULT_PROPERTY_IMAGES: Record<string, string> = {
     VILLA: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80",
@@ -183,12 +189,16 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false }: 
               <span>{surface} m²</span>
             </div>
           )}
-          <span className="ml-auto text-xs font-medium text-neutral-500">
-            {(listing.profiles?.role?.toUpperCase() === "AGENCY" || listing.owner?.role?.toUpperCase() === "AGENCY") &&
-            (listing.profiles?.agencyName || listing.profiles?.agency_name || listing.owner?.agencyName)
-              ? (listing.profiles?.agencyName || listing.profiles?.agency_name || listing.owner?.agencyName)
-              : formatRelativeTime(listing.createdAt || listing.created_at)}
-          </span>
+          <div className="ml-auto flex items-center gap-1.5" title={ownerDisplayName}>
+            <img
+              src={ownerAvatarUrl}
+              alt={ownerDisplayName}
+              className="h-5 w-5 rounded-full object-cover border border-neutral-200"
+            />
+            <span className="text-xs font-medium text-neutral-500 line-clamp-1 max-w-[90px]">
+              {ownerDisplayName !== "Annonceur" ? ownerDisplayName : formatRelativeTime(listing.createdAt || listing.created_at)}
+            </span>
+          </div>
         </div>
       </div>
     </Link>

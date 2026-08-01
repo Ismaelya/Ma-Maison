@@ -13,8 +13,9 @@ import {
   CreditCard,
 } from "lucide-react";
 import { getUser } from "@/lib/auth/helpers";
-import { getTrialDaysRemaining, cn } from "@/lib/utils";
+import { getTrialDaysRemaining, cn, getAvatarUrl } from "@/lib/utils";
 import { DashboardSignOut } from "@/components/dashboard/sign-out-button";
+import { Logo } from "@/components/ui/logo";
 
 export default async function DashboardLayout({
   children,
@@ -84,38 +85,23 @@ export default async function DashboardLayout({
       {/* Top bar */}
       <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-white/80 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="flex items-center gap-2 transition-opacity hover:opacity-80"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-sm">
-              <Home className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-neutral-900">
-              Ma <span className="text-primary-600">Maison</span>
-            </span>
-          </Link>
+          <Logo />
 
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-neutral-900">
-                {profile.name || (profile as any).full_name || "Utilisateur"}
+                {profile.name || "Utilisateur"}
               </p>
               <p className="text-xs text-neutral-500">
                 {isOwner ? "Propriétaire" : "Locataire"}
               </p>
             </div>
-            <div
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white",
-                isOwner ? "bg-secondary-600" : "bg-primary-600"
-              )}
-            >
-              {profile.name
-                ? profile.name.charAt(0).toUpperCase()
-                : (profile as any).full_name
-                  ? (profile as any).full_name.charAt(0).toUpperCase()
-                  : "U"}
+            <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary-600 shadow-sm">
+              <img
+                src={getAvatarUrl(profile.avatarUrl || (profile as any).avatar_url, profile.name)}
+                alt={profile.name || "Profil"}
+                className="h-full w-full object-cover"
+              />
             </div>
           </div>
         </div>

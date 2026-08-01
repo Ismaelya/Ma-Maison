@@ -21,7 +21,7 @@ export default async function HomePage() {
   // Fetch featured / latest properties
   const { data: featuredListings } = await supabase
     .from("properties")
-    .select("*, property_images(url)")
+    .select("*, property_images(url), profiles(id, name, agencyName, badgeVerified, avatarUrl, phone, role)")
     .eq("status", "APPROVED")
     .order("createdAt", { ascending: false })
     .limit(6);

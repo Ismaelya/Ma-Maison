@@ -11,7 +11,7 @@ export async function Header() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  let profile: { role: string; name?: string | null; full_name?: string | null; avatarUrl?: string | null } | null = null;
+  let profile: { role: string; name?: string | null; avatarUrl?: string | null } | null = null;
   if (user) {
     const { data } = await supabase
       .from("profiles")
@@ -72,7 +72,7 @@ export async function Header() {
               >
                 <div className="relative h-9 w-9 overflow-hidden rounded-full border-2 border-blue-600 shadow-sm">
                   <img
-                    src={getAvatarUrl(profile?.avatarUrl, profile?.name || profile?.full_name)}
+                    src={getAvatarUrl(profile?.avatarUrl, profile?.name)}
                     alt={profile?.name || "Profil"}
                     className="h-full w-full object-cover"
                   />

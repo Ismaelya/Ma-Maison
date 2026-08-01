@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { getUser } from "@/lib/auth/helpers";
 import { DashboardSignOut } from "@/components/dashboard/sign-out-button";
+import { Logo } from "@/components/ui/logo";
 
 export default async function AdminLayout({
   children,
@@ -67,23 +68,20 @@ export default async function AdminLayout({
       <header className="sticky top-0 z-50 border-b border-neutral-800 bg-neutral-950/80 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="flex items-center gap-2 transition-opacity hover:opacity-80"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-red-600 to-primary-700 shadow-sm">
-                <ShieldCheck className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold tracking-tight text-white">
-                Ma Maison <span className="text-red-500 text-xs uppercase font-mono px-2 py-0.5 rounded bg-red-950 border border-red-800">Admin</span>
-              </span>
-            </Link>
+            <Logo
+              variant="light"
+              badge={
+                <span className="text-red-500 text-xs uppercase font-mono px-2 py-0.5 rounded bg-red-950 border border-red-800">
+                  Admin
+                </span>
+              }
+            />
           </div>
 
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-sm font-semibold text-white">
-                {profile.name || (profile as any).full_name || "Administrateur"}
+                {profile.name || "Administrateur"}
               </p>
               <p className="text-xs text-neutral-400">ADMINISTRATEUR SYS</p>
             </div>

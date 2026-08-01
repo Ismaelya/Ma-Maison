@@ -23,6 +23,7 @@ import {
   formatDate,
   formatRelativeTime,
   cn,
+  getAvatarUrl,
 } from "@/lib/utils";
 import { ContactProtection } from "@/components/property/contact-modal";
 import type { Listing, Profile } from "@/types";
@@ -265,15 +266,17 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                   Propriétaire
                 </h3>
                 <div className="mt-4 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary-100 text-lg font-bold text-secondary-700">
-                    {(owner.name || owner.full_name)
-                      ? (owner.name || owner.full_name).charAt(0).toUpperCase()
-                      : "P"}
+                  <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-secondary-600 shadow-sm">
+                    <img
+                      src={getAvatarUrl(owner.avatarUrl || owner.avatar_url, owner.name)}
+                      alt={owner.name || "Propriétaire"}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                   <div>
-                    <p className="font-semibold text-neutral-900">
-                      {owner.name ?? owner.full_name ?? "Propriétaire"}
-                    </p>
+                    <h3 className="font-bold text-neutral-900">
+                      {owner.name ?? "Propriétaire"}
+                    </h3>
                     <p className="text-xs text-neutral-500">
                       Membre depuis {formatDate(owner.createdAt || owner.created_at)}
                     </p>
@@ -282,7 +285,7 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
 
                 <ContactProtection
                   phone={owner.phone}
-                  ownerName={owner.name ?? owner.full_name ?? "ce propriétaire"}
+                  ownerName={owner.name ?? "ce propriétaire"}
                   ownerId={owner.id}
                   listingId={typedListing.id}
                   isAuthenticated={isAuthenticated}

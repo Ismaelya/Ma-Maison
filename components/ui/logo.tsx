@@ -8,6 +8,7 @@ type LogoProps = {
   showText?: boolean;
   href?: string;
   variant?: "default" | "light";
+  badge?: React.ReactNode;
 };
 
 export function Logo({
@@ -16,6 +17,7 @@ export function Logo({
   showText = true,
   href = "/",
   variant = "default",
+  badge,
 }: LogoProps) {
   const content = (
     <div className={cn("inline-flex items-center gap-2.5", className)}>
@@ -30,12 +32,15 @@ export function Logo({
       {showText && (
         <span
           className={cn(
-            "text-xl font-bold tracking-tight",
+            "text-xl font-bold tracking-tight inline-flex items-center gap-2",
             variant === "light" ? "text-white" : "text-neutral-900"
           )}
         >
-          <span className={variant === "light" ? "text-white" : "text-[var(--color-text)]"}>Ma</span>{" "}
-          <span className="text-[var(--color-primary)]">Maison</span>
+          <span>
+            <span className={variant === "light" ? "text-white" : "text-[var(--color-text)]"}>Ma</span>{" "}
+            <span className="text-[var(--color-primary)]">Maison</span>
+          </span>
+          {badge}
         </span>
       )}
     </div>

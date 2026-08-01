@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { AlertOctagon, Mail, Home } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 export default function AccountSuspendedPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 px-4 py-12">
       <div className="w-full max-w-md text-center animate-fade-in-up">
+        <div className="mb-6 flex justify-center">
+          <Logo />
+        </div>
         {/* Icon */}
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 text-red-600 shadow-sm">
           <AlertOctagon className="h-10 w-10" />

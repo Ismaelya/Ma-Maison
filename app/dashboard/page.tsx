@@ -55,7 +55,7 @@ export default async function DashboardPage() {
       {/* Welcome */}
       <div>
         <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">
-          Bienvenue, {(profile.name || (profile as any).full_name)?.split(" ")[0] ?? "Utilisateur"} 👋
+          Bienvenue, {profile.name?.split(" ")[0] ?? "Utilisateur"} 👋
         </h1>
         <p className="mt-1 text-neutral-600">
           {isOwner

@@ -130,7 +130,7 @@ export function PaymentVerificationModal({
               {/* Owner details */}
               <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
                 <p className="text-xs font-semibold uppercase text-neutral-400">Propriétaire</p>
-                <p className="font-bold text-white mt-1">{profile.name || profile.full_name || "Sans nom"}</p>
+                <p className="font-bold text-white mt-1">{profile.name || "Sans nom"}</p>
                 <p className="text-xs text-neutral-400">{profile.email} · {profile.phone || "Pas de téléphone"}</p>
                 <p className="mt-2 text-xs text-neutral-500">Demande créée le {formatDate(payment.createdAt || payment.created_at)}</p>
               </div>

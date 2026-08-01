@@ -20,14 +20,14 @@ export default async function AdminReportDetailPage({
 
   let { data: report } = await supabase
     .from("reports")
-    .select("*, reporter:profiles!userId(id, name, full_name, email), property:properties!propertyId(id, title, city)")
+    .select("*, reporter:profiles!userId(id, name, email), property:properties!propertyId(id, title, city)")
     .eq("id", id)
     .single();
 
   if (!report) {
     const { data: legacy } = await supabase
       .from("reports")
-      .select("*, reporter:profiles!reporter_id(id, full_name, email), listing:listings!listing_id(id, title, city)")
+      .select("*, reporter:profiles!reporter_id(id, name, email), listing:listings!listing_id(id, title, city)")
       .eq("id", id)
       .single();
     report = legacy as any;
@@ -71,7 +71,7 @@ export default async function AdminReportDetailPage({
 
           <div className="border-t border-neutral-800 pt-3">
             <span className="text-xs font-semibold uppercase text-neutral-500">Signalé par</span>
-            <p className="font-bold text-white">{reporter.name || reporter.full_name || "Utilisateur"}</p>
+            <p className="font-bold text-white">{reporter.name || "Utilisateur"}</p>
             <p className="text-xs text-neutral-400">{reporter.email}</p>
           </div>
 

@@ -37,6 +37,7 @@ export class PropertyRepository {
 
       const results = await prisma.property.findMany({
         where: whereClause,
+        include: { owner: true, images: true },
         orderBy: { createdAt: "desc" },
       });
 

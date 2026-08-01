@@ -3,7 +3,7 @@ import Link from "next/link";
 import { MessageSquare, Building2 } from "lucide-react";
 import { requireAuth } from "@/lib/auth/helpers";
 import { MessageService } from "@/lib/messaging/message.service";
-import { formatRelativeTime, cn } from "@/lib/utils";
+import { formatRelativeTime, cn, getAvatarUrl } from "@/lib/utils";
 import { ChatBox } from "@/components/dashboard/chat-box";
 
 export const metadata: Metadata = {
@@ -28,7 +28,7 @@ export default async function MessagesPage({
   const formattedConversations = rawConversations.map((conv: any) => {
     const isTenant = conv.tenantId === profile.id;
     const partner = isTenant ? conv.owner : conv.tenant;
-    const partnerName = partner?.name || partner?.full_name || "Utilisateur";
+    const partnerName = partner?.name || "Utilisateur";
     const partnerAvatar = partner?.avatarUrl || partner?.avatar_url || null;
     const messages = Array.isArray(conv.messages) ? conv.messages : [];
 
@@ -96,12 +96,8 @@ export default async function MessagesPage({
                         : "hover:bg-neutral-50"
                     )}
                   >
-                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-700">
-                      {conv.partnerAvatar ? (
-                        <img src={conv.partnerAvatar} alt={conv.partnerName} className="h-full w-full rounded-full object-cover" />
-                      ) : (
-                        conv.partnerName.charAt(0).toUpperCase()
-                      )}
+                    <div className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-neutral-200 shadow-sm">
+                      <img src={getAvatarUrl(conv.partnerAvatar, conv.partnerName)} alt={conv.partnerName} className="h-full w-full rounded-full object-cover" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">

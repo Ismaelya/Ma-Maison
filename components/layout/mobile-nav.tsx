@@ -20,14 +20,14 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { cn } from "@/lib/utils";
+import { cn, getAvatarUrl } from "@/lib/utils";
 
 type MobileNavProps = {
   user: User | null;
   profile: {
     role: string;
     name?: string | null;
-    full_name?: string | null;
+    avatarUrl?: string | null;
     account_status?: string;
     subscription_status?: string;
   } | null;
@@ -47,7 +47,7 @@ export function MobileNav({ user, profile }: MobileNavProps) {
     router.push("/");
   }
 
-  const profileName = (profile?.name || profile?.full_name);
+  const profileName = profile?.name;
 
   return (
     <div className="md:hidden">
@@ -79,15 +79,12 @@ export function MobileNav({ user, profile }: MobileNavProps) {
           {user && profile && (
             <div className="mb-4 rounded-xl bg-neutral-50 p-4">
               <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white",
-                    isOwner ? "bg-secondary-600" : "bg-primary-600"
-                  )}
-                >
-                  {profileName
-                    ? profileName.charAt(0).toUpperCase()
-                    : "U"}
+                <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border-2 border-primary-600 shadow-sm">
+                  <img
+                    src={getAvatarUrl(profile?.avatarUrl, profileName)}
+                    alt={profileName || "Profil"}
+                    className="h-full w-full object-cover"
+                  />
                 </div>
                 <div>
                   <p className="font-semibold text-neutral-900">

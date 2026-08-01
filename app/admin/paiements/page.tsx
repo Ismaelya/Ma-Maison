@@ -67,7 +67,7 @@ export default async function AdminPaymentsPage() {
                       <tr key={p.id} className="hover:bg-neutral-900/50 transition-colors">
                         <td className="px-6 py-4">
                           <p className="font-semibold text-white">
-                            {profile.name || profile.full_name || "Sans nom"}
+                            {profile.name || "Sans nom"}
                           </p>
                           <p className="text-xs text-neutral-400">{profile.email}</p>
                           {profile.phone && (
@@ -135,7 +135,7 @@ export default async function AdminPaymentsPage() {
                       <tr key={p.id} className="hover:bg-neutral-900/50 transition-colors">
                         <td className="px-6 py-4">
                           <p className="font-semibold text-white">
-                            {profile.name || profile.full_name || "Sans nom"}
+                            {profile.name || "Sans nom"}
                           </p>
                           <p className="text-xs text-neutral-400">{profile.email}</p>
                         </td>

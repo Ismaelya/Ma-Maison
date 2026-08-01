@@ -14,7 +14,7 @@ export default async function AdminReportsPage() {
 
   const { data: reportsData, error } = await supabase
     .from("reports")
-    .select("*, reporter:profiles!userId(id, name, full_name, email), property:properties!propertyId(id, title, city)")
+    .select("*, reporter:profiles!userId(id, name, email), property:properties!propertyId(id, title, city)")
     .order("createdAt", { ascending: false });
 
   let reports = (reportsData ?? []) as any[];
@@ -22,7 +22,7 @@ export default async function AdminReportsPage() {
   if (reports.length === 0) {
     const { data: fallback } = await supabase
       .from("reports")
-      .select("*, reporter:profiles!reporter_id(id, full_name, email), listing:listings!listing_id(id, title, city)")
+      .select("*, reporter:profiles!reporter_id(id, name, email), listing:listings!listing_id(id, title, city)")
       .order("created_at", { ascending: false });
     reports = (fallback ?? []) as any[];
   }
@@ -84,7 +84,7 @@ export default async function AdminReportsPage() {
 
                       <td className="px-6 py-4">
                         <p className="font-semibold text-white">
-                          {reporter.name || reporter.full_name || "Utilisateur"}
+                          {reporter.name || "Utilisateur"}
                         </p>
                         <p className="text-xs text-neutral-400">{reporter.email}</p>
                       </td>

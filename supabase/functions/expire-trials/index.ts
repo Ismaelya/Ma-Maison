@@ -46,7 +46,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: expiredOwners, error: fetchError } = await supabase
       .from("profiles")
-      .select("id, email, full_name, trial_started_at")
+      .select("id, email, name, trial_started_at")
       .eq("role", "owner")
       .eq("status", "active")
       .not("trial_started_at", "is", null)

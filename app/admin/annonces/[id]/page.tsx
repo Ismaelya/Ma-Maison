@@ -91,7 +91,7 @@ export default async function AdminPropertyDetailPage({
 
           <div className="rounded-xl border border-neutral-900 bg-neutral-900/50 p-4">
             <span className="text-xs font-semibold uppercase text-neutral-500">Propriétaire</span>
-            <p className="font-bold text-white mt-1">{owner.name || owner.full_name || "Propriétaire"}</p>
+            <p className="font-bold text-white mt-1">{owner.name || "Propriétaire"}</p>
             <p className="text-xs text-neutral-400">{owner.email}</p>
           </div>
 

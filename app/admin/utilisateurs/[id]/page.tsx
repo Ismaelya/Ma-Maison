@@ -53,14 +53,14 @@ export default async function AdminUserDetailPage({
           <div className="flex items-center gap-4">
             <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-primary-500 bg-neutral-900 shadow-md">
               <img
-                src={getAvatarUrl(u.avatarUrl || u.avatar_url, u.name || u.full_name)}
-                alt={u.name || u.full_name || "Avatar"}
+                src={getAvatarUrl(u.avatarUrl || u.avatar_url, u.name)}
+                alt={u.name || "Avatar"}
                 className="h-full w-full object-cover"
               />
             </div>
             <div>
               <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                {u.name || u.full_name || "Utilisateur"}
+                {u.name || "Utilisateur"}
                 {u.badgeVerified && (
                   <ShieldCheck className="h-5 w-5 text-blue-400" />
                 )}
