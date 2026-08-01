@@ -25,12 +25,25 @@ export default async function AdminPropertyDetailPage({
     .single();
 
   if (!property) {
-    const { data: legacy } = await supabase
+    const { data: rawProp } = await supabase
       .from("properties")
-      .select("*, profiles(id, name, email, phone), property_images(*)")
+      .select("*, property_images(*)")
       .eq("id", id)
       .single();
-    property = legacy as any;
+
+    if (rawProp) {
+      const ownerId = rawProp.ownerId || rawProp.owner_id || rawProp.userId;
+      if (ownerId) {
+        const { data: ownerProfile } = await supabase
+          .from("profiles")
+          .select("id, name, email, phone")
+          .eq("id", ownerId)
+          .single();
+        property = { ...rawProp, owner: ownerProfile };
+      } else {
+        property = rawProp as any;
+      }
+    }
   }
 
   if (!property) {

@@ -22,7 +22,30 @@ export default async function AdminListingsPage() {
       .from("properties")
       .select("*, profiles(id, name, email, phone)")
       .order("createdAt", { ascending: false });
-    if (retryData) listingsData = retryData;
+    if (retryData) {
+      listingsData = retryData;
+      error = null;
+    }
+  }
+
+  if (error || !listingsData || listingsData.length === 0) {
+    const { data: rawProps, error: rawErr } = await supabase
+      .from("properties")
+      .select("*")
+      .order("createdAt", { ascending: false });
+
+    if (rawProps && rawProps.length > 0) {
+      const { data: allProfiles } = await supabase
+        .from("profiles")
+        .select("id, name, email, phone");
+      const profileMap = new Map((allProfiles ?? []).map((p) => [p.id, p]));
+
+      listingsData = rawProps.map((p) => ({
+        ...p,
+        owner: profileMap.get(p.ownerId || p.owner_id || p.userId || p.user_id),
+      }));
+      error = rawErr;
+    }
   }
 
   const listings = (listingsData ?? []) as any[];
