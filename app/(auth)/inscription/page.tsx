@@ -109,7 +109,7 @@ export default function InscriptionPage() {
             </div>
             <h2 className="text-h4 font-bold text-emerald-900">Inscription réussie !</h2>
             <p className="text-sm text-emerald-700 max-w-md mx-auto">
-              Votre compte a été créé avec succès. Si vous êtes propriétaire ou agence, votre **essai gratuit de 30 jours** est automatiquement actif.
+              Votre compte a été créé avec succès.
             </p>
             <div className="pt-4">
               <Button
