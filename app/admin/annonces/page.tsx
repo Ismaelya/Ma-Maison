@@ -14,13 +14,13 @@ export default async function AdminListingsPage() {
 
   let { data: listingsData, error } = await supabase
     .from("properties")
-    .select("*, owner:profiles!ownerId(id, name, full_name, email)")
+    .select("*, owner:profiles!ownerId(id, name, email, phone)")
     .order("createdAt", { ascending: false });
 
   if (error || !listingsData) {
     const { data: retryData } = await supabase
       .from("properties")
-      .select("*, profiles(id, name, full_name, email)")
+      .select("*, profiles(id, name, email, phone)")
       .order("createdAt", { ascending: false });
     if (retryData) listingsData = retryData;
   }

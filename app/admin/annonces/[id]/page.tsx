@@ -20,14 +20,14 @@ export default async function AdminPropertyDetailPage({
 
   let { data: property } = await supabase
     .from("properties")
-    .select("*, profiles!inner(id, name, full_name, email, phone), property_images(*)")
+    .select("*, owner:profiles!ownerId(id, name, email, phone), property_images(*)")
     .eq("id", id)
     .single();
 
   if (!property) {
     const { data: legacy } = await supabase
-      .from("listings")
-      .select("*, profiles!inner(id, name, full_name, email, phone)")
+      .from("properties")
+      .select("*, profiles(id, name, email, phone), property_images(*)")
       .eq("id", id)
       .single();
     property = legacy as any;

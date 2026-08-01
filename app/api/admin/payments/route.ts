@@ -17,8 +17,8 @@ export async function GET() {
   const supabaseAdmin = await createAdminClient();
   const { data } = await supabaseAdmin
     .from("payments")
-    .select("*, profiles!inner(id, name, full_name, email, phone)")
-    .order("created_at", { ascending: false });
+    .select("*, user:profiles!userId(id, name, email, phone)")
+    .order("createdAt", { ascending: false });
 
   return apiSuccess(data ?? []);
 }
