@@ -93,7 +93,7 @@ export default async function AdminLayout({
           {/* Admin Sidebar */}
           <aside className="w-full lg:w-64 lg:flex-shrink-0">
             <nav className="space-y-1 rounded-2xl border border-neutral-800 bg-neutral-950 p-3 shadow-xl">
-              {adminNavItems.map((item) => (
+              {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href as any}

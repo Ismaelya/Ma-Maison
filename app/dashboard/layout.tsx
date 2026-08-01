@@ -36,10 +36,10 @@ export default async function DashboardLayout({
 
   const roleStr = String(profile.role || "").toUpperCase();
   const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
-  const daysRemaining = getTrialDaysRemaining(profile.created_at || (profile as any).createdAt);
-  const isExpired = isOwner && (profile as any).subscriptionStatus !== "ACTIVE" && daysRemaining <= 0;
+  const trialDays = getTrialDaysRemaining(profile.createdAt || (profile as any).created_at);
+  const isExpired = isOwner && (profile as any).subscriptionStatus !== "ACTIVE" && trialDays <= 0;
 
-  const navigation = [
+  const navItems = [
     {
       href: "/dashboard",
       icon: LayoutDashboard,
@@ -108,8 +108,8 @@ export default async function DashboardLayout({
 
       {/* Trial warning banner */}
       {isOwner && isExpired && (
-        <div className="border-b border-red-200 bg-red-50 px-4 py-3">
-          <div className="mx-auto flex max-w-7xl items-center gap-3 text-sm text-red-700">
+        <div className="border-b border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-900 px-4 py-3">
+          <div className="mx-auto flex max-w-7xl items-center gap-3 text-sm text-red-700 dark:text-red-300">
             <AlertTriangle className="h-5 w-5 flex-shrink-0" />
             <p>
               <strong>Votre période d&apos;essai est terminée.</strong> Vos annonces
@@ -120,8 +120,8 @@ export default async function DashboardLayout({
       )}
 
       {isOwner && !isExpired && trialDays !== null && trialDays <= 7 && trialDays > 0 && (
-        <div className="border-b border-yellow-200 bg-yellow-50 px-4 py-3">
-          <div className="mx-auto flex max-w-7xl items-center gap-3 text-sm text-yellow-800">
+        <div className="border-b border-yellow-200 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-900 px-4 py-3">
+          <div className="mx-auto flex max-w-7xl items-center gap-3 text-sm text-yellow-800 dark:text-yellow-300">
             <AlertTriangle className="h-5 w-5 flex-shrink-0" />
             <p>
               <strong>Il vous reste {trialDays} jour{trialDays > 1 ? "s" : ""} d&apos;essai.</strong>{" "}
@@ -135,12 +135,12 @@ export default async function DashboardLayout({
         <div className="flex flex-col gap-8 lg:flex-row">
           {/* Sidebar navigation */}
           <aside className="w-full lg:w-60 lg:flex-shrink-0">
-            <nav className="space-y-1 rounded-2xl border border-[var(--border)] bg-white p-3 shadow-[var(--shadow-card)]">
+            <nav className="space-y-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3 shadow-[var(--shadow-card)]">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href as any}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-muted)] hover:text-primary-600"
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
