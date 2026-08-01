@@ -174,21 +174,6 @@ export default async function SubscriptionPage() {
           </p>
 
           <div className="space-y-3">
-            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white p-1 shadow-sm border border-blue-100">
-                    <img src="/images/wave.png" alt="Wave" className="h-full w-full object-contain" />
-                  </div>
-                  <span className="font-bold text-blue-900">Wave</span>
-                </div>
-                <span className="rounded-lg bg-blue-200/80 px-3 py-1 text-xs font-bold text-blue-800">
-                  {wavePhone}
-                </span>
-              </div>
-              <p className="mt-2 text-xs text-blue-700"></p>
-            </div>
-
             <div className="rounded-xl border border-orange-200 bg-orange-50/50 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -217,6 +202,21 @@ export default async function SubscriptionPage() {
                 </span>
               </div>
               <p className="mt-2 text-xs text-purple-700"></p>
+            </div>
+
+            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white p-1 shadow-sm border border-blue-100">
+                    <img src="/images/wave.png" alt="Wave" className="h-full w-full object-contain" />
+                  </div>
+                  <span className="font-bold text-blue-900">Wave</span>
+                </div>
+                <span className="rounded-lg bg-blue-200/80 px-3 py-1 text-xs font-bold text-blue-800">
+                  {wavePhone}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-blue-700"></p>
             </div>
           </div>
 

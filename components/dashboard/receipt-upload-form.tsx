@@ -6,7 +6,7 @@ import { Loader2, Upload, FileText, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export function ReceiptUploadForm() {
-  const [provider, setProvider] = useState<"wave" | "amanata" | "mynita">("wave");
+  const [provider, setProvider] = useState<"amanata" | "mynita" | "wave">("amanata");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -131,9 +131,9 @@ export function ReceiptUploadForm() {
         </label>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { id: "wave", name: "Wave", logo: "/images/wave.png", color: "border-blue-500 bg-blue-50 text-blue-700" },
             { id: "amanata", name: "Amanata", logo: "/images/amana.jpg", color: "border-orange-500 bg-orange-50 text-orange-700" },
             { id: "mynita", name: "Mynita", logo: "/images/nita.png", color: "border-purple-500 bg-purple-50 text-purple-700" },
+            { id: "wave", name: "Wave", logo: "/images/wave.png", color: "border-blue-500 bg-blue-50 text-blue-700" },
           ].map((item) => (
             <button
               key={item.id}
