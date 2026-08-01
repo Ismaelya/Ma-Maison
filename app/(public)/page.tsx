@@ -46,7 +46,7 @@ export default async function HomePage() {
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 backdrop-blur-sm">
               <Star className="h-4 w-4 text-yellow-300" />
               <span className="text-sm font-medium text-white/90">
-                La plateforme immobilière #1 au Niger
+                La plateforme immobilière au Niger
               </span>
             </div>
 
