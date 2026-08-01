@@ -131,21 +131,24 @@ export function ReceiptUploadForm() {
         </label>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { id: "wave", name: "Wave", color: "border-blue-500 bg-blue-50 text-blue-700" },
-            { id: "amanata", name: "Amanata", color: "border-orange-500 bg-orange-50 text-orange-700" },
-            { id: "mynita", name: "Mynita", color: "border-purple-500 bg-purple-50 text-purple-700" },
+            { id: "wave", name: "Wave", logo: "/images/wave.png", color: "border-blue-500 bg-blue-50 text-blue-700" },
+            { id: "amanata", name: "Amanata", logo: "/images/amana.jpg", color: "border-orange-500 bg-orange-50 text-orange-700" },
+            { id: "mynita", name: "Mynita", logo: "/images/nita.png", color: "border-purple-500 bg-purple-50 text-purple-700" },
           ].map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setProvider(item.id as any)}
-              className={`rounded-xl border-2 py-3 text-center font-bold text-sm transition-all ${
+              className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 py-3 px-2 font-bold text-xs sm:text-sm transition-all ${
                 provider === item.id
                   ? item.color
                   : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-neutral-100"
               }`}
             >
-              {item.name}
+              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5 shadow-sm border border-neutral-200">
+                <img src={item.logo} alt={item.name} className="h-full w-full object-contain" />
+              </div>
+              <span>{item.name}</span>
             </button>
           ))}
         </div>

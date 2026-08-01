@@ -176,32 +176,47 @@ export default async function SubscriptionPage() {
           <div className="space-y-3">
             <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-blue-900">Wave Niger</span>
-                <span className="rounded bg-blue-200 px-2 py-0.5 text-xs font-bold text-blue-800">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white p-1 shadow-sm border border-blue-100">
+                    <img src="/images/wave.png" alt="Wave" className="h-full w-full object-contain" />
+                  </div>
+                  <span className="font-bold text-blue-900">Wave</span>
+                </div>
+                <span className="rounded-lg bg-blue-200/80 px-3 py-1 text-xs font-bold text-blue-800">
                   {wavePhone}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-blue-700">Nom du compte : Ma Maison NE</p>
+              <p className="mt-2 text-xs text-blue-700">Nom du compte : Ma Maison NE</p>
             </div>
 
             <div className="rounded-xl border border-orange-200 bg-orange-50/50 p-4">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-orange-900">Amanata Mobile</span>
-                <span className="rounded bg-orange-200 px-2 py-0.5 text-xs font-bold text-orange-800">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white p-1 shadow-sm border border-orange-100">
+                    <img src="/images/amana.jpg" alt="Amanata" className="h-full w-full object-contain" />
+                  </div>
+                  <span className="font-bold text-orange-900">Amanata</span>
+                </div>
+                <span className="rounded-lg bg-orange-200/80 px-3 py-1 text-xs font-bold text-orange-800">
                   {amanataPhone}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-orange-700">Nom du compte : Ma Maison NE</p>
+              <p className="mt-2 text-xs text-orange-700">Nom du compte : Ma Maison NE</p>
             </div>
 
             <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-4">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-purple-900">Mynita Service</span>
-                <span className="rounded bg-purple-200 px-2 py-0.5 text-xs font-bold text-purple-800">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white p-1 shadow-sm border border-purple-100">
+                    <img src="/images/nita.png" alt="Mynita" className="h-full w-full object-contain" />
+                  </div>
+                  <span className="font-bold text-purple-900">Mynita</span>
+                </div>
+                <span className="rounded-lg bg-purple-200/80 px-3 py-1 text-xs font-bold text-purple-800">
                   {mynitaPhone}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-purple-700">Nom du compte : Ma Maison NE</p>
+              <p className="mt-2 text-xs text-purple-700">Nom du compte : Ma Maison NE</p>
             </div>
           </div>
 
