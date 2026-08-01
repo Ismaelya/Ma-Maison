@@ -105,7 +105,7 @@ export default async function SubscriptionPage() {
             {status === "active" && (activeSub?.endDate || activeSub?.expires_at) ? (
               <div>
                 <p className="text-sm font-semibold text-green-900">
-                  Votre abonnement Premium est valide jusqu&apos;au {formatDate(activeSub.endDate || activeSub.expires_at)}.
+                  Votre abonnement Premium est valide jusqu'au {formatDate(activeSub.endDate || activeSub.expires_at)}.
                 </p>
                 <p className="mt-1 text-xs text-green-700">
                   Vos annonces bénéficient de la visibilité normale et du badge propriétaire vérifié.
@@ -114,7 +114,7 @@ export default async function SubscriptionPage() {
             ) : status === "trial" ? (
               <div>
                 <p className="text-sm font-semibold text-blue-900">
-                  Période d&apos;essai gratuite : {trialDays} jour{trialDays && trialDays > 1 ? "s" : ""} restant{trialDays && trialDays > 1 ? "s" : ""}.
+                  Période d'essai gratuite : {trialDays} jour{trialDays && trialDays > 1 ? "s" : ""} restant{trialDays && trialDays > 1 ? "s" : ""}.
                 </p>
                 <p className="mt-1 text-xs text-blue-700">
                   Profitez de la publication illimitée et recevez des messages de locataires.
@@ -123,7 +123,7 @@ export default async function SubscriptionPage() {
             ) : (
               <div>
                 <p className="text-sm font-semibold text-red-900">
-                  Votre période d&apos;essai a expiré. Vos annonces ne sont plus visibles publiquement.
+                  Votre période d'essai a expiré. Vos annonces ne sont plus visibles publiquement.
                 </p>
                 <p className="mt-1 text-xs text-red-700">
                   Soumettez votre reçu de paiement ci-dessous pour réactiver vos annonces sous 24h.
@@ -141,7 +141,7 @@ export default async function SubscriptionPage() {
           <ul className="mt-4 space-y-2 text-xs text-neutral-700">
             <li className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-secondary-600 flex-shrink-0" />
-              Publication d&apos;annonces illimitée
+              Publication d'annonces illimitée
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-secondary-600 flex-shrink-0" />
@@ -169,8 +169,8 @@ export default async function SubscriptionPage() {
           </h2>
 
           <p className="text-sm text-neutral-600 leading-relaxed">
-            Pour souscrire ou renouveler votre abonnement Premium (**{formatPrice(subPrice)} / mois**),
-            effectuez le virement du montant exact vers l&apos;un des comptes ci-dessous :
+            Pour souscrire ou renouveler votre abonnement Premium ({formatPrice(subPrice)} / mois),
+            effectuez le dépôt du montant exact vers l'un des comptes ci-dessous :
           </p>
 
           <div className="space-y-3">
@@ -186,7 +186,7 @@ export default async function SubscriptionPage() {
                   {wavePhone}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-blue-700">Nom du compte : Ma Maison NE</p>
+              <p className="mt-2 text-xs text-blue-700"></p>
             </div>
 
             <div className="rounded-xl border border-orange-200 bg-orange-50/50 p-4">
@@ -201,7 +201,7 @@ export default async function SubscriptionPage() {
                   {amanataPhone}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-orange-700">Nom du compte : Ma Maison NE</p>
+              <p className="mt-2 text-xs text-orange-700"></p>
             </div>
 
             <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-4">
@@ -216,15 +216,15 @@ export default async function SubscriptionPage() {
                   {mynitaPhone}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-purple-700">Nom du compte : Ma Maison NE</p>
+              <p className="mt-2 text-xs text-purple-700"></p>
             </div>
           </div>
 
           <div className="rounded-xl bg-neutral-100 p-4 text-xs text-neutral-600 space-y-1">
             <p className="font-semibold text-neutral-900">Procédure de validation :</p>
             <ol className="list-decimal list-inside space-y-1">
-              <li>Effectuez le virement de **{formatPrice(subPrice)}**</li>
-              <li>Prenez une capture d&apos;écran ou une photo nette du reçu</li>
+              <li>Effectuez le virement de {formatPrice(subPrice)}</li>
+              <li>Prenez une capture d'écran ou une photo nette du reçu</li>
               <li>Téléversez le reçu dans le formulaire ci-contre</li>
             </ol>
           </div>
@@ -233,7 +233,7 @@ export default async function SubscriptionPage() {
         {/* Upload Form */}
         <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
           <h2 className="text-lg font-bold text-neutral-900 mb-4">
-            Soumettre un reçu de paiement
+            Soumettre le reçu de paiement
           </h2>
           <ReceiptUploadForm />
         </div>
