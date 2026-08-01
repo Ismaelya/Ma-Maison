@@ -44,9 +44,6 @@ export default async function SubscriptionPage() {
     .order("createdAt", { ascending: false });
 
   const paymentList = (payments ?? []) as Payment[];
-  const latestRejectedPayment = paymentList.find(
-    (p: any) => String(p.status).toUpperCase() === "REJECTED"
-  );
   const trialDays = activeSub?.endDate ? getTrialDaysRemaining(activeSub.endDate) : null;
   const status = (activeSub?.status ?? "EXPIRED").toLowerCase();
 
@@ -161,22 +158,6 @@ export default async function SubscriptionPage() {
           </ul>
         </div>
       </div>
-
-      {/* Rejected Payment Warning Callout */}
-      {latestRejectedPayment && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-900 shadow-sm animate-fade-in flex items-start gap-3">
-          <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-bold text-sm">Dernière demande de paiement refusée par l'administration</p>
-            <p className="text-xs text-red-700">
-              Motif du refus : <span className="font-bold italic">« {latestRejectedPayment.reference || "Reçu de paiement non conforme"} »</span>
-            </p>
-            <p className="text-xs text-red-600/90 pt-1">
-              Veuillez vérifier votre reçu et soumettre un nouveau fichier ci-dessous.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Manual Payment Instructions & Upload */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
