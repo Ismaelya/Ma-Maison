@@ -15,7 +15,7 @@ const geist = {
 export const metadata: Metadata = {
   title: {
     template: "%s | Ma Maison",
-    default: "Ma Maison — Trouvez votre logement idéal au Niger",
+    default: "Ma Maison",
   },
   description:
     "Ma Maison est la plateforme immobilière de référence au Niger. Trouvez des appartements, maisons, studios et terrains à louer ou à acheter à Niamey et dans tout le Niger.",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "fr_NE",
     siteName: "Ma Maison",
-    title: "Ma Maison — Trouvez votre logement idéal au Niger",
+    title: "Ma Maison",
     description:
       "La plateforme immobilière de référence au Niger. Publiez et trouvez des annonces immobilières facilement.",
   },

@@ -63,7 +63,7 @@ test.describe("Authentication Flows", () => {
   test("should display landing page with hero section", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.getByText("Trouvez votre logement idéal au Niger")
+      page.getByText("Ma Maison")
     ).toBeVisible();
   });
 

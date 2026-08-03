@@ -1,7 +1,7 @@
 {
   "name": "Ma Maison",
   "short_name": "Ma Maison",
-  "description": "Ma Maison — Trouvez votre logement idéal au Niger",
+  "description": "Ma Maison",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
