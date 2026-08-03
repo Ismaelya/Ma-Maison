@@ -7,6 +7,7 @@ const FREE_DAILY_LIMIT = 10;
 
 export async function POST(request: Request) {
   try {
+    // ── Authenticated user client (subject to RLS) ────────────────────────
     const supabase = await createClient();
     const {
       data: { user },
@@ -15,10 +16,21 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { conversationId, content } = body;
 
-    const senderId = user?.id || "89c59896-1b3a-49a4-9b37-b1345a48091d";
+    if (!conversationId || !content) {
+      return NextResponse.json(
+        { error: "conversationId et content requis." },
+        { status: 400 }
+      );
+    }
+
+    if (!user) {
+      return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+    }
+
+    const senderId = user.id;
     const identifier = `messages:${senderId}`;
 
-    // Rate limiting anti-spam check (10 messages max per minute)
+    // ── Rate limiting anti-spam (10 messages / minute) ────────────────────
     const rateLimit = await messagingRateLimiter.check(identifier);
     if (!rateLimit.success) {
       return NextResponse.json(
@@ -30,18 +42,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!conversationId || !content) {
-      return NextResponse.json(
-        { error: "conversationId et content requis." },
-        { status: 400 }
-      );
-    }
-
-    const supabaseAdmin = await createAdminClient();
-
-    // --- Free tier daily messaging limit ---
-    // Only applies to OWNER / AGENCY without an ACTIVE subscription
-    const { data: senderProfile } = await supabaseAdmin
+    // ── Read sender role via authenticated client (user reads own profile) ─
+    // RLS: profiles are readable by the owner themselves.
+    const { data: senderProfile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", senderId)
@@ -49,25 +52,24 @@ export async function POST(request: Request) {
 
     const senderRole = String(senderProfile?.role ?? "").toUpperCase();
 
+    // ── Free-tier daily limit (OWNER / AGENCY only) ───────────────────────
     if (senderRole === "OWNER" || senderRole === "AGENCY") {
-      // Check for an active Premium subscription
-      const { data: activeSub } = await supabaseAdmin
-        .from("subscriptions")
-        .select("id")
-        .eq("userId", senderId)
-        .eq("status", "ACTIVE")
-        .maybeSingle();
+      // Use a narrow SECURITY DEFINER RPC — never a generic admin client.
+      // has_active_subscription() reads subscriptions bypassing RLS,
+      // but returns only a boolean: callers cannot extract other users' data.
+      const { data: isPremium, error: subErr } = await supabase.rpc(
+        "has_active_subscription",
+        { p_user_id: senderId }
+      );
 
-      if (!activeSub) {
-        // Count messages sent in the last 24 hours
-        const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const { count } = await supabaseAdmin
-          .from("messages")
-          .select("id", { count: "exact", head: true })
-          .eq("senderId", senderId)
-          .gte("createdAt", since);
+      if (!subErr && !isPremium) {
+        // count_daily_messages() counts own messages via SECURITY DEFINER.
+        const { data: used24h, error: countErr } = await supabase.rpc(
+          "count_daily_messages",
+          { p_user_id: senderId }
+        );
 
-        const used = count ?? 0;
+        const used = (countErr ? 0 : (used24h ?? 0)) as number;
 
         if (used >= FREE_DAILY_LIMIT) {
           return NextResponse.json(
@@ -83,8 +85,10 @@ export async function POST(request: Request) {
           );
         }
 
-        // Insert message
-        const { data: message, error: msgErr } = await supabaseAdmin
+        // ── INSERT via authenticated client → RLS messages_participants_send enforced ──
+        // Policy: senderId = auth.uid() AND user is tenant OR owner of conversation.
+        // This prevents inserting into conversations the sender doesn't belong to.
+        const { data: message, error: msgErr } = await supabase
           .from("messages")
           .insert({
             id: crypto.randomUUID(),
@@ -101,8 +105,9 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: msgErr.message }, { status: 400 });
         }
 
-        // Notify recipient
-        await notifyRecipient(supabaseAdmin, conversationId, senderId, content);
+        // Notify recipient — admin client is legitimate here: the server
+        // needs to find the other participant's ID to write their notification.
+        await notifyRecipient(conversationId, senderId, content);
 
         return NextResponse.json({
           success: true,
@@ -117,8 +122,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // --- Premium / TENANT path — no daily limit ---
-    const { data: message, error: msgErr } = await supabaseAdmin
+    // ── Premium / TENANT path — INSERT via authenticated client (RLS enforced) ─
+    const { data: message, error: msgErr } = await supabase
       .from("messages")
       .insert({
         id: crypto.randomUUID(),
@@ -135,7 +140,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: msgErr.message }, { status: 400 });
     }
 
-    await notifyRecipient(supabaseAdmin, conversationId, senderId, content);
+    await notifyRecipient(conversationId, senderId, content);
 
     return NextResponse.json({
       success: true,
@@ -147,28 +152,38 @@ export async function POST(request: Request) {
   }
 }
 
+/**
+ * Sends a NEW_MESSAGE notification to the other participant.
+ * Uses admin client here — this is the only legitimate use of elevated privilege
+ * in this route: the server needs to read both participant IDs to write a
+ * notification for the recipient without exposing them to the sender.
+ */
 async function notifyRecipient(
-  supabaseAdmin: any,
   conversationId: string,
   senderId: string,
   content: string
 ) {
-  const { data: conv } = await supabaseAdmin
-    .from("conversations")
-    .select("tenantId, ownerId")
-    .eq("id", conversationId)
-    .single();
+  try {
+    const supabaseAdmin = await createAdminClient();
+    const { data: conv } = await supabaseAdmin
+      .from("conversations")
+      .select("tenantId, ownerId")
+      .eq("id", conversationId)
+      .single();
 
-  if (conv) {
-    const recipientId = conv.tenantId === senderId ? conv.ownerId : conv.tenantId;
-    if (recipientId) {
-      await NotificationService.createNotification({
-        userId: recipientId,
-        type: "NEW_MESSAGE",
-        title: "Nouveau message reçu",
-        message: `Vous avez reçu un nouveau message : "${content.slice(0, 50)}${content.length > 50 ? "..." : ""}"`,
-        link: `/dashboard/messages?conversationId=${conversationId}`,
-      });
+    if (conv) {
+      const recipientId = conv.tenantId === senderId ? conv.ownerId : conv.tenantId;
+      if (recipientId) {
+        await NotificationService.createNotification({
+          userId: recipientId,
+          type: "NEW_MESSAGE",
+          title: "Nouveau message reçu",
+          message: `Vous avez reçu un nouveau message : "${content.slice(0, 50)}${content.length > 50 ? "..." : ""}"`,
+          link: `/dashboard/messages?conversationId=${conversationId}`,
+        });
+      }
     }
+  } catch {
+    // Notification failure is non-fatal — message was already inserted
   }
 }

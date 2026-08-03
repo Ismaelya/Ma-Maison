@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 const FREE_DAILY_LIMIT = 10;
 
 /**
  * GET /api/messages/quota
  *
- * Returns the current user's daily messaging quota:
- *  - isPremium: true  → no limit applies
- *  - isPremium: false → used / limit / remaining counts over the last 24 hours
+ * Returns the current user's daily messaging quota.
+ * Uses SECURITY DEFINER RPC functions — no createAdminClient() needed.
  *
- * Only relevant for OWNER / AGENCY accounts.
- * TENANT accounts always get isPremium: true (never limited).
+ *  - isPremium: true  → no limit applies (Premium sub or TENANT/ADMIN role)
+ *  - isPremium: false → used / limit / remaining counts over the last 24 hours
  */
 export async function GET() {
   try {
@@ -24,10 +23,8 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
     }
 
-    const supabaseAdmin = await createAdminClient();
-
-    // Fetch sender profile
-    const { data: profile } = await supabaseAdmin
+    // Read own profile (RLS: users can read their own profile)
+    const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
@@ -35,32 +32,28 @@ export async function GET() {
 
     const role = String(profile?.role ?? "").toUpperCase();
 
-    // TENANT or ADMIN are never limited
+    // TENANT and ADMIN are never subject to the daily limit
     if (role === "TENANT" || role === "ADMIN") {
       return NextResponse.json({ isPremium: true, used: 0, limit: null, remaining: null });
     }
 
-    // Check for an active Premium subscription
-    const { data: activeSub } = await supabaseAdmin
-      .from("subscriptions")
-      .select("id")
-      .eq("userId", user.id)
-      .eq("status", "ACTIVE")
-      .maybeSingle();
+    // Use narrow SECURITY DEFINER RPC — returns boolean only, no data leakage
+    const { data: isPremium, error: subErr } = await supabase.rpc(
+      "has_active_subscription",
+      { p_user_id: user.id }
+    );
 
-    if (activeSub) {
+    if (!subErr && isPremium) {
       return NextResponse.json({ isPremium: true, used: 0, limit: null, remaining: null });
     }
 
-    // Count messages sent in the last 24 hours
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { count } = await supabaseAdmin
-      .from("messages")
-      .select("id", { count: "exact", head: true })
-      .eq("senderId", user.id)
-      .gte("createdAt", since);
+    // Count own messages in last 24h via SECURITY DEFINER RPC
+    const { data: used24h, error: countErr } = await supabase.rpc(
+      "count_daily_messages",
+      { p_user_id: user.id }
+    );
 
-    const used = count ?? 0;
+    const used = (countErr ? 0 : (used24h ?? 0)) as number;
 
     return NextResponse.json({
       isPremium: false,
