@@ -114,10 +114,10 @@ export default async function SubscriptionPage() {
             ) : status === "free" ? (
               <div>
                 <p className="text-sm font-semibold text-blue-900">
-                  Compte Gratuit — publication illimitée, visibilité normale et messagerie complète.
+                  Compte Gratuit — publication illimitée, visibilité normale, 10 messages/jour.
                 </p>
                 <p className="mt-1 text-xs text-blue-700">
-                  Passez en Premium pour obtenir le badge vérifié, la mise en avant et les statistiques de vues.
+                  Passez en Premium pour obtenir le badge vérifié, la mise en avant, les statistiques de vues et la messagerie illimitée.
                 </p>
               </div>
             ) : (
@@ -136,23 +136,54 @@ export default async function SubscriptionPage() {
         {/* Benefits Card */}
         <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
           <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-500">
-            Formules disponibles
+            Gratuit vs Premium
           </h3>
-          <ul className="mt-4 space-y-2 text-xs text-neutral-700">
-            <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-secondary-600 flex-shrink-0" />
-              Gratuit : publication illimitée, visibilité normale, messagerie complète
-            </li>
-            <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-secondary-600 flex-shrink-0" />
-              Premium : badge vérifié, mise en avant dans les résultats, statistiques de vues
-            </li>
-            <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-secondary-600 flex-shrink-0" />
-              Si votre abonnement Premium expire, vous passez simplement au palier Gratuit sans blocage
-            </li>
-          </ul>
-          <div className="mt-6 rounded-xl border border-primary-200 bg-primary-50 p-4 text-sm text-primary-800">
+          <div className="mt-4 overflow-hidden rounded-xl border border-neutral-200">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-neutral-200 bg-neutral-50">
+                  <th className="px-3 py-2.5 text-left font-semibold text-neutral-600">Fonctionnalité</th>
+                  <th className="px-3 py-2.5 text-center font-semibold text-blue-600">Gratuit</th>
+                  <th className="px-3 py-2.5 text-center font-semibold text-primary-600">Premium</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100 text-neutral-700">
+                <tr>
+                  <td className="px-3 py-2.5">Publication d&apos;annonces</td>
+                  <td className="px-3 py-2.5 text-center">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 inline" />
+                  </td>
+                  <td className="px-3 py-2.5 text-center">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 inline" />
+                  </td>
+                </tr>
+                <tr className="bg-neutral-50/50">
+                  <td className="px-3 py-2.5">Badge vérifié</td>
+                  <td className="px-3 py-2.5 text-center">
+                    <XCircle className="h-4 w-4 text-neutral-300 inline" />
+                  </td>
+                  <td className="px-3 py-2.5 text-center">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 inline" />
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-3 py-2.5">Mise en avant &amp; statistiques</td>
+                  <td className="px-3 py-2.5 text-center">
+                    <XCircle className="h-4 w-4 text-neutral-300 inline" />
+                  </td>
+                  <td className="px-3 py-2.5 text-center">
+                    <CheckCircle2 className="h-4 w-4 text-green-500 inline" />
+                  </td>
+                </tr>
+                <tr className="bg-amber-50/60">
+                  <td className="px-3 py-2.5 font-semibold text-neutral-800">Messagerie</td>
+                  <td className="px-3 py-2.5 text-center font-semibold text-amber-700">10 msg/jour</td>
+                  <td className="px-3 py-2.5 text-center font-semibold text-primary-700">Illimitée</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 rounded-xl border border-primary-200 bg-primary-50 p-4 text-sm text-primary-800">
             <p className="font-semibold">Passer Premium</p>
             <p className="mt-1 text-xs text-primary-700">Le bouton de paiement reste toujours disponible pour souscrire ou renouveler à tout moment.</p>
           </div>
