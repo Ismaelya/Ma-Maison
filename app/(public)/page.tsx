@@ -40,44 +40,44 @@ export default async function HomePage() {
           <div className="absolute -bottom-20 -right-20 h-96 w-96 rounded-full bg-secondary-400/20 blur-3xl" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36">
+        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-24 lg:px-8 lg:py-36">
           <div className="mx-auto max-w-3xl text-center">
             {/* Badge */}
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 backdrop-blur-sm">
-              <Star className="h-4 w-4 text-yellow-300" />
-              <span className="text-sm font-medium text-white/90">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 backdrop-blur-sm sm:mb-6 sm:px-4">
+              <Star className="h-3.5 w-3.5 text-yellow-300 sm:h-4 sm:w-4" />
+              <span className="text-xs font-medium text-white/90 sm:text-sm">
                 La plateforme immobilière au Niger
               </span>
             </div>
 
-            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
               Trouvez votre{" "}
               <span className="relative">
                 <span className="relative z-10 text-secondary-300">logement idéal</span>
-                <span className="absolute bottom-1 left-0 z-0 h-3 w-full bg-secondary-500/30 sm:bottom-2 sm:h-4" />
+                <span className="absolute bottom-1 left-0 z-0 h-2 w-full bg-secondary-500/30 sm:bottom-2 sm:h-4" />
               </span>{" "}
               au Niger
             </h1>
 
-            <p className="mt-6 text-lg leading-relaxed text-white/80 sm:text-xl">
+            <p className="mt-4 text-base leading-relaxed text-white/80 sm:mt-6 sm:text-xl">
               Parcourez des centaines d'annonces immobilières à Niamey et dans
               tout le Niger. Location, achat, terrains — Ma Maison simplifie
               votre recherche.
             </p>
 
             {/* Search CTA */}
-            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <div className="mt-8 flex flex-col items-stretch gap-3 sm:mt-10 sm:flex-row sm:items-center sm:justify-center sm:gap-4">
               <Link
                 href="/recherche"
-                className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-8 py-4 text-base font-semibold text-primary-700 shadow-xl transition-all hover:shadow-2xl hover:scale-[1.02] sm:w-auto"
+                className="group flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-sm font-semibold text-primary-700 shadow-xl transition-all hover:shadow-2xl hover:scale-[1.02] sm:px-8 sm:py-4 sm:text-base"
               >
-                <Search className="h-5 w-5" />
+                <Search className="h-4 w-4 sm:h-5 sm:w-5" />
                 Rechercher un logement
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 href="/inscription"
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-white/30 px-8 py-4 text-base font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/10 sm:w-auto"
+                className="flex items-center justify-center gap-2 rounded-2xl border-2 border-white/30 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/10 sm:px-8 sm:py-4 sm:text-base"
               >
                 Publier une annonce
               </Link>
@@ -106,36 +106,36 @@ export default async function HomePage() {
       {/* ================================================================
           HOW IT WORKS
           ================================================================ */}
-      <section className="bg-neutral-50 py-20">
+      <section className="bg-neutral-50 py-12 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-neutral-900 sm:text-4xl">
+            <h2 className="text-2xl font-bold text-neutral-900 sm:text-4xl">
               Comment ça marche ?
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-neutral-600">
+            <p className="mx-auto mt-3 max-w-2xl text-base text-neutral-600 sm:mt-4 sm:text-lg">
               Ma Maison simplifie la recherche et la publication d'annonces
               immobilières au Niger.
             </p>
           </div>
 
-          <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-16 sm:grid-cols-3 sm:gap-8">
             {[
               {
-                icon: <Search className="h-7 w-7" />,
+                icon: <Search className="h-6 w-6 sm:h-7 sm:w-7" />,
                 title: "Recherchez",
                 description:
                   "Parcourez les annonces par ville, type de bien, budget et plus encore. C'est gratuit et sans inscription.",
                 color: "from-primary-500 to-primary-700",
               },
               {
-                icon: <Building2 className="h-7 w-7" />,
+                icon: <Building2 className="h-6 w-6 sm:h-7 sm:w-7" />,
                 title: "Contactez",
                 description:
                   "Inscrivez-vous pour contacter directement les propriétaires et ajouter des annonces à vos favoris.",
                 color: "from-secondary-500 to-secondary-700",
               },
               {
-                icon: <Home className="h-7 w-7" />,
+                icon: <Home className="h-6 w-6 sm:h-7 sm:w-7" />,
                 title: "Emménagez",
                 description:
                   "Visitez les biens, négociez et trouvez le logement idéal pour vous et votre famille.",
@@ -144,16 +144,16 @@ export default async function HomePage() {
             ].map((step, index) => (
               <div
                 key={step.title}
-                className="animate-fade-in-up group relative rounded-2xl bg-white p-8 shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-card-hover)]"
+                className="animate-fade-in-up group relative rounded-2xl bg-white p-6 shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-card-hover)] sm:p-8"
                 style={{ animationDelay: `${index * 150}ms`, animationFillMode: "backwards" }}
               >
                 <div className={`inline-flex rounded-xl bg-gradient-to-br ${step.color} p-3 text-white shadow-sm`}>
                   {step.icon}
                 </div>
-                <h3 className="mt-5 text-xl font-semibold text-neutral-900">
+                <h3 className="mt-4 text-lg font-semibold text-neutral-900 sm:mt-5 sm:text-xl">
                   {step.title}
                 </h3>
-                <p className="mt-2 leading-relaxed text-neutral-600">
+                <p className="mt-2 text-sm leading-relaxed text-neutral-600 sm:text-base">
                   {step.description}
                 </p>
               </div>
@@ -165,14 +165,14 @@ export default async function HomePage() {
       {/* ================================================================
           FEATURED LISTINGS
           ================================================================ */}
-      <section className="py-20">
+      <section className="py-12 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-neutral-900 sm:text-4xl">
+              <h2 className="text-2xl font-bold text-neutral-900 sm:text-4xl">
                 Annonces récentes
               </h2>
-              <p className="mt-2 text-lg text-neutral-600">
+              <p className="mt-1 text-sm text-neutral-600 sm:mt-2 sm:text-lg">
                 Découvrez les dernières annonces publiées
               </p>
             </div>
@@ -185,14 +185,14 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-10">
+          <div className="mt-8 sm:mt-10">
             <PropertyGrid
               listings={listings}
               emptyMessage="Les premières annonces arrivent bientôt !"
             />
           </div>
 
-          <div className="mt-8 text-center sm:hidden">
+          <div className="mt-6 text-center sm:hidden">
             <Link
               href="/recherche"
               className="inline-flex items-center gap-1 rounded-lg px-6 py-3 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50"
@@ -207,15 +207,15 @@ export default async function HomePage() {
       {/* ================================================================
           WHY MA MAISON
           ================================================================ */}
-      <section className="bg-neutral-50 py-20">
+      <section className="bg-neutral-50 py-12 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-neutral-900 sm:text-4xl">
+            <h2 className="text-2xl font-bold text-neutral-900 sm:text-4xl">
               Pourquoi choisir Ma Maison ?
             </h2>
           </div>
 
-          <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:mt-16 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
             {[
               {
                 icon: <Shield className="h-6 w-6" />,
@@ -235,13 +235,13 @@ export default async function HomePage() {
             ].map((feature) => (
               <div
                 key={feature.title}
-                className="flex items-start gap-4 rounded-2xl bg-white p-6 shadow-[var(--shadow-card)]"
+                className="flex items-start gap-4 rounded-2xl bg-white p-5 shadow-[var(--shadow-card)] sm:p-6"
               >
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 sm:h-12 sm:w-12">
                   {feature.icon}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-neutral-900">
+                  <h3 className="text-sm font-semibold text-neutral-900 sm:text-base">
                     {feature.title}
                   </h3>
                   <p className="mt-1 text-sm leading-relaxed text-neutral-600">
@@ -257,17 +257,17 @@ export default async function HomePage() {
       {/* ================================================================
           CTA — FOR OWNERS
           ================================================================ */}
-      <section className="py-20">
+      <section className="py-12 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-secondary-600 to-secondary-800 shadow-xl">
-            <div className="relative px-8 py-16 sm:px-16 sm:py-20">
+            <div className="relative px-6 py-12 sm:px-16 sm:py-20">
               <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/5 blur-2xl" />
               <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-white/5 blur-2xl" />
               <div className="relative mx-auto max-w-2xl text-center">
-                <h2 className="text-3xl font-bold text-white sm:text-4xl">
+                <h2 className="text-2xl font-bold text-white sm:text-4xl">
                   Vous êtes propriétaire ?
                 </h2>
-                <p className="mt-4 text-lg text-white/80">
+                <p className="mt-3 text-base text-white/80 sm:mt-4 sm:text-lg">
                   Publiez vos annonces gratuitement pendant 30 jours. Touchez
                   des milliers de locataires potentiels au Niger.
                 </p>
@@ -276,10 +276,10 @@ export default async function HomePage() {
                     Puis seulement {formatPrice(1500)}/mois
                   </span>
                 </div>
-                <div className="mt-8">
+                <div className="mt-6 sm:mt-8">
                   <Link
                     href="/inscription"
-                    className="group inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-4 text-base font-semibold text-secondary-700 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]"
+                    className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-semibold text-secondary-700 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] sm:w-auto sm:px-8 sm:text-base"
                   >
                     Commencer l&apos;essai gratuit
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

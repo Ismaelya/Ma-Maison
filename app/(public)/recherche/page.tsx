@@ -33,7 +33,6 @@ export default async function SearchPage({
   const pageNum = params.page ? parseInt(params.page, 10) : 1;
   const limit = 6;
 
-  // Query using PropertyRepository.search() with true SQL pagination (.range())
   const listings = await PropertyRepository.search({
     city: params.city,
     type: params.type,
@@ -51,11 +50,11 @@ export default async function SearchPage({
     <div className="animate-fade-in">
       {/* Page header */}
       <div className="border-b border-[var(--color-border)] bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-neutral-900">
+        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+          <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">
             Rechercher un logement
           </h1>
-          <p className="mt-2 text-neutral-600">
+          <p className="mt-1 text-sm text-neutral-600 sm:mt-2">
             {listings.length > 0
               ? `${listings.length} annonce${listings.length > 1 ? "s" : ""} affichée${listings.length > 1 ? "s" : ""} (Page ${pageNum})`
               : "Modifiez vos filtres pour trouver des annonces"}
@@ -63,15 +62,31 @@ export default async function SearchPage({
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-8 lg:flex-row">
-          {/* Filters sidebar */}
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+          {/* Filters: collapsible on mobile, always visible on lg */}
           <aside className="w-full lg:w-72 lg:flex-shrink-0">
-            <SearchFilters currentFilters={params} />
+            {/* Mobile collapse toggle */}
+            <details className="group lg:!open" open={false}>
+              <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 font-semibold text-neutral-800 shadow-sm lg:hidden">
+                <span className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
+                  </svg>
+                  Filtres{hasActiveFilters ? " (actifs)" : ""}
+                </span>
+                <svg className="h-4 w-4 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div className="mt-3 lg:mt-0">
+                <SearchFilters currentFilters={params} />
+              </div>
+            </details>
           </aside>
 
           {/* Results */}
-          <div className="flex-1 space-y-8">
+          <div className="flex-1 space-y-6 sm:space-y-8">
             <PropertyGrid
               listings={listings}
               emptyMessage={
@@ -83,19 +98,19 @@ export default async function SearchPage({
 
             {/* Pagination Controls */}
             {listings.length > 0 && (
-              <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-6">
+              <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-5 sm:pt-6">
                 <Link
                   href={{
                     pathname: "/recherche",
                     query: { ...params, page: Math.max(1, pageNum - 1) },
                   }}
-                  className={`rounded-xl border px-4 py-2 text-xs font-semibold ${
+                  className={`rounded-xl border px-3 py-2 text-xs font-semibold sm:px-4 ${
                     pageNum <= 1
                       ? "pointer-events-none opacity-40 border-neutral-200"
                       : "border-neutral-300 hover:bg-neutral-50"
                   }`}
                 >
-                  ← Page précédente
+                  ← Précédente
                 </Link>
 
                 <span className="text-xs font-medium text-neutral-500">
@@ -107,13 +122,13 @@ export default async function SearchPage({
                     pathname: "/recherche",
                     query: { ...params, page: pageNum + 1 },
                   }}
-                  className={`rounded-xl border px-4 py-2 text-xs font-semibold ${
+                  className={`rounded-xl border px-3 py-2 text-xs font-semibold sm:px-4 ${
                     listings.length < limit
                       ? "pointer-events-none opacity-40 border-neutral-200"
                       : "border-neutral-300 hover:bg-neutral-50"
                   }`}
                 >
-                  Page suivante →
+                  Suivante →
                 </Link>
               </div>
             )}

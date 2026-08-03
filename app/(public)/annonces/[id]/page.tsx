@@ -111,13 +111,14 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
     <div className="animate-fade-in">
       {/* Top bar */}
       <div className="border-b border-[var(--border)] bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
           <Link
             href="/recherche"
             className="flex items-center gap-2 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
           >
             <ArrowLeft className="h-4 w-4" />
-            Retour aux résultats
+            <span className="hidden sm:inline">Retour aux résultats</span>
+            <span className="sm:hidden">Retour</span>
           </Link>
           <div className="flex items-center gap-2">
             <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-700">
@@ -130,8 +131,9 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        {/* On mobile: single column (content then sidebar). On lg: 3-col grid */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
           {/* Main content */}
           <div className="lg:col-span-2">
             {/* Image gallery */}
@@ -257,11 +259,12 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
           </div>
 
           {/* Sidebar — Price & Owner */}
+          {/* On mobile: shows at bottom, no sticky. On lg: sticky */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
+            <div className="lg:sticky lg:top-24 space-y-4">
               {/* Price card */}
-              <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
-                <p className="text-3xl font-bold text-primary-700">
+              <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)] sm:p-6">
+                <p className="text-2xl font-bold text-primary-700 sm:text-3xl">
                   {formatPrice(typedListing.price)}
                 </p>
                 {transType === "rent" && (
