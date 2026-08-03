@@ -59,14 +59,14 @@ export async function POST(request: Request) {
       // but returns only a boolean: callers cannot extract other users' data.
       const { data: isPremium, error: subErr } = await supabase.rpc(
         "has_active_subscription",
-        { p_user_id: senderId }
+        { p_user_id: senderId } // senderId is user.id (string) — matches TEXT param
       );
 
       if (!subErr && !isPremium) {
         // count_daily_messages() counts own messages via SECURITY DEFINER.
         const { data: used24h, error: countErr } = await supabase.rpc(
           "count_daily_messages",
-          { p_user_id: senderId }
+          { p_user_id: senderId } // senderId is user.id (string) — matches TEXT param
         );
 
         const used = (countErr ? 0 : (used24h ?? 0)) as number;
