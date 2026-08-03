@@ -2,28 +2,26 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 export class SubscriptionService {
   /**
-   * Creates an initial TRIAL subscription for a new OWNER or AGENCY user.
-   * TRIAL duration: 30 days.
+   * Creates a permanent FREE subscription for a new OWNER or AGENCY user.
    */
   static async createTrialSubscription(userId: string): Promise<any> {
     const supabaseAdmin = await createAdminClient();
     const startDate = new Date().toISOString();
-    const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data, error } = await supabaseAdmin
       .from("subscriptions")
       .insert({
         userId,
-        status: "TRIAL",
-        price: 1500,
+        status: "FREE",
+        price: 0,
         startDate,
-        endDate,
+        endDate: null,
       } as any)
       .select()
       .single();
 
     if (error) {
-      console.error("Erreur de création de l'abonnement d'essai:", error);
+      console.error("Erreur de création de l'abonnement gratuit:", error);
     }
     return data;
   }

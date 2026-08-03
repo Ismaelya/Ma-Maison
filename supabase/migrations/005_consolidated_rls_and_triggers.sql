@@ -107,6 +107,15 @@ create trigger on_payment_status_change
   after update of status on public.payments
   for each row execute function public.handle_payment_approved();
 
+create or replace function public.increment_property_view(property_id text)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.properties set "viewCount" = "viewCount" + 1 where id = property_id;
+$$;
+
 -- ------------------------------------------------------------
 -- 4. JOB QUOTIDIEN : expiration TRIAL et ACTIVE unifiée
 -- ------------------------------------------------------------

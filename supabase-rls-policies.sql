@@ -37,7 +37,7 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_auth_user();
 
 -- ------------------------------------------------------------
--- 2. TRIGGER : création automatique d'un abonnement TRIAL
+-- 2. TRIGGER : création automatique d'un abonnement FREE
 --    pour tout nouveau profil OWNER ou AGENCY
 -- ------------------------------------------------------------
 
@@ -50,7 +50,7 @@ as $$
 begin
   if new.role in ('OWNER', 'AGENCY') then
     insert into public.subscriptions (id, "userId", status, price, "startDate", "endDate", "createdAt")
-    values (gen_random_uuid(), new.id, 'TRIAL', 1500, now(), now() + interval '30 days', now());
+    values (gen_random_uuid(), new.id, 'FREE', 0, now(), null, now());
 
     update public.profiles set "trialStartedAt" = now() where id = new.id;
   end if;
@@ -107,8 +107,17 @@ create trigger on_payment_status_change
   after update of status on public.payments
   for each row execute function public.handle_payment_approved();
 
+create or replace function public.increment_property_view(property_id text)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.properties set "viewCount" = "viewCount" + 1 where id = property_id;
+$$;
+
 -- ------------------------------------------------------------
--- 4. JOB QUOTIDIEN : expiration TRIAL et ACTIVE unifiée
+-- 4. JOB QUOTIDIEN : expiration Premium (ACTIVE) uniquement
 -- ------------------------------------------------------------
 
 create or replace function public.expire_subscriptions()
@@ -119,8 +128,19 @@ set search_path = public
 as $$
   update public.subscriptions
   set status = 'EXPIRED'
-  where status in ('TRIAL', 'ACTIVE')
+  where status = 'ACTIVE'
+    and "endDate" is not null
     and "endDate" < now();
+
+  update public.profiles p
+  set "badgeVerified" = false
+  where p.id in (
+    select s."userId"
+    from public.subscriptions s
+    where s.status = 'EXPIRED'
+      and s."endDate" is not null
+      and s."endDate" < now()
+  );
 $$;
 
 -- ------------------------------------------------------------
@@ -226,11 +246,8 @@ as $$
   select exists (
     select 1
     from public.profiles p
-    left join public.subscriptions s
-      on s."userId" = p.id and s.status in ('TRIAL', 'ACTIVE')
     where p.id = owner_id
       and p.status = 'ACTIVE'
-      and s.id is not null
   );
 $$;
 

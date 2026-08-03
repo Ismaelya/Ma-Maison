@@ -29,7 +29,7 @@ export default async function AdminUserDetailPage({
   }
 
   const u = userProfile as any;
-  const activeSub = (u.subscriptions ?? []).find((s: any) => s.status === "ACTIVE" || s.status === "TRIAL");
+  const activeSub = (u.subscriptions ?? []).find((s: any) => s.status === "ACTIVE" || s.status === "FREE" || s.status === "TRIAL");
   const subStatus = activeSub ? activeSub.status : "EXPIRED";
 
   // Fetch properties owned by this user

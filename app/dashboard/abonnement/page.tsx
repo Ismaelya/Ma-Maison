@@ -45,7 +45,7 @@ export default async function SubscriptionPage() {
 
   const paymentList = (payments ?? []) as Payment[];
   const trialDays = activeSub?.endDate ? getTrialDaysRemaining(activeSub.endDate) : null;
-  const status = (activeSub?.status ?? "EXPIRED").toLowerCase();
+  const status = String(activeSub?.status ?? "FREE").toLowerCase();
 
   return (
     <div className="animate-fade-in space-y-8">
@@ -66,7 +66,7 @@ export default async function SubscriptionPage() {
             "rounded-2xl border p-6 shadow-[var(--shadow-card)] md:col-span-2",
             status === "active"
               ? "border-green-200 bg-gradient-to-br from-green-50 to-emerald-50"
-              : status === "trial"
+              : status === "free"
                 ? "border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50"
                 : "border-red-200 bg-gradient-to-br from-red-50 to-rose-50"
           )}
@@ -78,15 +78,15 @@ export default async function SubscriptionPage() {
                   "rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider",
                   status === "active"
                     ? "bg-green-600 text-white"
-                    : status === "trial"
+                    : status === "free"
                       ? "bg-blue-600 text-white"
                       : "bg-red-600 text-white"
                 )}
               >
                 {status === "active"
                   ? "Formule Premium Active"
-                  : status === "trial"
-                    ? "Essai Gratuit"
+                  : status === "free"
+                    ? "Compte Gratuit"
                     : "Abonnement Expiré"}
               </span>
               {(profile.badgeVerified || (profile as any).badge_verified) && (
@@ -111,22 +111,22 @@ export default async function SubscriptionPage() {
                   Vos annonces bénéficient de la visibilité normale et du badge propriétaire vérifié.
                 </p>
               </div>
-            ) : status === "trial" ? (
+            ) : status === "free" ? (
               <div>
                 <p className="text-sm font-semibold text-blue-900">
-                  Période d'essai gratuite : {trialDays} jour{trialDays && trialDays > 1 ? "s" : ""} restant{trialDays && trialDays > 1 ? "s" : ""}.
+                  Compte Gratuit — publication illimitée, visibilité normale et messagerie complète.
                 </p>
                 <p className="mt-1 text-xs text-blue-700">
-                  Profitez de la publication illimitée et recevez des messages de locataires.
+                  Passez en Premium pour obtenir le badge vérifié, la mise en avant et les statistiques de vues.
                 </p>
               </div>
             ) : (
               <div>
                 <p className="text-sm font-semibold text-red-900">
-                  Votre période d'essai a expiré. Vos annonces ne sont plus visibles publiquement.
+                  Votre abonnement Premium n&apos;est plus actif. Vous conservez votre accès Gratuit et pouvez continuer à publier.
                 </p>
                 <p className="mt-1 text-xs text-red-700">
-                  Soumettez votre reçu de paiement ci-dessous pour réactiver vos annonces sous 24h.
+                  Vous pouvez souscrire à nouveau à tout moment pour retrouver les avantages Premium.
                 </p>
               </div>
             )}
@@ -136,26 +136,26 @@ export default async function SubscriptionPage() {
         {/* Benefits Card */}
         <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
           <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-500">
-            Avantages Premium
+            Formules disponibles
           </h3>
           <ul className="mt-4 space-y-2 text-xs text-neutral-700">
             <li className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-secondary-600 flex-shrink-0" />
-              Publication d'annonces illimitée
+              Gratuit : publication illimitée, visibilité normale, messagerie complète
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-secondary-600 flex-shrink-0" />
-              Badge propriétaire vérifié
+              Premium : badge vérifié, mise en avant dans les résultats, statistiques de vues
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-secondary-600 flex-shrink-0" />
-              Messagerie directe avec locataires
-            </li>
-            <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-secondary-600 flex-shrink-0" />
-              Support client prioritaire
+              Si votre abonnement Premium expire, vous passez simplement au palier Gratuit sans blocage
             </li>
           </ul>
+          <div className="mt-6 rounded-xl border border-primary-200 bg-primary-50 p-4 text-sm text-primary-800">
+            <p className="font-semibold">Passer Premium</p>
+            <p className="mt-1 text-xs text-primary-700">Le bouton de paiement reste toujours disponible pour souscrire ou renouveler à tout moment.</p>
+          </div>
         </div>
       </div>
 

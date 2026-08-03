@@ -15,11 +15,17 @@ export async function GET(request: Request) {
     const { data: expiredSubs, error } = await supabaseAdmin
       .from("subscriptions")
       .update({ status: "EXPIRED" } as any)
-      .in("status", ["TRIAL", "ACTIVE", "trial", "active"])
-      .lt("expires_at", nowIso)
+      .eq("status", "ACTIVE")
+      .not("endDate", "is", null)
+      .lt("endDate", nowIso)
       .select();
 
     if (error) throw error;
+
+    const userIds = Array.from(new Set((expiredSubs ?? []).map((sub: any) => sub.userId).filter(Boolean)));
+    if (userIds.length > 0) {
+      await supabaseAdmin.from("profiles").update({ badgeVerified: false } as any).in("id", userIds);
+    }
 
     const count = (expiredSubs ?? []).length;
     return apiSuccess({ updatedCount: count }, `${count} abonnement(s) expiré(s) mis à jour avec succès.`);

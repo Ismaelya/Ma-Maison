@@ -185,11 +185,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // Initial 30-day trial subscription for owners and agencies
+    // Create a permanent FREE subscription for owners and agencies
     if (normalizedRole === "OWNER" || normalizedRole === "AGENCY") {
       try {
         const now = new Date();
-        const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
         const existingSub = await prisma.subscription.findFirst({
           where: { userId: user.id },
         });
@@ -197,16 +196,16 @@ export async function POST(request: Request) {
         if (existingSub) {
           await prisma.subscription.update({
             where: { id: existingSub.id },
-            data: { status: "ACTIVE" },
+            data: { status: "FREE", endDate: null },
           });
         } else {
           await prisma.subscription.create({
             data: {
               userId: user.id,
-              status: "ACTIVE",
+              status: "FREE",
               price: 0,
               startDate: now,
-              endDate: expiry,
+              endDate: null,
             },
           });
         }

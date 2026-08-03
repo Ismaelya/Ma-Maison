@@ -85,16 +85,14 @@ export async function requireRole(role: UserRole | "tenant" | "owner" | "agency"
 
 /**
  * Checks whether an owner or agency can publish/manage listings.
- * Requires active account status and a valid TRIAL or ACTIVE subscription.
+ * Publication is allowed for active accounts with publisher roles.
+ * Subscriptions no longer block publishing; Premium only adds benefits.
  */
-export function canOwnerPublish(profile: Profile, subscription: Subscription | null): boolean {
-  const role = profile.role;
-  const status = profile.status ?? (profile as any).account_status;
+export function canOwnerPublish(profile: Profile, _subscription: Subscription | null): boolean {
+  const role = String(profile.role ?? "").toUpperCase();
+  const status = String(profile.status ?? (profile as any).account_status ?? "").toUpperCase();
 
   if (status === "SUSPENDED") return false;
-  if (role !== "OWNER" && role !== "AGENCY" && role !== "ADMIN") return false;
-  if (role === "ADMIN") return true; // admin non soumis à l'abonnement
-  if (!subscription) return false;
-  if (subscription.status === "EXPIRED") return false;
-  return subscription.status === "TRIAL" || subscription.status === "ACTIVE";
+  if (role === "ADMIN") return true;
+  return role === "OWNER" || role === "AGENCY";
 }

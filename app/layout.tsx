@@ -73,7 +73,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Ma Maison" />
       </head>
       <body className={`${geist.className} min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] transition-colors duration-200 antialiased`}>
-        <ThemeProvider defaultTheme="system">
+        <ThemeProvider defaultTheme="light">
           <QueryProvider>
             <ToastProvider>
               <div className="flex min-h-screen flex-col">

@@ -56,8 +56,8 @@ export async function PATCH(
   // Validate owner/agency publishing permissions
   if (!canOwnerPublish(profile as any, latestSubscription as any)) {
     return apiError(
-      "SUBSCRIPTION_REQUIRED",
-      "Votre abonnement a expiré. Renouvelez-le pour modifier ou republier une annonce.",
+      "FORBIDDEN",
+      "Votre compte ne permet pas de modifier ou republier une annonce pour le moment.",
       403
     );
   }

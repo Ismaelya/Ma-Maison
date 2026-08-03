@@ -223,12 +223,12 @@ export default function InscriptionPage() {
                 />
               </div>
 
-              {/* Trial Info Banner */}
+              {/* Free plan info banner */}
               {(selectedRole === "OWNER" || selectedRole === "AGENCY") && (
                 <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-xs text-blue-900 flex items-start gap-2.5">
                   <ShieldCheck className="h-4 w-4 text-[var(--color-primary)] flex-shrink-0 mt-0.5" />
                   <span>
-                    <strong>Essai Gratuit de 30 jours inclus :</strong> Accès immédiat à la publication sans carte bancaire ni frais initiaux.
+                    <strong>Compte Gratuit inclus :</strong> publication illimitée et accès immédiat sans carte bancaire.
                   </span>
                 </div>
               )}

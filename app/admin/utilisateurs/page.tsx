@@ -57,7 +57,7 @@ export default async function AdminUsersPage() {
                 const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
                 const isAdmin = roleStr === "ADMIN";
 
-                const activeSub = (u.subscriptions ?? []).find((s: any) => s.status === "ACTIVE" || s.status === "TRIAL");
+                const activeSub = (u.subscriptions ?? []).find((s: any) => s.status === "ACTIVE" || s.status === "FREE" || s.status === "TRIAL");
                 const subStatus = activeSub ? activeSub.status : "EXPIRED";
 
                 return (
@@ -122,7 +122,7 @@ export default async function AdminUsersPage() {
                             "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
                             subStatus === "ACTIVE"
                               ? "bg-green-950 text-green-400 border border-green-800"
-                              : subStatus === "TRIAL"
+                              : subStatus === "TRIAL" || subStatus === "FREE"
                                 ? "bg-blue-950 text-blue-400 border border-blue-800"
                                 : "bg-red-950 text-red-400 border border-red-800"
                           )}

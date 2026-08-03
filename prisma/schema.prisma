@@ -37,6 +37,7 @@ enum AccountStatus {
 /// qui appartient à AccountStatus — décision Partie 2/3).
 enum SubscriptionStatus {
   TRIAL
+  FREE
   ACTIVE
   EXPIRED
 }
@@ -176,6 +177,7 @@ model Property {
 
   status     PropertyStatus @default(DRAFT)
   isFeatured Boolean        @default(false)
+  viewCount  Int            @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -235,7 +237,7 @@ model Subscription {
 
   price     Int      // lu depuis AppSettings.subscriptionPrice au moment de la création, jamais une constante en dur
   startDate DateTime
-  endDate   DateTime
+  endDate   DateTime?
 
   user Profile @relation(fields: [userId], references: [id])
 

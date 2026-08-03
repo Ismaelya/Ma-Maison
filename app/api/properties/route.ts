@@ -25,6 +25,16 @@ export async function GET(request: NextRequest) {
     };
 
     const properties = await PropertyService.getProperties(filters);
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      const sanitized = (properties as any[]).map((property) => {
+        const { address, ...rest } = property as any;
+        return rest;
+      });
+      return apiSuccess(sanitized, "Annonces récupérées avec succès", 200);
+    }
 
     return apiSuccess(properties, "Annonces récupérées avec succès", 200);
   } catch (err: any) {
@@ -95,8 +105,8 @@ export async function POST(request: Request) {
   // Validate owner/agency publishing permissions
   if (!canOwnerPublish(profile as any, latestSubscription as any)) {
     return apiError(
-      "SUBSCRIPTION_REQUIRED",
-      "Votre abonnement a expiré. Renouvelez-le pour publier une nouvelle annonce.",
+      "FORBIDDEN",
+      "Votre compte ne permet pas de publier une annonce pour le moment.",
       403
     );
   }

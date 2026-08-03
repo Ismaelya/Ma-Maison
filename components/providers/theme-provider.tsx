@@ -17,7 +17,7 @@ type ThemeProviderState = {
 };
 
 const initialState: ThemeProviderState = {
-  theme: "system",
+  theme: "light",
   setTheme: () => null,
   isDark: false,
 };
@@ -26,7 +26,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  defaultTheme = "light",
   storageKey = "ma-maison-theme",
   ...props
 }: ThemeProviderProps) {
@@ -36,8 +36,14 @@ export function ThemeProvider({
 
   useEffect(() => {
     setMounted(true);
-    const savedTheme = (localStorage.getItem(storageKey) as Theme) || defaultTheme;
-    setThemeState(savedTheme);
+    // Temporarily force light theme to avoid dark-mode visibility regressions.
+    const forcedTheme: Theme = "light";
+    try {
+      localStorage.setItem(storageKey, forcedTheme);
+    } catch {
+      // ignore
+    }
+    setThemeState(forcedTheme);
   }, [defaultTheme, storageKey]);
 
   useEffect(() => {

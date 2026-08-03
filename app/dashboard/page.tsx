@@ -100,7 +100,7 @@ export default async function DashboardPage() {
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {isOwner && (profile as any).subscription_status !== "expired" && (
+        {isOwner && (
           <Link
             href="/dashboard/annonces/nouveau"
             className="group flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)]"

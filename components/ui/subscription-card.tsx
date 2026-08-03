@@ -3,7 +3,7 @@ import { Sparkles, Calendar, CheckCircle2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 type SubscriptionCardProps = {
-  status: "trial" | "active" | "expired" | string;
+  status: "free" | "active" | "expired" | string;
   trialStartedAt?: string | null;
   expiresAt?: string | null;
 };
@@ -14,7 +14,7 @@ export function SubscriptionCard({
   expiresAt,
 }: SubscriptionCardProps) {
   const isPremium = status.toLowerCase() === "active";
-  const isTrial = status.toLowerCase() === "trial";
+  const isFree = status.toLowerCase() === "free";
 
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-gradient-to-br from-neutral-900 to-neutral-950 p-6 text-white shadow-xl">
@@ -35,12 +35,12 @@ export function SubscriptionCard({
           className={`rounded-full px-3 py-1 text-xs font-bold uppercase border ${
             isPremium
               ? "bg-[var(--color-success)]/20 text-[var(--color-success)] border-[var(--color-success)]/40"
-              : isTrial
+              : isFree
               ? "bg-[var(--color-primary)]/20 text-[var(--color-primary)] border-[var(--color-primary)]/40"
               : "bg-[var(--color-danger)]/20 text-[var(--color-danger)] border-[var(--color-danger)]/40"
           }`}
         >
-          {isPremium ? "Premium" : isTrial ? "Essai Gratuit" : "Expiré"}
+          {isPremium ? "Premium" : isFree ? "Gratuit" : "Expiré"}
         </span>
       </div>
 

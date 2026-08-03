@@ -63,6 +63,17 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
     .eq("id", id)
     .single();
 
+  if (listing) {
+    const currentUser = (await supabase.auth.getUser()).data.user;
+    const isOwnerVisitor = !!currentUser && currentUser.id === listing.ownerId;
+    if (!isOwnerVisitor) {
+      const { error } = await supabase.rpc("increment_property_view", { property_id: id });
+      if (error) {
+        console.error("viewCount RPC failed", error);
+      }
+    }
+  }
+
   if (!listing) {
     notFound();
   }

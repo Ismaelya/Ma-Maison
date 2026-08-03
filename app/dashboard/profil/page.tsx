@@ -87,29 +87,23 @@ export default async function ProfilePage() {
             </div>
           </div>
 
-          {/* Trial info for owners */}
+          {/* Premium info for owners */}
           {isOwner && trialDays !== null && (
             <div
               className={cn(
                 "rounded-2xl border p-6 shadow-[var(--shadow-card)]",
-                trialDays > 7
-                  ? "border-green-200 bg-green-50"
-                  : trialDays > 0
-                    ? "border-yellow-200 bg-yellow-50"
-                    : "border-red-200 bg-red-50"
+                "border-blue-200 bg-blue-50"
               )}
             >
               <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-neutral-600">
                 <Clock className="h-4 w-4" />
-                Période d&apos;essai
+                Formule actuelle
               </h3>
-              <p className="mt-3 text-3xl font-bold text-neutral-900">
-                {trialDays > 0 ? `${trialDays} jour${trialDays > 1 ? "s" : ""}` : "Terminée"}
+              <p className="mt-3 text-lg font-bold text-neutral-900">
+                Compte Gratuit
               </p>
               <p className="mt-1 text-sm text-neutral-600">
-                {trialDays > 0
-                  ? "restant avant expiration"
-                  : "Souscrivez un abonnement pour continuer"}
+                Vous pouvez publier sans limite et passer à Premium à tout moment pour bénéficier du badge vérifié et de la mise en avant.
               </p>
             </div>
           )}

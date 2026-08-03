@@ -14,11 +14,10 @@ function isIos(): boolean {
 
 function isInStandaloneMode(): boolean {
   if (typeof navigator === "undefined") return false;
-  // @ts-ignore
-  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (navigator as any).standalone === true;
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (navigator as any)['standalone'] === true;
 }
 
-export default function InstallPrompt(): JSX.Element | null {
+export default function InstallPrompt(): React.ReactElement | null {
   const [deferredPrompt, setDeferredPrompt] = useState<DeferredPrompt | null>(null);
   const [visible, setVisible] = useState(false);
   const [showIosInstructions, setShowIosInstructions] = useState(false);

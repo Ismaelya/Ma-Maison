@@ -31,15 +31,13 @@ export default async function MyListingsPage() {
             {listings.length} annonce{listings.length !== 1 ? "s" : ""}
           </p>
         </div>
-        {(profile as any).subscription_status !== "expired" && (
-          <Link
-            href="/dashboard/annonces/nouveau"
-            className="flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700 hover:shadow-md"
-          >
-            <Plus className="h-4 w-4" />
-            Nouvelle annonce
-          </Link>
-        )}
+        <Link
+          href="/dashboard/annonces/nouveau"
+          className="flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700 hover:shadow-md"
+        >
+          <Plus className="h-4 w-4" />
+          Nouvelle annonce
+        </Link>
       </div>
 
       {error && (
@@ -59,15 +57,13 @@ export default async function MyListingsPage() {
           <p className="mt-1 text-sm text-neutral-500">
             Publiez votre premier bien immobilier
           </p>
-          {(profile as any).subscription_status !== "expired" && (
-            <Link
-              href="/dashboard/annonces/nouveau"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
-            >
-              <Plus className="h-4 w-4" />
-              Publier une annonce
-            </Link>
-          )}
+          <Link
+            href="/dashboard/annonces/nouveau"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
+          >
+            <Plus className="h-4 w-4" />
+            Publier une annonce
+          </Link>
         </div>
       ) : (
         <div className="rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
@@ -99,6 +95,11 @@ export default async function MyListingsPage() {
                   {formatPrice(listing.price)} · {listing.city} ·{" "}
                   {formatRelativeTime(listing.createdAt)}
                 </p>
+                {(profile.badgeVerified || (profile as any).badge_verified) && (
+                  <p className="mt-1 text-xs text-neutral-500">
+                    Vues : {listing.viewCount ?? 0}
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center gap-2">

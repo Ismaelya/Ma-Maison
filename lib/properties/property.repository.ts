@@ -37,12 +37,34 @@ export class PropertyRepository {
 
       const results = await prisma.property.findMany({
         where: whereClause,
-        include: { owner: true, images: true },
+        include: {
+          owner: {
+            include: {
+              subscriptions: {
+                where: { status: "ACTIVE" },
+                select: { id: true, status: true },
+                orderBy: { createdAt: "desc" },
+                take: 1,
+              },
+            },
+          },
+          images: true,
+        },
         orderBy: { createdAt: "desc" },
       });
 
       if (results && results.length > 0) {
-        return results as unknown as Property[];
+        const sorted = [...results].sort((a, b) => {
+          const aPremium = (a.owner as any)?.subscriptions?.length > 0;
+          const bPremium = (b.owner as any)?.subscriptions?.length > 0;
+
+          if (aPremium !== bPremium) {
+            return aPremium ? -1 : 1;
+          }
+
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+        return sorted as unknown as Property[];
       }
     } catch {
       // Ignore Prisma search error
@@ -51,7 +73,10 @@ export class PropertyRepository {
     const supabase = await createClient();
     let query = supabase
       .from("properties")
-      .select("*, property_images(*), profiles!inner(id, name, agencyName, badgeVerified, avatarUrl, phone, status)", { count: "exact" })
+      .select(
+        "*, property_images(*), profiles!inner(id, name, agencyName, badgeVerified, avatarUrl, phone, status, subscriptions!left(id, status, createdAt))",
+        { count: "exact" }
+      )
       .eq("status", "APPROVED")
       .eq("profiles.status", "ACTIVE")
       .order("createdAt", { ascending: false });
@@ -61,7 +86,18 @@ export class PropertyRepository {
     }
 
     const { data } = await query;
-    return (data ?? []) as unknown as Property[];
+    const sorted = (data ?? []).sort((a: any, b: any) => {
+      const aPremium = (a.profiles?.subscriptions ?? []).some((sub: any) => String(sub.status).toUpperCase() === "ACTIVE");
+      const bPremium = (b.profiles?.subscriptions ?? []).some((sub: any) => String(sub.status).toUpperCase() === "ACTIVE");
+
+      if (aPremium !== bPremium) {
+        return aPremium ? -1 : 1;
+      }
+
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    return sorted as unknown as Property[];
   }
 
   static async findById(id: string): Promise<Property | null> {

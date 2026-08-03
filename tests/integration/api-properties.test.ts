@@ -18,8 +18,12 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/properties/property.service", () => ({
   PropertyService: {
-    searchProperties: vi.fn(),
+    getProperties: vi.fn(),
     createProperty: vi.fn(),
+    getProperty: vi.fn(),
+    updateProperty: vi.fn(),
+    deleteProperty: vi.fn(),
+    submitPropertyForModeration: vi.fn(),
   },
 }));
 
@@ -30,7 +34,7 @@ describe("API Integration: GET /api/properties", () => {
 
   it("sanitizes property address for unauthenticated users", async () => {
     mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
-    vi.spyOn(PropertyService, "searchProperties").mockResolvedValue([
+    vi.spyOn(PropertyService, "getProperties").mockResolvedValue([
       {
         id: "prop-101",
         title: "Villa Yantala",
@@ -56,7 +60,7 @@ describe("API Integration: GET /api/properties", () => {
       data: { user: { id: "user-123", email: "user@mamaison.ne" } },
       error: null,
     });
-    vi.spyOn(PropertyService, "searchProperties").mockResolvedValue([
+    vi.spyOn(PropertyService, "getProperties").mockResolvedValue([
       {
         id: "prop-101",
         title: "Villa Yantala",
@@ -97,7 +101,7 @@ describe("API Integration: POST /api/properties", () => {
     expect(body.error.code).toBe("UNAUTHORIZED");
   });
 
-  it("rejects creation when owner subscription is EXPIRED (403)", async () => {
+  it("allows creation for an active owner account even without a premium subscription (201)", async () => {
     const userId = "owner-expired";
     mockGetUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
 
@@ -129,6 +133,13 @@ describe("API Integration: POST /api/properties", () => {
       return {};
     });
 
+    vi.spyOn(PropertyService, "createProperty").mockResolvedValue({
+      id: "prop-new-1",
+      title: "Appartement Plateau",
+      ownerId: userId,
+      status: "PENDING",
+    } as any);
+
     const req = new Request("http://localhost:3000/api/properties", {
       method: "POST",
       body: JSON.stringify({ title: "Appartement Plateau" }),
@@ -137,12 +148,12 @@ describe("API Integration: POST /api/properties", () => {
     const res = await POST(req);
     const body = await res.json();
 
-    expect(res.status).toBe(403);
-    expect(body.success).toBe(false);
-    expect(body.error.code).toBe("SUBSCRIPTION_REQUIRED");
+    expect(res.status).toBe(201);
+    expect(body.success).toBe(true);
+    expect(body.data.id).toBe("prop-new-1");
   });
 
-  it("creates property successfully when user has ACTIVE subscription (201)", async () => {
+  it("creates property successfully when user has ACTIVE premium subscription (201)", async () => {
     const userId = "owner-active";
     mockGetUser.mockResolvedValue({ data: { user: { id: userId } }, error: null });
 

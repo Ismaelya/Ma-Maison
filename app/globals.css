@@ -55,10 +55,10 @@
   --color-success: #16A34A;   /* Growth Green */
   --color-warning: #EA580C;   /* Amber / Orange */
   --color-danger: #DC2626;    /* Red */
-  --color-bg: #FFFFFF;        /* Clean White */
+  --color-bg: #F8FAFC;        /* Soft White */
   --color-text: #111827;      /* Dark Slate */
-  --color-muted: #F3F4F6;     /* Light Neutral */
-  --color-border: #E5E7EB;    /* Light Grey Border */
+  --color-muted: #E2E8F0;     /* Soft Neutral */
+  --color-border: #CBD5E1;    /* Gentle Grey Border */
   --color-ring: #2563EB;
 
   /* Extended UI Token Aliases */
@@ -83,19 +83,56 @@
 }
 
 .dark {
-  --color-bg: #0f172a;        /* Dark Slate 900 */
-  --color-text: #f8fafc;      /* Light Slate 50 */
-  --color-muted: #1e293b;     /* Slate 800 */
-  --color-border: #334155;    /* Slate 700 */
-  --color-ring: #3b82f6;
+  /* Neutralize dark mode: force light tokens when .dark is present */
+  --color-bg: #F8FAFC !important;        /* Soft White */
+  --color-text: #111827 !important;      /* Dark Slate */
+  --color-muted: #E2E8F0 !important;     /* Soft Neutral */
+  --color-border: #CBD5E1 !important;    /* Gentle Grey Border */
+  --color-ring: #2563eb !important;
 
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --border: #334155;
-  --input: #334155;
+  --background: var(--color-bg) !important;
+  --foreground: var(--color-text) !important;
+  --border: var(--color-border) !important;
+  --input: var(--color-border) !important;
 
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-card-hover: 0 10px 25px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  --shadow-card-hover: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+}
+
+.dark .bg-white,
+.dark .bg-neutral-50,
+.dark .bg-neutral-100,
+.dark .bg-neutral-200,
+.dark .bg-neutral-300,
+.dark .bg-neutral-400 {
+  background-color: var(--color-bg) !important;
+}
+
+.dark .border-white,
+.dark .border-neutral-100,
+.dark .border-neutral-200,
+.dark .border-neutral-300,
+.dark .border-neutral-400 {
+  border-color: var(--color-border) !important;
+}
+
+.dark .text-neutral-900,
+.dark .text-neutral-800,
+.dark .text-neutral-700,
+.dark .text-neutral-600,
+.dark .text-neutral-500 {
+  color: var(--color-text) !important;
+}
+
+.dark .text-neutral-400,
+.dark .text-neutral-300,
+.dark .text-neutral-200 {
+  color: #94a3b8 !important;
+}
+
+.dark .shadow-card,
+.dark .shadow-card-hover {
+  box-shadow: var(--shadow-card) !important;
 }
 
 /* ============================================================================

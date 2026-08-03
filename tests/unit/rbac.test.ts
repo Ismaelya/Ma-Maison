@@ -61,12 +61,12 @@ describe("RBAC & Subscription Permission Guards", () => {
     expect(canOwnerPublish(baseProfile, activeSub)).toBe(true);
   });
 
-  it("BLOCKS owner in EXPIRED status from publishing listings", () => {
-    expect(canOwnerPublish(baseProfile, expiredSub)).toBe(false);
+  it("allows owner in EXPIRED status to publish listings", () => {
+    expect(canOwnerPublish(baseProfile, expiredSub)).toBe(true);
   });
 
-  it("BLOCKS owner without subscription (null) from publishing listings", () => {
-    expect(canOwnerPublish(baseProfile, null)).toBe(false);
+  it("allows owner without subscription (null) to publish listings", () => {
+    expect(canOwnerPublish(baseProfile, null)).toBe(true);
   });
 
   it("BLOCKS owner in SUSPENDED account status, even with ACTIVE subscription", () => {
@@ -88,9 +88,9 @@ describe("RBAC & Subscription Permission Guards", () => {
     expect(canOwnerPublish(agencyProfile, activeSub)).toBe(true);
   });
 
-  it("BLOCKS agency in EXPIRED status from publishing listings", () => {
+  it("allows agency in EXPIRED status to publish listings", () => {
     const agencyProfile: Profile = { ...baseProfile, role: "AGENCY" };
-    expect(canOwnerPublish(agencyProfile, expiredSub)).toBe(false);
+    expect(canOwnerPublish(agencyProfile, expiredSub)).toBe(true);
   });
 
   it("ALLOWS admin users to publish/manage listings without subscription", () => {
