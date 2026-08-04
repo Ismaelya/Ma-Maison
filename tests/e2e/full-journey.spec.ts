@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
 
-const dbUrl = process.env.DATABASE_URL || "postgresql://postgres.wvxojyoblzlvbedtorwq:zakariabouli@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
+const dbUrl = process.env.DATABASE_URL || "";
 
 const prisma = new PrismaClient({
   datasources: { db: { url: dbUrl } },

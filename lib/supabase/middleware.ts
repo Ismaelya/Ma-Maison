@@ -33,7 +33,11 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Refresh user session
+  // Always purge legacy insecure cookies left by a previous buggy version
+  response.cookies.delete("ma_maison_user_id");
+  response.cookies.delete("ma_maison_user_email");
+
+  // Refresh user session — only real Supabase sessions are accepted
   let user = null;
   try {
     const { data } = await supabase.auth.getUser();
