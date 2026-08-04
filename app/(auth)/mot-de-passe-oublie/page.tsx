@@ -13,6 +13,16 @@ import { Logo } from "@/components/ui/logo";
 import { useToast } from "@/components/ui/toast-notification";
 import { formatAuthError } from "@/lib/utils";
 
+function getAuthErrorMessage(error: unknown): string | undefined {
+  if (!error) return undefined;
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === "string" ? message : undefined;
+  }
+  return undefined;
+}
+
 export default function MotDePasseOubliePage() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -37,7 +47,8 @@ export default function MotDePasseOubliePage() {
     });
 
     if (error) {
-      const formatted = formatAuthError(error.message);
+      const errorMessage = getAuthErrorMessage(error) || "Une erreur est survenue.";
+      const formatted = formatAuthError(errorMessage);
       setServerError(formatted);
       toast.error(formatted);
       return;
