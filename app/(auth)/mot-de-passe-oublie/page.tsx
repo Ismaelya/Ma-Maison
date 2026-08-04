@@ -33,7 +33,7 @@ export default function MotDePasseOubliePage() {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
 
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${origin}/callback?next=/connexion`,
+      redirectTo: `${origin}/callback/handle?next=/connexion`,
     });
 
     if (error) {
