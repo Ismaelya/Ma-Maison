@@ -392,6 +392,10 @@ model AppSettings {
   maxImagesPerListing Int  @default(10)
   maxImageSizeMb      Int  @default(5)
 
+  /// Interrupteur global Premium. false = mode pause (pas de nouveaux abonnements).
+  /// true = fonctionnement normal. Modifiable par l'admin sans redéploiement.
+  premiumEnabled Boolean @default(true)
+
   updatedAt DateTime @updatedAt
 
   @@map("app_settings")

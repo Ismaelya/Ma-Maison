@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Clock } from "lucide-react";
+import { Clock, AlertTriangle } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/server";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
 import { PaymentVerificationModal } from "@/components/admin/payment-verification-modal";
@@ -10,6 +10,15 @@ export const metadata: Metadata = {
 
 export default async function AdminPaymentsPage() {
   const supabase = await createAdminClient();
+
+  // Fetch premiumEnabled flag
+  const { data: appSettings } = await supabase
+    .from("app_settings")
+    .select("premiumEnabled")
+    .limit(1)
+    .maybeSingle();
+
+  const premiumEnabled: boolean = appSettings?.premiumEnabled !== false;
 
   const { data: paymentsData, error } = await supabase
     .from("payments")
@@ -26,9 +35,21 @@ export default async function AdminPaymentsPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">Vérification des paiements</h1>
         <p className="mt-1 text-sm text-neutral-400">
-          Validez les demandes d'abonnement Premium (1 500 FCFA) après vérification du reçu
+          Validez les demandes d&apos;abonnement Premium (1 500 FCFA) après vérification du reçu
         </p>
       </div>
+
+      {/* Bandeau mode Premium désactivé */}
+      {!premiumEnabled && (
+        <div className="flex items-center gap-3 rounded-xl border border-amber-700/50 bg-amber-950/40 px-5 py-4 text-sm text-amber-300">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400" />
+          <span>
+            <strong className="font-semibold text-amber-200">Mode Premium actuellement désactivé</strong>
+            {" "}— Les nouvelles demandes de paiement sont bloquées côté propriétaire. Aucune nouvelle soumission attendue tant que{" "}
+            <code className="rounded bg-amber-900/60 px-1.5 py-0.5 text-xs font-mono text-amber-300">premiumEnabled = false</code>.
+          </span>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-xl border border-red-800 bg-red-950/50 p-4 text-sm text-red-300">

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit, Eye } from "lucide-react";
 import { requireRole } from "@/lib/auth/helpers";
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice, formatRelativeTime, cn } from "@/lib/utils";
@@ -13,6 +13,14 @@ export const metadata: Metadata = {
 export default async function MyListingsPage() {
   const { profile } = await requireRole("owner");
   const supabase = await createClient();
+
+  // Fetch premiumEnabled flag to conditionally show Premium-specific UI
+  const { data: appSettings } = await supabase
+    .from("app_settings")
+    .select("premiumEnabled")
+    .limit(1)
+    .maybeSingle();
+  const premiumEnabled: boolean = appSettings?.premiumEnabled !== false;
 
   const { data, error } = await supabase
     .from("properties")
@@ -95,7 +103,7 @@ export default async function MyListingsPage() {
                   {formatPrice(listing.price)} · {listing.city} ·{" "}
                   {formatRelativeTime(listing.createdAt)}
                 </p>
-                {(profile.badgeVerified || (profile as any).badge_verified) && (
+                {premiumEnabled && (profile.badgeVerified || (profile as any).badge_verified) && (
                   <p className="mt-1 text-xs text-neutral-500">
                     Vues : {listing.viewCount ?? 0}
                   </p>

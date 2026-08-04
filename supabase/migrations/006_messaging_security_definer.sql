@@ -51,9 +51,9 @@ REVOKE ALL ON FUNCTION public.count_daily_messages(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.count_daily_messages(text) TO authenticated;
 
 -- 3. Read conversation participants (server-side notification only).
---    Conversations.id is uuid in Prisma, so uuid parameter is correct here.
-DROP FUNCTION IF EXISTS public.get_conversation_participants(uuid);
-CREATE OR REPLACE FUNCTION public.get_conversation_participants(p_conversation_id uuid)
+--    Conversations.id is stored as TEXT in Postgres, so the RPC accepts TEXT.
+DROP FUNCTION IF EXISTS public.get_conversation_participants(text);
+CREATE OR REPLACE FUNCTION public.get_conversation_participants(p_conversation_id text)
 RETURNS TABLE(tenant_id text, owner_id text)
 LANGUAGE sql
 SECURITY DEFINER
@@ -65,5 +65,5 @@ AS $$
   WHERE id = p_conversation_id;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_conversation_participants(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_conversation_participants(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.get_conversation_participants(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_conversation_participants(text) TO authenticated;

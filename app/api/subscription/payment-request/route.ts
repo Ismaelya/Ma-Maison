@@ -10,6 +10,22 @@ export async function POST(request: Request) {
     return apiError("UNAUTHORIZED", "Non authentifié", 401);
   }
 
+  // ── Guard global : mode Premium suspendu ──────────────────────────────────
+  const { data: appSettings } = await supabase
+    .from("app_settings")
+    .select("premiumEnabled")
+    .limit(1)
+    .maybeSingle();
+
+  if (appSettings?.premiumEnabled === false) {
+    return apiError(
+      "PREMIUM_PAUSED",
+      "Les abonnements Premium sont temporairement suspendus. Revenez bientôt !",
+      403
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   try {
     const { method, receiptUrl, amount } = await request.json();
     const payment = await PaymentService.submitPaymentRequest(user.id, {
