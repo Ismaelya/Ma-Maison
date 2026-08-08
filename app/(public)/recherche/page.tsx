@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { PropertyRepository } from "@/lib/properties/property.repository";
 import { PropertyGrid } from "@/components/property/property-grid";
 import { SearchFilters } from "@/components/property/search-filters";
@@ -87,7 +88,9 @@ export default async function SearchPage({
                 </svg>
               </summary>
               <div className="mt-3 lg:mt-0">
-                <SearchFilters currentFilters={params} />
+                <Suspense fallback={null}>
+                  <SearchFilters currentFilters={params} />
+                </Suspense>
               </div>
             </details>
           </aside>
