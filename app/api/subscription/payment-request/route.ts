@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   // ── Guard global : mode Premium suspendu ──────────────────────────────────
   const { data: appSettings } = await supabase
     .from("app_settings")
-    .select("premiumEnabled")
+    .select("premiumEnabled, subscriptionPrice")
     .limit(1)
     .maybeSingle();
 
@@ -27,7 +27,10 @@ export async function POST(request: Request) {
   // ─────────────────────────────────────────────────────────────────────────
 
   try {
-    const { method, receiptUrl, amount } = await request.json();
+    const { method, receiptUrl } = await request.json();
+    // Le montant ne vient jamais du client — toujours forcé côté serveur
+    // depuis app_settings.subscriptionPrice (défaut 1500 si absent).
+    const amount = appSettings?.subscriptionPrice ?? 1500;
     const payment = await PaymentService.submitPaymentRequest(user.id, {
       method,
       receiptUrl,

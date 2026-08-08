@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { AdminService } from "@/lib/admin/admin.service";
 import { AuditService } from "@/lib/audit/audit.service";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -8,7 +8,30 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
+// AdminService essaie toujours Prisma en premier avant de retomber sur le
+// client Supabase admin (mocké ci-dessus). Sans ce mock, $transaction /
+// profile.findUnique / property.update / report.update tentent une vraie
+// connexion réseau à la base de données à chaque test, provoquant des
+// timeouts (5000ms) au lieu d'un fallback immédiat vers le chemin mocké.
+vi.mock("@/lib/prisma/client", () => ({
+  prisma: {
+    $transaction: vi.fn().mockRejectedValue(new Error("prisma unavailable in tests")),
+    $executeRawUnsafe: vi.fn().mockRejectedValue(new Error("prisma unavailable in tests")),
+    profile: { findUnique: vi.fn().mockRejectedValue(new Error("prisma unavailable in tests")) },
+    property: { update: vi.fn().mockRejectedValue(new Error("prisma unavailable in tests")) },
+    report: { update: vi.fn().mockRejectedValue(new Error("prisma unavailable in tests")) },
+  },
+}));
+
 describe("Sprint 8 — Admin Dashboard Services & Audit Logs", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("logs ACCOUNT_SUSPENDED audit entry when suspending a user", async () => {
     const mockSupabase = {
       from: vi.fn().mockReturnValue({
@@ -94,7 +117,7 @@ describe("Sprint 8 — Admin Dashboard Services & Audit Logs", () => {
       "admin-001",
       "ADMIN_ACTION",
       "rep-789",
-      expect.objectContaining({ type: "REPORT_STATUS_CHANGE", status: "CLOSED" })
+      expect.objectContaining({ type: "REPORT_STATUS_UPDATED", status: "CLOSED" })
     );
 
     auditSpy.mockRestore();

@@ -12,6 +12,9 @@ import {
   Share2,
   Heart,
   CheckCircle2,
+  Lock,
+  UserPlus,
+  LogIn,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -24,7 +27,6 @@ import {
   getAvatarUrl,
 } from "@/lib/utils";
 import { ContactProtection } from "@/components/property/contact-modal";
-import type { Listing, Profile } from "@/types";
 
 type ListingDetailParams = {
   params: Promise<{ id: string }>;
@@ -135,12 +137,12 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
         {/* On mobile: single column (content then sidebar). On lg: 3-col grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
           {/* Main content */}
-          <div className="lg:col-span-2">
-            {/* Image gallery */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Image gallery — Teaser: ONE single image for unauthenticated visitors */}
             <div className="overflow-hidden rounded-2xl bg-neutral-100">
               {imagesList.length > 0 ? (
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <div className="relative aspect-[4/3] sm:col-span-2">
+                <div className={cn("grid grid-cols-1 gap-2", isAuthenticated && imagesList.length > 1 && "sm:grid-cols-2")}>
+                  <div className={cn("relative aspect-[4/3]", isAuthenticated && imagesList.length > 1 && "sm:col-span-2")}>
                     <Image
                       src={imagesList[0]!}
                       alt={typedListing.title}
@@ -149,16 +151,17 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                       priority
                     />
                   </div>
-                  {imagesList.slice(1, 3).map((img: string, i: number) => (
-                    <div key={i} className="relative aspect-[4/3]">
-                      <Image
-                        src={img}
-                        alt={`${typedListing.title} - Photo ${i + 2}`}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  ))}
+                  {isAuthenticated &&
+                    imagesList.slice(1, 3).map((img: string, i: number) => (
+                      <div key={i} className="relative aspect-[4/3]">
+                        <Image
+                          src={img}
+                          alt={`${typedListing.title} - Photo ${i + 2}`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
                 </div>
               ) : (
                 <div className="flex aspect-[16/9] items-center justify-center">
@@ -168,7 +171,7 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
             </div>
 
             {/* Title & badges */}
-            <div className="mt-6">
+            <div>
               <div className="flex flex-wrap gap-2">
                 <span
                   className={cn(
@@ -195,71 +198,105 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
               </p>
             </div>
 
-            {/* Key features */}
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {roomsCount !== null && (
-                <FeatureBox
-                  icon={<Bed className="h-5 w-5" />}
-                  label="Pièces"
-                  value={String(roomsCount)}
-                />
-              )}
-              {bathroomsCount !== null && (
-                <FeatureBox
-                  icon={<Bath className="h-5 w-5" />}
-                  label="Salles de bain"
-                  value={String(bathroomsCount)}
-                />
-              )}
-              {surfaceArea !== null && (
-                <FeatureBox
-                  icon={<Maximize className="h-5 w-5" />}
-                  label="Superficie"
-                  value={`${surfaceArea} m²`}
-                />
-              )}
-              <FeatureBox
-                icon={<Calendar className="h-5 w-5" />}
-                label="Publié"
-                value={formatRelativeTime(typedListing.createdAt || typedListing.created_at)}
-              />
-            </div>
+            {isAuthenticated ? (
+              <>
+                {/* Key features */}
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  {roomsCount !== null && (
+                    <FeatureBox
+                      icon={<Bed className="h-5 w-5" />}
+                      label="Pièces"
+                      value={String(roomsCount)}
+                    />
+                  )}
+                  {bathroomsCount !== null && (
+                    <FeatureBox
+                      icon={<Bath className="h-5 w-5" />}
+                      label="Salles de bain"
+                      value={String(bathroomsCount)}
+                    />
+                  )}
+                  {surfaceArea !== null && (
+                    <FeatureBox
+                      icon={<Maximize className="h-5 w-5" />}
+                      label="Superficie"
+                      value={`${surfaceArea} m²`}
+                    />
+                  )}
+                  <FeatureBox
+                    icon={<Calendar className="h-5 w-5" />}
+                    label="Publié"
+                    value={formatRelativeTime(typedListing.createdAt || typedListing.created_at)}
+                  />
+                </div>
 
-            {/* Description */}
-            {typedListing.description && (
-              <div className="mt-8">
-                <h2 className="text-lg font-semibold text-neutral-900">
-                  Description
-                </h2>
-                <p className="mt-3 whitespace-pre-line leading-relaxed text-neutral-600">
-                  {typedListing.description}
-                </p>
-              </div>
-            )}
+                {/* Description */}
+                {typedListing.description && (
+                  <div>
+                    <h2 className="text-lg font-semibold text-neutral-900">
+                      Description
+                    </h2>
+                    <p className="mt-3 whitespace-pre-line leading-relaxed text-neutral-600">
+                      {typedListing.description}
+                    </p>
+                  </div>
+                )}
 
-            {/* Amenities */}
-            {amenitiesList.length > 0 && (
-              <div className="mt-8">
-                <h2 className="text-lg font-semibold text-neutral-900">
-                  Équipements & services
-                </h2>
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {amenitiesList.map((amenity: string) => (
-                    <div
-                      key={amenity}
-                      className="flex items-center gap-2 text-sm text-neutral-700"
-                    >
-                      <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-secondary-500" />
-                      {amenity}
+                {/* Amenities */}
+                {amenitiesList.length > 0 && (
+                  <div>
+                    <h2 className="text-lg font-semibold text-neutral-900">
+                      Équipements & services
+                    </h2>
+                    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {amenitiesList.map((amenity: string) => (
+                        <div
+                          key={amenity}
+                          className="flex items-center gap-2 text-sm text-neutral-700"
+                        >
+                          <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-secondary-500" />
+                          {amenity}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              /* REGISTRATION GATE BANNER FOR UNAUTHENTICATED VISITORS */
+              <div className="rounded-3xl border border-primary-200 bg-gradient-to-br from-primary-50/60 via-white to-secondary-50/40 p-6 sm:p-8 shadow-md text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-600/20">
+                  <Lock className="h-7 w-7" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 font-heading">
+                  Accès réservé aux membres
+                </h2>
+                <p className="mt-2 text-sm sm:text-base leading-relaxed text-neutral-600 max-w-lg mx-auto font-sans">
+                  Connectez-vous ou inscrivez-vous pour voir tous les détails et contacter le propriétaire.
+                </p>
+
+                <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+                  <Link
+                    href={`/connexion?redirectTo=${encodeURIComponent(`/annonces/${id}`)}`}
+                    className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-primary-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700 hover:shadow-md"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    Se connecter
+                  </Link>
+
+                  <Link
+                    href={`/inscription?redirectTo=${encodeURIComponent(`/annonces/${id}`)}`}
+                    className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-primary-300 bg-white px-6 py-3 text-sm font-semibold text-primary-700 transition-colors hover:bg-primary-50"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    S&apos;inscrire gratuitement
+                  </Link>
                 </div>
               </div>
             )}
           </div>
 
           {/* Sidebar — Price & Owner */}
-          {/* On mobile: shows at bottom, no sticky. On lg: sticky */}
           <div className="lg:col-span-1">
             <div className="lg:sticky lg:top-24 space-y-4">
               {/* Price card */}
@@ -272,37 +309,67 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                 )}
               </div>
 
-              {/* Owner card */}
-              <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-                  Propriétaire
-                </h3>
-                <div className="mt-4 flex items-center gap-3">
-                  <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-secondary-600 shadow-sm">
-                    <img
-                      src={getAvatarUrl(owner.avatarUrl || owner.avatar_url, owner.name)}
-                      alt={owner.name || "Propriétaire"}
-                      className="h-full w-full object-cover"
-                    />
+              {/* Owner Card or Gated Owner Card */}
+              {isAuthenticated ? (
+                <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+                    Propriétaire
+                  </h3>
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-secondary-600 shadow-sm">
+                      <img
+                        src={getAvatarUrl(owner.avatarUrl || owner.avatar_url, owner.name)}
+                        alt={owner.name || "Propriétaire"}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-neutral-900">
+                        {owner.name ?? "Propriétaire"}
+                      </h3>
+                      <p className="text-xs text-neutral-500">
+                        Membre depuis {formatDate(owner.createdAt || owner.created_at)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <ContactProtection
+                    phone={owner.phone}
+                    ownerName={owner.name ?? "ce propriétaire"}
+                    ownerId={owner.id}
+                    listingId={typedListing.id}
+                    isAuthenticated={isAuthenticated}
+                  />
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-[var(--border)] bg-neutral-50 p-6 shadow-[var(--shadow-card)] text-center space-y-4">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200 text-neutral-500">
+                    <Lock className="h-6 w-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-neutral-900">
-                      {owner.name ?? "Propriétaire"}
-                    </h3>
-                    <p className="text-xs text-neutral-500">
-                      Membre depuis {formatDate(owner.createdAt || owner.created_at)}
+                    <h3 className="font-bold text-neutral-900">Informations propriétaire</h3>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Connectez-vous ou inscrivez-vous pour contacter le propriétaire et débloquer ses coordonnées.
                     </p>
                   </div>
+                  <div className="space-y-2 pt-2">
+                    <Link
+                      href={`/connexion?redirectTo=${encodeURIComponent(`/annonces/${id}`)}`}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700"
+                    >
+                      <LogIn className="h-4 w-4" />
+                      Se connecter
+                    </Link>
+                    <Link
+                      href={`/inscription?redirectTo=${encodeURIComponent(`/annonces/${id}`)}`}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-100"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      S&apos;inscrire
+                    </Link>
+                  </div>
                 </div>
-
-                <ContactProtection
-                  phone={owner.phone}
-                  ownerName={owner.name ?? "ce propriétaire"}
-                  ownerId={owner.id}
-                  listingId={typedListing.id}
-                  isAuthenticated={isAuthenticated}
-                />
-              </div>
+              )}
             </div>
           </div>
         </div>

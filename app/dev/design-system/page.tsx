@@ -86,7 +86,7 @@ export default function DesignSystemDemoPage() {
           <div>
             <span className="text-xs font-mono text-neutral-400">Small Text — 14px (medium)</span>
             <p className="text-small text-neutral-500">
-              * Les frais de publication s'élèvent à 1 500 FCFA par mois avec 30 jours d'essai gratuit.
+              * Les frais de publication s&apos;élèvent à 1 500 FCFA par mois avec 30 jours d&apos;essai gratuit.
             </p>
           </div>
         </div>
@@ -192,7 +192,7 @@ export default function DesignSystemDemoPage() {
       <section className="space-y-6">
         <div className="border-b border-[var(--color-border)] pb-3">
           <h2 className="text-h2">4. Contrôles de Formulaire</h2>
-          <p className="text-xs text-neutral-500 mt-1">Input, Textarea, Select, Checkbox, Radio Group avec labels et gestion d'erreurs.</p>
+          <p className="text-xs text-neutral-500 mt-1">Input, Textarea, Select, Checkbox, Radio Group avec labels et gestion d&apos;erreurs.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 rounded-2xl border border-[var(--color-border)] p-6 bg-white shadow-sm">
@@ -257,7 +257,7 @@ export default function DesignSystemDemoPage() {
               size="sm"
               onClick={() => setInputError(!inputError)}
             >
-              Basculer l'état d'erreur du champ Nom
+              Basculer l&apos;état d&apos;erreur du champ Nom
             </Button>
           </div>
         </div>
@@ -363,7 +363,7 @@ export default function DesignSystemDemoPage() {
                   toast.success("Action confirmée !");
                 }}
               >
-                Confirmer l'action
+                Confirmer l&apos;action
               </Button>
             </>
           }
@@ -383,7 +383,7 @@ export default function DesignSystemDemoPage() {
       <section className="space-y-6">
         <div className="border-b border-[var(--color-border)] pb-3">
           <h2 className="text-h2">8. Skeletons, ErrorState & EmptyState</h2>
-          <p className="text-xs text-neutral-500 mt-1">Composants de chargement, d'erreur et de liste vide.</p>
+          <p className="text-xs text-neutral-500 mt-1">Composants de chargement, d&apos;erreur et de liste vide.</p>
         </div>
 
         <div className="space-y-6">

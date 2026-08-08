@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PropertyService } from "@/lib/properties/property.service";
 import { apiSuccess, apiError } from "@/lib/utils/api-response";
 import { canOwnerPublish } from "@/lib/auth/helpers";
+import { listingSchema } from "@/lib/validations/listing";
 
 export async function GET(
   _request: NextRequest,
@@ -10,10 +11,41 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const property = await PropertyService.getProperty(id);
     if (!property) {
       return apiError("NOT_FOUND", "Annonce introuvable", 404);
     }
+
+    if (!user) {
+      const rawProperty = property as any;
+      const images = Array.isArray(rawProperty.images) && rawProperty.images.length > 0
+        ? [rawProperty.images[0]]
+        : Array.isArray(rawProperty.property_images) && rawProperty.property_images.length > 0
+          ? [rawProperty.property_images[0]]
+          : [];
+
+      const sanitizedProperty = {
+        id: rawProperty.id,
+        title: rawProperty.title,
+        price: rawProperty.price,
+        city: rawProperty.city,
+        district: rawProperty.district || rawProperty.neighborhood || rawProperty.city,
+        type: rawProperty.type || rawProperty.property_type || "HOUSE",
+        transactionType: rawProperty.transactionType || rawProperty.transaction_type || "RENT",
+        images,
+        createdAt: rawProperty.createdAt || rawProperty.created_at,
+        isGated: true,
+        gateMessage: "Connectez-vous ou inscrivez-vous pour voir tous les détails et contacter le propriétaire",
+      };
+
+      return apiSuccess(sanitizedProperty);
+    }
+
     return apiSuccess(property);
   } catch (err: any) {
     return apiError("SERVER_ERROR", err.message, 500);
@@ -76,7 +108,17 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const updated = await PropertyService.updateProperty(id, body);
+
+    const parsed = listingSchema.partial().safeParse(body);
+    if (!parsed.success) {
+      return apiError(
+        "VALIDATION_ERROR",
+        parsed.error.issues[0]?.message || "Données invalides",
+        400
+      );
+    }
+
+    const updated = await PropertyService.updateProperty(id, { ...body, ...parsed.data });
     return apiSuccess(updated, "Annonce mise à jour avec succès");
   } catch (err: any) {
     return apiError("BAD_REQUEST", err.message, 400);

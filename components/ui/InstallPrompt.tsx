@@ -65,10 +65,10 @@ export default function InstallPrompt(): React.ReactElement | null {
   if (showIosInstructions) {
     return (
       <div style={{ position: "fixed", left: 16, right: 16, bottom: 16, padding: 12, background: "white", borderRadius: 8, boxShadow: "0 6px 24px rgba(0,0,0,0.12)", zIndex: 9999, fontSize: 14 }}>
-        <div style={{ marginBottom: 8, color: "#111" }}>Pour installer Ma Maison sur iOS : appuyez sur le bouton <strong>Partager</strong> puis choisissez <strong>Ajouter à l'écran d'accueil</strong>.</div>
+        <div style={{ marginBottom: 8, color: "#111" }}>Pour installer Ma Maison sur iOS : appuyez sur le bouton <strong>Partager</strong> puis choisissez <strong>Ajouter à l&apos;écran d&apos;accueil</strong>.</div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button onClick={() => { setVisible(false); setShowIosInstructions(false); }} style={{ padding: "8px 12px", background: "#2563eb", color: "white", borderRadius: 6, border: "none" }}>
-            J'ai compris
+            J&apos;ai compris
           </button>
         </div>
       </div>
@@ -77,7 +77,7 @@ export default function InstallPrompt(): React.ReactElement | null {
 
   return (
     <div style={{ position: "fixed", left: 16, right: 16, bottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", padding: 12, background: "white", borderRadius: 8, boxShadow: "0 6px 24px rgba(0,0,0,0.12)", zIndex: 9999 }}>
-      <div style={{ fontSize: 14, color: "#111" }}>Installer l'application Ma Maison ?</div>
+      <div style={{ fontSize: 14, color: "#111" }}>Installer l&apos;application Ma Maison ?</div>
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={onInstall} style={{ padding: "8px 12px", background: "#2563eb", color: "white", borderRadius: 6, border: "none" }}>
           Installer

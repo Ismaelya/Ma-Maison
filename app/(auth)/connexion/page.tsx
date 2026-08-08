@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, Lock, LogIn, ArrowRight } from "lucide-react";
+import { Mail, Lock, LogIn, ArrowRight, ShieldCheck, Sparkles, Building2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -80,8 +81,13 @@ export default function ConnexionPage() {
 
     toast.success("Connexion réussie ! Redirection...");
 
+    const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const redirectTo = searchParams?.get("redirectTo");
+
     if (role === "ADMIN") {
       router.push("/admin");
+    } else if (redirectTo && redirectTo.startsWith("/")) {
+      router.push(redirectTo);
     } else {
       router.push("/dashboard");
     }
@@ -89,79 +95,121 @@ export default function ConnexionPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--color-muted)]/30 p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-md space-y-8 rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg)] p-8 shadow-[var(--shadow-card)] animate-fade-in text-left">
-        {/* Header */}
-        <div className="text-center space-y-3">
-          <div className="flex justify-center">
-            <Logo />
-          </div>
-          <h1 className="text-h3 font-bold text-[var(--color-text)]">Connexion à votre compte</h1>
-          <p className="text-small text-neutral-500">
-            Accédez à votre espace Ma Maison Niger
-          </p>
-        </div>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-muted)] p-4 sm:p-6 lg:p-10">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="grid w-full max-w-4xl overflow-hidden rounded-3xl border border-[var(--color-border)] bg-white shadow-2xl md:grid-cols-2"
+      >
+        {/* Left Side: Brand Showcase Panel (Desktop split / stacked mobile) */}
+        <div className="relative flex flex-col justify-between bg-[var(--color-primary-950)] p-8 text-white md:p-12 overflow-hidden">
+          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-[var(--color-secondary-500)]/15 blur-3xl" />
+          <div className="absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-[var(--color-primary-400)]/10 blur-3xl" />
 
-        {/* Server Error Alert */}
-        {serverError && (
-          <div className="rounded-2xl border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10 p-4 text-xs font-medium text-[var(--color-danger)] animate-fade-in">
-            {serverError}
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          <Input
-            label="Adresse e-mail *"
-            type="email"
-            placeholder="votre.email@exemple.com"
-            leftIcon={<Mail className="h-4 w-4" />}
-            {...register("email")}
-            error={errors.email?.message}
-          />
-
-          <div className="space-y-1">
-            <Input
-              label="Mot de passe *"
-              type="password"
-              placeholder="••••••••"
-              leftIcon={<Lock className="h-4 w-4" />}
-              {...register("password")}
-              error={errors.password?.message}
-            />
-            <div className="flex justify-end pt-1">
-              <Link
-                href="/mot-de-passe-oublie"
-                className="text-xs font-medium text-[var(--color-primary)] hover:underline"
-              >
-                Mot de passe oublié ?
-              </Link>
+          <div className="relative z-10 space-y-6">
+            <Logo variant="light" />
+            <div className="pt-6 space-y-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-secondary-400)]/30 bg-[var(--color-secondary-400)]/10 px-3 py-1 text-xs font-semibold text-[var(--color-secondary-400)]">
+                <Sparkles className="h-3.5 w-3.5" /> Espace Membre Prestige
+              </span>
+              <h2 className="text-2xl font-bold font-heading leading-tight text-white sm:text-3xl">
+                La référence immobilière de confiance au Niger
+              </h2>
+              <p className="text-sm leading-relaxed text-stone-300 font-sans">
+                Accédez à des centaines d&apos;annonces exclusives, contactez directement les propriétaires et gérez vos biens en toute simplicité.
+              </p>
             </div>
           </div>
 
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            fullWidth
-            isLoading={isSubmitting}
-            leftIcon={<LogIn className="h-4 w-4" />}
-          >
-            Se connecter
-          </Button>
-        </form>
-
-        {/* Footer */}
-        <div className="border-t border-[var(--color-border)] pt-6 text-center text-xs text-neutral-500">
-          Vous n&apos;avez pas encore de compte ?{" "}
-          <Link
-            href="/inscription"
-            className="font-semibold text-[var(--color-primary)] hover:underline inline-flex items-center gap-1"
-          >
-            S&apos;inscrire <ArrowRight className="h-3 w-3" />
-          </Link>
+          <div className="relative z-10 pt-8 space-y-3 border-t border-white/10 text-xs text-stone-400">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-[var(--color-secondary-400)]" />
+              <span>Annonces et propriétaires 100% vérifiés</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-[var(--color-secondary-400)]" />
+              <span>Plateforme immobilière n°1 à Niamey & Niger</span>
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* Right Side: Form Container */}
+        <div className="flex flex-col justify-center p-8 sm:p-10 lg:p-12 bg-white text-left">
+          {/* Header */}
+          <div className="space-y-2 mb-6">
+            <h1 className="text-h3 font-bold text-[var(--color-text)] font-heading">Connexion à votre compte</h1>
+            <p className="text-small text-stone-500 font-sans">
+              Accédez à votre espace Ma Maison Niger
+            </p>
+          </div>
+
+          {/* Server Error Alert */}
+          {serverError && (
+            <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-medium text-red-700 animate-fade-in">
+              {serverError}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <Input
+              label="Adresse e-mail *"
+              type="email"
+              placeholder="votre.email@exemple.com"
+              leftIcon={<Mail className="h-4 w-4 text-stone-400" />}
+              {...register("email")}
+              error={errors.email?.message}
+            />
+
+            <div className="space-y-1">
+              <Input
+                label="Mot de passe *"
+                type="password"
+                placeholder="••••••••"
+                leftIcon={<Lock className="h-4 w-4 text-stone-400" />}
+                {...register("password")}
+                error={errors.password?.message}
+              />
+              <div className="flex justify-end pt-1">
+                <Link
+                  href="/mot-de-passe-oublie"
+                  className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                >
+                  Mot de passe oublié ?
+                </Link>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              isLoading={isSubmitting}
+              leftIcon={<LogIn className="h-4 w-4" />}
+            >
+              Se connecter
+            </Button>
+          </form>
+
+          {/* Footer */}
+          <div className="mt-8 border-t border-stone-200 pt-6 text-center text-xs text-stone-500">
+            Vous n&apos;avez pas encore de compte ?{" "}
+            <Link
+              href={
+                typeof window !== "undefined" && new URLSearchParams(window.location.search).get("redirectTo")
+                  ? `/inscription?redirectTo=${encodeURIComponent(new URLSearchParams(window.location.search).get("redirectTo")!)}`
+                  : "/inscription"
+              }
+              className="font-bold text-[var(--color-primary)] hover:underline inline-flex items-center gap-1"
+            >
+              S&apos;inscrire <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
+

@@ -4,7 +4,7 @@ import { apiSuccess, apiError } from "@/lib/utils/api-response";
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return apiError("UNAUTHORIZED", "Accès non autorisé", 401);
   }
 
@@ -12,9 +12,12 @@ export async function GET(request: Request) {
     const supabaseAdmin = await createAdminClient();
     const nowIso = new Date().toISOString();
 
+    // Un abonnement Premium expiré retombe en FREE (jamais d'état bloquant) —
+    // cohérent avec le modèle Gratuit permanent. Miroir de la fonction SQL
+    // public.expire_subscriptions().
     const { data: expiredSubs, error } = await supabaseAdmin
       .from("subscriptions")
-      .update({ status: "EXPIRED" } as any)
+      .update({ status: "FREE", price: 0, endDate: null } as any)
       .eq("status", "ACTIVE")
       .not("endDate", "is", null)
       .lt("endDate", nowIso)
@@ -28,7 +31,7 @@ export async function GET(request: Request) {
     }
 
     const count = (expiredSubs ?? []).length;
-    return apiSuccess({ updatedCount: count }, `${count} abonnement(s) expiré(s) mis à jour avec succès.`);
+    return apiSuccess({ updatedCount: count }, `${count} abonnement(s) Premium repassé(s) en Gratuit avec succès.`);
   } catch (err: any) {
     return apiError("CRON_ERROR", err.message || "Erreur d'exécution du cron", 500);
   }

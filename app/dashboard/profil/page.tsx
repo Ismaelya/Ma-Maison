@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { User, Shield, Clock } from "lucide-react";
 import { requireAuth } from "@/lib/auth/helpers";
 import { ProfileForm } from "@/components/forms/profile-form";
-import { formatDate, getTrialDaysRemaining, cn } from "@/lib/utils";
+import { formatDate, cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Mon profil",
@@ -12,8 +12,6 @@ export default async function ProfilePage() {
   const { profile } = await requireAuth();
   const roleStr = String(profile.role ?? "").toUpperCase();
   const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
-  const trialRaw = (profile as any).trial_started_at || profile.trialStartedAt;
-  const trialDays = isOwner && trialRaw ? getTrialDaysRemaining(typeof trialRaw === "string" ? trialRaw : (trialRaw as Date).toISOString()) : null;
 
   return (
     <div className="animate-fade-in space-y-8">
@@ -87,23 +85,15 @@ export default async function ProfilePage() {
             </div>
           </div>
 
-          {/* Premium info for owners */}
-          {isOwner && trialDays !== null && (
-            <div
-              className={cn(
-                "rounded-2xl border p-6 shadow-[var(--shadow-card)]",
-                "border-blue-200 bg-blue-50"
-              )}
-            >
-              <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-neutral-600">
+          {/* Publication info for owners */}
+          {isOwner && (
+            <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
+              <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-neutral-500">
                 <Clock className="h-4 w-4" />
-                Formule actuelle
+                Publication
               </h3>
-              <p className="mt-3 text-lg font-bold text-neutral-900">
-                Compte Gratuit
-              </p>
-              <p className="mt-1 text-sm text-neutral-600">
-                Vous pouvez publier sans limite et passer à Premium à tout moment pour bénéficier du badge vérifié et de la mise en avant.
+              <p className="mt-3 text-sm text-neutral-600">
+                La publication d&apos;annonces est gratuite et illimitée.
               </p>
             </div>
           )}

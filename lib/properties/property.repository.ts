@@ -10,94 +10,74 @@ export type PropertyFilterOptions = {
   minPrice?: number;
   maxPrice?: number;
   rooms?: number;
+  bathrooms?: number;
   page?: number;
   limit?: number;
   q?: string;
+  sortBy?: "createdAt" | "price";
+  sortOrder?: "asc" | "desc";
 };
+
+function escapePostgrestValue(value: string): string {
+  return value.replace(/[%,()]/g, (match) => `\\${match}`);
+}
 
 export class PropertyRepository {
   static async search(filters: PropertyFilterOptions = {}): Promise<Property[]> {
-    try {
-      const whereClause: any = {
-        status: "APPROVED",
-        owner: {
-          status: "ACTIVE",
-        },
-      };
-
-      if (filters.city) {
-        whereClause.city = filters.city;
-      }
-      if (filters.district) {
-        whereClause.district = { contains: filters.district, mode: "insensitive" };
-      }
-      if (filters.type) {
-        whereClause.type = filters.type.toUpperCase();
-      }
-
-      const results = await prisma.property.findMany({
-        where: whereClause,
-        include: {
-          owner: {
-            include: {
-              subscriptions: {
-                where: { status: "ACTIVE" },
-                select: { id: true, status: true },
-                orderBy: { createdAt: "desc" },
-                take: 1,
-              },
-            },
-          },
-          images: true,
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      if (results && results.length > 0) {
-        const sorted = [...results].sort((a, b) => {
-          const aPremium = (a.owner as any)?.subscriptions?.length > 0;
-          const bPremium = (b.owner as any)?.subscriptions?.length > 0;
-
-          if (aPremium !== bPremium) {
-            return aPremium ? -1 : 1;
-          }
-
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
-        return sorted as unknown as Property[];
-      }
-    } catch {
-      // Ignore Prisma search error
-    }
-
     const supabase = await createClient();
+
+    const page = Math.max(1, filters.page || 1);
+    const limit = Math.max(1, Math.min(filters.limit || 12, 100));
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const sortColumn = filters.sortBy === "price" ? "price" : "createdAt";
+    const ascending = filters.sortOrder === "asc";
+
     let query = supabase
       .from("properties")
-      .select(
-        "*, property_images(*), profiles!inner(id, name, agencyName, badgeVerified, avatarUrl, phone, status, subscriptions!left(id, status, createdAt))",
-        { count: "exact" }
-      )
+      .select("*, property_images(*), profiles!inner(id, name, agencyName, badgeVerified, avatarUrl, phone, status)")
       .eq("status", "APPROVED")
-      .eq("profiles.status", "ACTIVE")
-      .order("createdAt", { ascending: false });
+      .eq("profiles.status", "ACTIVE");
 
     if (filters.city) {
       query = query.eq("city", filters.city);
     }
+    if (filters.district) {
+      query = query.ilike("district", `%${escapePostgrestValue(filters.district)}%`);
+    }
+    if (filters.type) {
+      query = query.eq("type", filters.type.toUpperCase());
+    }
+    if (filters.transactionType) {
+      query = query.eq("transactionType", filters.transactionType.toUpperCase());
+    }
+    if (filters.minPrice !== undefined) {
+      query = query.gte("price", filters.minPrice);
+    }
+    if (filters.maxPrice !== undefined) {
+      query = query.lte("price", filters.maxPrice);
+    }
+    if (filters.rooms !== undefined) {
+      query = query.gte("rooms", filters.rooms);
+    }
+    if (filters.bathrooms !== undefined) {
+      query = query.gte("bathrooms", filters.bathrooms);
+    }
+    if (filters.q) {
+      const q = escapePostgrestValue(filters.q);
+      query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+    }
 
-    const { data } = await query;
-    const sorted = (data ?? []).sort((a: any, b: any) => {
-      const aPremium = (a.profiles?.subscriptions ?? []).some((sub: any) => String(sub.status).toUpperCase() === "ACTIVE");
-      const bPremium = (b.profiles?.subscriptions ?? []).some((sub: any) => String(sub.status).toUpperCase() === "ACTIVE");
+    query = query
+      .order("isFeatured", { ascending: false })
+      .order(sortColumn, { ascending })
+      .range(from, to);
 
-      if (aPremium !== bPremium) {
-        return aPremium ? -1 : 1;
-      }
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
 
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-
-    return sorted as unknown as Property[];
+    return (data ?? []) as unknown as Property[];
   }
 
   static async findById(id: string): Promise<Property | null> {
@@ -172,38 +152,73 @@ export class PropertyRepository {
     return data as unknown as Property;
   }
 
-  static async update(id: string, updates: Partial<Property>): Promise<Property> {
-    try {
-      const updated = await prisma.property.update({
-        where: { id },
-        data: updates as any,
-      });
-      return updated as unknown as Property;
-    } catch {
-      // Ignore
+  private static readonly UPDATABLE_FIELDS = [
+    "title",
+    "description",
+    "price",
+    "city",
+    "district",
+    "address",
+    "rooms",
+    "bathrooms",
+    "surface",
+    "type",
+    "transactionType",
+  ] as const;
+
+  static async update(id: string, updates: Partial<Property> & { images?: string[] }): Promise<Property> {
+    const sanitized: Record<string, any> = {};
+    for (const key of PropertyRepository.UPDATABLE_FIELDS) {
+      if (Object.prototype.hasOwnProperty.call(updates, key)) {
+        sanitized[key] = (updates as any)[key];
+      }
+    }
+    if (sanitized.type) sanitized.type = String(sanitized.type).toUpperCase();
+    if (sanitized.transactionType) sanitized.transactionType = String(sanitized.transactionType).toUpperCase();
+    if (sanitized.price !== undefined) sanitized.price = Number(sanitized.price);
+    if (sanitized.rooms !== undefined) sanitized.rooms = Number(sanitized.rooms);
+    if (sanitized.bathrooms !== undefined) sanitized.bathrooms = Number(sanitized.bathrooms);
+    if (sanitized.surface !== undefined) {
+      sanitized.surface = sanitized.surface != null ? Number(sanitized.surface) : null;
     }
 
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("properties")
-      .update(updates as any)
-      .eq("id", id)
-      .select()
-      .single();
+    const images = (updates as any).images;
 
-    if (error) throw new Error(error.message);
-    return data as unknown as Property;
+    const updated = await prisma.property.update({
+      where: { id },
+      data: sanitized,
+    });
+
+    if (Array.isArray(images)) {
+      await prisma.propertyImage.deleteMany({ where: { propertyId: id } });
+      if (images.length > 0) {
+        await prisma.propertyImage.createMany({
+          data: images.map((url: string, index: number) => ({
+            id: crypto.randomUUID(),
+            propertyId: id,
+            url,
+            order: index,
+          })),
+        });
+      }
+    }
+
+    return updated as unknown as Property;
   }
 
   static async delete(id: string): Promise<void> {
-    try {
-      await prisma.property.delete({ where: { id } });
-      return;
-    } catch {
-      // Ignore
-    }
+    await prisma.$transaction([
+      prisma.message.deleteMany({ where: { conversation: { propertyId: id } } }),
+      prisma.conversation.deleteMany({ where: { propertyId: id } }),
+      prisma.favorite.deleteMany({ where: { propertyId: id } }),
+      prisma.review.deleteMany({ where: { propertyId: id } }),
+      prisma.report.deleteMany({ where: { propertyId: id } }),
+      prisma.propertyImage.deleteMany({ where: { propertyId: id } }),
+    ]);
 
-    const supabase = await createClient();
-    await supabase.from("properties").delete().eq("id", id);
+    const result = await prisma.property.deleteMany({ where: { id } });
+    if (result.count === 0) {
+      throw new Error(`Suppression impossible : annonce introuvable (id: ${id})`);
+    }
   }
 }

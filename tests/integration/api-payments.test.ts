@@ -11,6 +11,16 @@ vi.mock("@/lib/supabase/server", () => ({
     auth: {
       getUser: mockGetUser,
     },
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        limit: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { premiumEnabled: true, subscriptionPrice: 1500 },
+            error: null,
+          }),
+        }),
+      }),
+    }),
   })),
 }));
 

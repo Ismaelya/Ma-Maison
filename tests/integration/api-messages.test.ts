@@ -6,15 +6,26 @@ import { NotificationService } from "@/lib/notifications/notification.service";
 const mockGetUser = vi.fn();
 const mockSingleMessage = vi.fn();
 const mockSingleConv = vi.fn();
+const mockSingleProfile = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
+  // Le client authentifié fait la lecture de profil (rôle) ET l'insertion du
+  // message (RLS messages_participants_send appliquée) — c'est le vrai chemin
+  // de la route, l'admin client ne sert que pour la notification du destinataire.
   createClient: vi.fn(() => Promise.resolve({
     auth: {
       getUser: mockGetUser,
     },
-  })),
-  createAdminClient: vi.fn(() => Promise.resolve({
     from: (table: string) => {
+      if (table === "profiles") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: mockSingleProfile,
+            }),
+          }),
+        };
+      }
       if (table === "messages") {
         return {
           insert: () => ({
@@ -24,6 +35,12 @@ vi.mock("@/lib/supabase/server", () => ({
           }),
         };
       }
+      return {};
+    },
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+  })),
+  createAdminClient: vi.fn(() => Promise.resolve({
+    from: (table: string) => {
       if (table === "conversations") {
         return {
           select: () => ({
@@ -107,6 +124,7 @@ describe("API Integration: POST /api/messages", () => {
       createdAt: new Date().toISOString(),
     };
 
+    mockSingleProfile.mockResolvedValue({ data: { role: "TENANT" }, error: null });
     mockSingleMessage.mockResolvedValue({ data: createdMsg, error: null });
     mockSingleConv.mockResolvedValue({
       data: { tenantId: senderId, ownerId: recipientId },

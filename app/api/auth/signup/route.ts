@@ -34,13 +34,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const normalizedRole = (role || "TENANT").toUpperCase();
+    const ALLOWED_SIGNUP_ROLES = ["TENANT", "OWNER", "AGENCY"];
+    const requestedRole = (role || "TENANT").toString().toUpperCase();
+    const normalizedRole = ALLOWED_SIGNUP_ROLES.includes(requestedRole) ? requestedRole : "TENANT";
     const avatarUrl = getAvatarUrl(null, name);
     const userEmail = email.trim().toLowerCase();
     const basePhone = phone ? String(phone).trim() : `+227${Math.floor(80000000 + Math.random() * 19999999)}`;
 
     let user: any = null;
     let supabaseAdmin: any = null;
+    let createdViaAdmin = false;
 
     try {
       supabaseAdmin = await createAdminClient();
@@ -55,7 +58,6 @@ export async function POST(request: Request) {
           const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
             email: userEmail,
             password,
-            email_confirm: true,
             user_metadata: {
               name,
               phone: basePhone,
@@ -67,6 +69,7 @@ export async function POST(request: Request) {
 
           if (!adminAuthErr && adminAuthData?.user) {
             user = adminAuthData.user;
+            createdViaAdmin = true;
             break;
           }
 
@@ -79,9 +82,9 @@ export async function POST(request: Request) {
                 if (existing) {
                   await supabaseAdmin.auth.admin.updateUserById(existing.id, {
                     password,
-                    email_confirm: true,
                   });
                   user = existing;
+                  createdViaAdmin = !existing.email_confirmed_at;
                   break;
                 }
               } catch {
@@ -136,6 +139,17 @@ export async function POST(request: Request) {
         email: userEmail,
         user_metadata: { name, phone: basePhone, role: normalizedRole },
       };
+    }
+
+    // The Admin API (createUser/updateUserById) never dispatches a confirmation
+    // email by itself — it must be triggered explicitly via the public resend endpoint.
+    if (createdViaAdmin) {
+      try {
+        const supabase = await createClient();
+        await supabase.auth.resend({ type: "signup", email: userEmail });
+      } catch (resendErr) {
+        console.warn("Confirmation email resend warning:", resendErr);
+      }
     }
 
     // Ensure Profile record exists in profiles table using Prisma ORM with phone conflict resolution
@@ -214,36 +228,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // Generate active session via MagicLink OTP + verifyOtp
-    if (supabaseAdmin) {
-      try {
-        const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
-          type: "magiclink",
-          email: userEmail,
-        });
-
-        if (linkData?.properties?.hashed_token) {
-          const supabase = await createClient();
-          await supabase.auth.verifyOtp({
-            token_hash: linkData.properties.hashed_token,
-            type: "magiclink",
-          });
-        }
-      } catch (sessionErr) {
-        console.warn("Session OTP generation warning:", sessionErr);
-      }
-    }
-
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       user,
-      message: "Compte créé avec succès.",
+      message: "Compte créé avec succès. Vérifiez votre boîte de réception pour confirmer votre e-mail.",
     });
-
-    response.headers.append("Set-Cookie", `ma_maison_user_id=${user.id}; Path=/; Max-Age=2592000; SameSite=Lax`);
-    response.headers.append("Set-Cookie", `ma_maison_user_email=${encodeURIComponent(user.email || userEmail)}; Path=/; Max-Age=2592000; SameSite=Lax`);
-
-    return response;
   } catch (err: any) {
     console.error("Fatal Signup Error:", err);
     const msg = typeof err === "string" ? err : (err && typeof err.message === "string" && err.message) ? err.message : String(err || "Erreur serveur");

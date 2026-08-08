@@ -131,7 +131,7 @@ export default async function AdminPaymentsPage() {
 
         {processedPayments.length === 0 ? (
           <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-8 text-center text-sm text-neutral-500">
-            Aucun paiement traité pour l'instant.
+            Aucun paiement traité pour l&apos;instant.
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-950 shadow-xl">

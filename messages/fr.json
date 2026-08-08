@@ -38,5 +38,29 @@
     "owner": "Propriétaire",
     "agency": "Agence immobilière",
     "admin": "Administrateur"
+  },
+  "Auth": {
+    "loginTitle": "Connexion à votre compte",
+    "loginSubtitle": "Accédez à votre espace Ma Maison Niger",
+    "registerTitle": "Créer votre compte",
+    "registerSubtitle": "Rejoignez la plateforme immobilière de référence au Niger",
+    "brandTagline": "La référence immobilière de confiance au Niger",
+    "brandDescription": "Trouvez le logement de vos rêves ou gérez vos annonces en toute sérénité avec un accompagnement d'excellence.",
+    "emailLabel": "Adresse e-mail *",
+    "passwordLabel": "Mot de passe *",
+    "forgotPassword": "Mot de passe oublié ?",
+    "submitLogin": "Se connecter",
+    "noAccount": "Vous n'avez pas encore de compte ?",
+    "signUpLink": "S'inscrire",
+    "alreadyAccount": "Vous avez déjà un compte ?",
+    "signInLink": "Se connecter",
+    "roleTenant": "Locataire",
+    "roleOwner": "Propriétaire",
+    "roleAgency": "Agence",
+    "fullNameLabel": "Nom complet *",
+    "phoneLabel": "Téléphone (optionnel)",
+    "agencyNameLabel": "Nom de l'agence immobilière *",
+    "confirmPasswordLabel": "Confirmer le mot de passe *",
+    "submitRegister": "Créer mon compte"
   }
 }

@@ -127,7 +127,7 @@ export function ContactProtection({
 
               <div className="mt-6 flex flex-col gap-3">
                 <Link
-                  href="/inscription"
+                  href={`/inscription?redirectTo=${encodeURIComponent(`/annonces/${listingId}`)}`}
                   className="flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700"
                 >
                   <UserPlus className="h-4 w-4" />
@@ -135,7 +135,7 @@ export function ContactProtection({
                 </Link>
 
                 <Link
-                  href="/connexion"
+                  href={`/connexion?redirectTo=${encodeURIComponent(`/annonces/${listingId}`)}`}
                   className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-5 py-3 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50"
                 >
                   <LogIn className="h-4 w-4" />

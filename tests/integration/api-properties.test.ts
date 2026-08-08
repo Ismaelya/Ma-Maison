@@ -142,7 +142,17 @@ describe("API Integration: POST /api/properties", () => {
 
     const req = new Request("http://localhost:3000/api/properties", {
       method: "POST",
-      body: JSON.stringify({ title: "Appartement Plateau" }),
+      body: JSON.stringify({
+        title: "Appartement Plateau",
+        description: "Un bel appartement bien situé au centre-ville avec toutes commodités.",
+        propertyType: "APARTMENT",
+        transactionType: "RENT",
+        price: 150000,
+        city: "Niamey",
+        district: "Plateau",
+        rooms: 2,
+        bathrooms: 1,
+      }),
     });
 
     const res = await POST(req);
@@ -194,7 +204,17 @@ describe("API Integration: POST /api/properties", () => {
 
     const req = new Request("http://localhost:3000/api/properties", {
       method: "POST",
-      body: JSON.stringify({ title: "Superbe Villa Goudel", price: 300000 }),
+      body: JSON.stringify({
+        title: "Superbe Villa Goudel",
+        description: "Une superbe villa avec jardin et piscine dans un quartier calme.",
+        propertyType: "VILLA",
+        transactionType: "SALE",
+        price: 300000,
+        city: "Niamey",
+        district: "Goudel",
+        rooms: 4,
+        bathrooms: 3,
+      }),
     });
 
     const res = await POST(req);

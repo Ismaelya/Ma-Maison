@@ -1,27 +1,41 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
-  --color-primary: #2563eb;
+  --font-space-grotesk: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-manrope: 'Manrope', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-body: 'Manrope', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
 
-  --color-secondary-50: #f0fdf4;
-  --color-secondary-100: #dcfce7;
-  --color-secondary-200: #bbf7d0;
-  --color-secondary-500: #10b981;
-  --color-secondary-600: #059669;
-  --color-secondary-700: #047857;
-  --color-secondary-800: #065f46;
-  --color-secondary: #059669;
+  /* Deep blue — extracted from logo.png (house/left wordmark) */
+  --color-primary-50: #EDEFFD;
+  --color-primary-100: #D6DCFA;
+  --color-primary-200: #ADB9F5;
+  --color-primary-300: #778AEE;
+  --color-primary-400: #334FE6;
+  --color-primary-500: #1832BF;
+  --color-primary-600: #13299A;
+  --color-primary-700: #102281; /* exact logo blue */
+  --color-primary-800: #0C1A64;
+  --color-primary-900: #091349;
+  --color-primary-950: #060C2D;
+  --color-primary: #13299A;
+
+  --color-warmblack: #0F172A;
+  --color-ivory: #FFFFFF;
+
+  /* Turquoise/émeraude — extracted from logo.png (chain link/right wordmark) */
+  --color-secondary-50: #EBFEFC;
+  --color-secondary-100: #CDFEF6;
+  --color-secondary-200: #9CFCEE;
+  --color-secondary-400: #1FF9D8;
+  --color-secondary-500: #05CBAD; /* exact logo teal */
+  --color-secondary-600: #038672;
+  --color-secondary-700: #036D5D;
+  --color-secondary-800: #025548;
+  --color-secondary-900: #023C33;
+  --color-secondary-950: #012822;
+  --color-secondary: #038672;
 
   --color-success-50: #f0fdf4;
   --color-success-100: #dcfce7;
@@ -46,20 +60,26 @@
 }
 
 /* ============================================================================
-   MA MAISON — Design System Tokens (v1.1 Partie 8)
+   MA MAISON — Design System Tokens (v3.0 — Logo Blue/Turquoise)
    ============================================================================ */
 
 :root {
-  /* Strict Color Tokens */
-  --color-primary: #2563EB;   /* Trust Blue */
+  /* Strict Color Tokens — Brand Palette (extracted from logo.png) */
+  --color-primary: #13299A;   /* Deep Blue */
+  --color-accent: #05CBAD;    /* Turquoise / Émeraude */
+  --color-warmblack: #0F172A; /* Neutral Ink */
+  --color-ivory: #FFFFFF;     /* Neutral White */
   --color-success: #16A34A;   /* Growth Green */
   --color-warning: #EA580C;   /* Amber / Orange */
   --color-danger: #DC2626;    /* Red */
-  --color-bg: #F8FAFC;        /* Soft White */
-  --color-text: #111827;      /* Dark Slate */
-  --color-muted: #E2E8F0;     /* Soft Neutral */
-  --color-border: #CBD5E1;    /* Gentle Grey Border */
-  --color-ring: #2563EB;
+  --color-bg: #FFFFFF;        /* Neutral Light Background */
+  --color-text: #0F172A;      /* Neutral Dark Slate Text */
+  --color-muted: #F1F5F9;     /* Neutral Soft Panel */
+  --color-border: #E2E8F0;    /* Neutral Light Border */
+  --color-ring: #13299A;
+
+  /* Brand gradient — mirrors the logo's blue → turquoise transition */
+  --gradient-brand: linear-gradient(135deg, #102281 0%, #05CBAD 100%);
 
   /* Extended UI Token Aliases */
   --background: var(--color-bg);
@@ -77,26 +97,26 @@
   --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-card-hover: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
-  --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-card: 0 1px 4px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  --shadow-card-hover: 0 12px 30px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(15, 23, 42, 0.05);
+  --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.3);
 }
 
 .dark {
-  /* Neutralize dark mode: force light tokens when .dark is present */
-  --color-bg: #F8FAFC !important;        /* Soft White */
-  --color-text: #111827 !important;      /* Dark Slate */
-  --color-muted: #E2E8F0 !important;     /* Soft Neutral */
-  --color-border: #CBD5E1 !important;    /* Gentle Grey Border */
-  --color-ring: #2563eb !important;
+  /* Force light/neutral tokens for consistent brand aesthetic */
+  --color-bg: #FFFFFF !important;
+  --color-text: #0F172A !important;
+  --color-muted: #F1F5F9 !important;
+  --color-border: #E2E8F0 !important;
+  --color-ring: #13299A !important;
 
   --background: var(--color-bg) !important;
   --foreground: var(--color-text) !important;
   --border: var(--color-border) !important;
   --input: var(--color-border) !important;
 
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-  --shadow-card-hover: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+  --shadow-card: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
+  --shadow-card-hover: 0 12px 30px rgba(15, 23, 42, 0.1) !important;
 }
 
 .dark .bg-white,
@@ -127,7 +147,7 @@
 .dark .text-neutral-400,
 .dark .text-neutral-300,
 .dark .text-neutral-200 {
-  color: #94a3b8 !important;
+  color: #78716c !important;
 }
 
 .dark .shadow-card,
@@ -136,10 +156,11 @@
 }
 
 /* ============================================================================
-   Typography Scale (Partie 8 : H1 36px, H2 30px, H3 24px, H4 20px, body 16px, small 14px)
+   Typography Scale — Space Grotesk (Titres 600-700) & Manrope (Corps 400-500)
    ============================================================================ */
 
 h1, .text-h1 {
+  font-family: var(--font-space-grotesk), var(--font-heading), sans-serif;
   font-size: 2.25rem; /* 36px */
   line-height: 2.5rem;
   font-weight: 700;
@@ -147,6 +168,7 @@ h1, .text-h1 {
 }
 
 h2, .text-h2 {
+  font-family: var(--font-space-grotesk), var(--font-heading), sans-serif;
   font-size: 1.875rem; /* 30px */
   line-height: 2.25rem;
   font-weight: 700;
@@ -154,6 +176,7 @@ h2, .text-h2 {
 }
 
 h3, .text-h3 {
+  font-family: var(--font-space-grotesk), var(--font-heading), sans-serif;
   font-size: 1.5rem; /* 24px */
   line-height: 2rem;
   font-weight: 600;
@@ -161,12 +184,15 @@ h3, .text-h3 {
 }
 
 h4, .text-h4 {
+  font-family: var(--font-space-grotesk), var(--font-heading), sans-serif;
   font-size: 1.25rem; /* 20px */
   line-height: 1.75rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 body, .text-body {
+  font-family: var(--font-manrope), var(--font-body), sans-serif;
   font-size: 1rem; /* 16px */
   line-height: 1.5rem;
   color: var(--color-text);
@@ -174,6 +200,7 @@ body, .text-body {
 }
 
 small, .text-small {
+  font-family: var(--font-manrope), var(--font-body), sans-serif;
   font-size: 0.875rem; /* 14px */
   line-height: 1.25rem;
 }
@@ -212,6 +239,14 @@ html {
 .text-danger-custom { color: var(--color-danger); }
 
 .bg-muted-custom { background-color: var(--color-muted); }
+
+.bg-gradient-brand { background-image: var(--gradient-brand); }
+.text-gradient-brand {
+  background-image: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 
 /* Animations */
 @keyframes fade-in {

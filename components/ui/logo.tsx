@@ -34,17 +34,17 @@ export function Logo({
       />
       {showText && (
         <span className="inline-flex items-baseline gap-[0.18em]">
-          {/* "Ma" — bleu profond du logo */}
+          {/* "Ma" — Bleu profond (logo) */}
           <span
             style={{
-              fontFamily: "'Outfit', 'Inter', sans-serif",
-              fontWeight: 800,
-              fontSize: "1.2rem",
-              letterSpacing: "-0.03em",
+              fontFamily: "var(--font-space-grotesk), sans-serif",
+              fontWeight: 700,
+              fontSize: "1.25rem",
+              letterSpacing: "-0.02em",
               lineHeight: 1,
               background: variant === "light"
-                ? "linear-gradient(135deg, #e0f2fe 0%, #a5f3fc 100%)"
-                : "linear-gradient(135deg, #1a28c0 0%, #2563eb 100%)",
+                ? "linear-gradient(135deg, #FFFFFF 0%, #D6DCFA 100%)"
+                : "linear-gradient(135deg, #102281 0%, #1832BF 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -52,17 +52,17 @@ export function Logo({
           >
             Ma
           </span>
-          {/* "Maison" — cyan/turquoise du logo */}
+          {/* "Maison" — Turquoise/émeraude (logo) */}
           <span
             style={{
-              fontFamily: "'Outfit', 'Inter', sans-serif",
+              fontFamily: "var(--font-space-grotesk), sans-serif",
               fontWeight: 700,
-              fontSize: "1.2rem",
-              letterSpacing: "-0.02em",
+              fontSize: "1.25rem",
+              letterSpacing: "-0.01em",
               lineHeight: 1,
               background: variant === "light"
-                ? "linear-gradient(135deg, #67e8f9 0%, #ffffff 100%)"
-                : "linear-gradient(135deg, #0ea5e9 0%, #06d6c7 100%)",
+                ? "linear-gradient(135deg, #05CBAD 0%, #9CFCEE 100%)"
+                : "linear-gradient(135deg, #05CBAD 0%, #038672 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",

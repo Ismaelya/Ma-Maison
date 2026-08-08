@@ -39,6 +39,16 @@ export async function POST(request: Request) {
     });
 
     if (error || !data?.user) {
+      if (error?.code === "email_not_confirmed") {
+        return NextResponse.json(
+          {
+            error: "Merci de confirmer votre email avant de vous connecter — vérifiez votre boîte de réception.",
+            remaining: rateLimit.remaining,
+          },
+          { status: 401 }
+        );
+      }
+
       return NextResponse.json(
         {
           error: "Email ou mot de passe incorrect.",

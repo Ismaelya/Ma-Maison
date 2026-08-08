@@ -3,8 +3,6 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { messagingRateLimiter } from "@/lib/rate-limit";
 import { NotificationService } from "@/lib/notifications/notification.service";
 
-const FREE_DAILY_LIMIT = 10;
-
 export async function POST(request: Request) {
   try {
     // ── Authenticated user client (subject to RLS) ────────────────────────
@@ -42,87 +40,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // ── Read sender role via authenticated client (user reads own profile) ─
-    // RLS: profiles are readable by the owner themselves.
-    const { data: senderProfile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", senderId)
-      .single();
+    // ── Free-tier daily message limit: DISABLED ────────────────────────────
+    // Premium is currently paused, so the 10 msg/day cap on OWNER/AGENCY
+    // accounts had no escape hatch — it was a pure restriction with no
+    // upgrade path available to the user. Removed until Premium is
+    // reactivated. To reinstate: restore the has_active_subscription() /
+    // count_daily_messages() check that used to gate the insert below
+    // (see git history on this file) and re-add the FREE_DAILY_LIMIT
+    // constant and quota fields in the response.
 
-    const senderRole = String(senderProfile?.role ?? "").toUpperCase();
-
-    // ── Free-tier daily limit (OWNER / AGENCY only) ───────────────────────
-    if (senderRole === "OWNER" || senderRole === "AGENCY") {
-      // Use a narrow SECURITY DEFINER RPC — never a generic admin client.
-      // has_active_subscription() reads subscriptions bypassing RLS,
-      // but returns only a boolean: callers cannot extract other users' data.
-      const { data: isPremium, error: subErr } = await supabase.rpc(
-        "has_active_subscription",
-        { p_user_id: senderId } // senderId is user.id (string) — matches TEXT param
-      );
-
-      if (!subErr && !isPremium) {
-        // count_daily_messages() counts own messages via SECURITY DEFINER.
-        const { data: used24h, error: countErr } = await supabase.rpc(
-          "count_daily_messages",
-          { p_user_id: senderId } // senderId is user.id (string) — matches TEXT param
-        );
-
-        const used = (countErr ? 0 : (used24h ?? 0)) as number;
-
-        if (used >= FREE_DAILY_LIMIT) {
-          return NextResponse.json(
-            {
-              error:
-                "Limite de 10 messages/jour atteinte en mode Gratuit. Passez Premium pour une messagerie illimitée.",
-              code: "MESSAGE_LIMIT_REACHED",
-              remaining: 0,
-              used,
-              limit: FREE_DAILY_LIMIT,
-            },
-            { status: 403 }
-          );
-        }
-
-        // ── INSERT via authenticated client → RLS messages_participants_send enforced ──
-        // Policy: senderId = auth.uid() AND user is tenant OR owner of conversation.
-        // This prevents inserting into conversations the sender doesn't belong to.
-        const { data: message, error: msgErr } = await supabase
-          .from("messages")
-          .insert({
-            id: crypto.randomUUID(),
-            conversationId,
-            senderId,
-            content,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (msgErr) {
-          return NextResponse.json({ error: msgErr.message }, { status: 400 });
-        }
-
-        // Notify recipient — admin client is legitimate here: the server
-        // needs to find the other participant's ID to write their notification.
-        await notifyRecipient(conversationId, senderId, content);
-
-        return NextResponse.json({
-          success: true,
-          message,
-          quota: {
-            isPremium: false,
-            used: used + 1,
-            limit: FREE_DAILY_LIMIT,
-            remaining: FREE_DAILY_LIMIT - (used + 1),
-          },
-        });
-      }
-    }
-
-    // ── Premium / TENANT path — INSERT via authenticated client (RLS enforced) ─
+    // ── INSERT via authenticated client → RLS messages_participants_send enforced ──
+    // Policy: senderId = auth.uid() AND user is tenant OR owner of conversation.
+    // This prevents inserting into conversations the sender doesn't belong to.
     const { data: message, error: msgErr } = await supabase
       .from("messages")
       .insert({

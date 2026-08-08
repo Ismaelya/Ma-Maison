@@ -21,7 +21,11 @@ begin
     new.email,
     coalesce(new.raw_user_meta_data->>'name', ''),
     nullif(new.raw_user_meta_data->>'phone', ''),
-    coalesce((new.raw_user_meta_data->>'role')::"UserRole", 'TENANT'),
+    case
+      when new.raw_user_meta_data->>'role' in ('TENANT', 'OWNER', 'AGENCY')
+        then (new.raw_user_meta_data->>'role')::"UserRole"
+      else 'TENANT'::"UserRole"
+    end,
     nullif(trim(new.raw_user_meta_data->>'agencyName'), ''),
     'ACTIVE',
     now(),
@@ -37,8 +41,9 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_auth_user();
 
 -- ------------------------------------------------------------
--- 2. TRIGGER : création automatique d'un abonnement TRIAL
+-- 2. TRIGGER : création automatique d'un abonnement FREE
 --    pour tout nouveau profil OWNER ou AGENCY
+--    (modèle Gratuit permanent — TRIAL n'existe plus)
 -- ------------------------------------------------------------
 
 create or replace function public.handle_new_owner_trial()
@@ -50,9 +55,7 @@ as $$
 begin
   if new.role in ('OWNER', 'AGENCY') then
     insert into public.subscriptions (id, "userId", status, price, "startDate", "endDate", "createdAt")
-    values (gen_random_uuid(), new.id, 'TRIAL', 1500, now(), now() + interval '30 days', now());
-
-    update public.profiles set "trialStartedAt" = now() where id = new.id;
+    values (gen_random_uuid(), new.id, 'FREE', 0, now(), null, now());
   end if;
   return new;
 end;
@@ -177,10 +180,19 @@ alter table public.app_settings enable row level security;
 -- 7. PROFILES
 -- ------------------------------------------------------------
 
+-- Le OR sur properties.status = 'APPROVED' permet aux visiteurs anonymes de lire
+-- les infos publiques (nom, avatar, etc.) du propriétaire d'une annonce visible.
 drop policy if exists "profiles_select_own_or_public_fields" on public.profiles;
 create policy "profiles_select_own_or_public_fields"
   on public.profiles for select
-  using (id = auth.uid()::text or public.is_admin());
+  using (
+    id = auth.uid()::text
+    or public.is_admin()
+    or exists (
+      select 1 from public.properties pr
+      where pr."ownerId" = profiles.id and pr.status = 'APPROVED'
+    )
+  );
 
 drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own"
@@ -218,21 +230,40 @@ create policy "profiles_admin_full_access"
 -- 8. PROPERTIES
 -- ------------------------------------------------------------
 
+-- Visibilité publique : modèle Gratuit permanent — aucune condition d'abonnement.
+-- Ne dépend que du statut de l'annonce et du compte propriétaire (non suspendu).
+--
+-- NOTE : le lookup sur profiles doit rester dans une fonction SECURITY DEFINER
+-- (et non un EXISTS inline dans la policy). profiles_select_own_or_public_fields
+-- contient elle-même une clause qui référence properties.status = 'APPROVED' ;
+-- un EXISTS inline ici réévaluerait cette policy et provoquerait une récursion
+-- infinie ("infinite recursion detected in policy for relation profiles").
+-- SECURITY DEFINER, exécutée en tant que postgres (superuser), bypass RLS en
+-- interne et casse le cycle.
+create or replace function public.is_active_owner(owner_id text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles p
+    where p.id = owner_id and p.status = 'ACTIVE'
+  );
+$$;
+
 drop policy if exists "properties_public_read" on public.properties;
 create policy "properties_public_read"
   on public.properties for select
   using (
     status = 'APPROVED'
-    and exists (
-      select 1
-      from public.profiles p
-      left join public.subscriptions s
-        on s."userId" = p.id and s.status in ('TRIAL', 'ACTIVE')
-      where p.id = properties."ownerId"
-        and p.status = 'ACTIVE'
-        and s.id is not null
-    )
+    and public.is_active_owner("ownerId")
   );
+
+-- is_approved_owner() gated visibility on an active subscription; no longer used
+-- now that public visibility doesn't depend on subscription status.
+drop function if exists public.is_approved_owner(text);
 
 drop policy if exists "properties_owner_read_own" on public.properties;
 create policy "properties_owner_read_own"
@@ -253,7 +284,45 @@ create policy "properties_owner_insert"
 drop policy if exists "properties_owner_update_delete" on public.properties;
 create policy "properties_owner_update_delete"
   on public.properties for update
-  using ("ownerId" = auth.uid()::text);
+  using ("ownerId" = auth.uid()::text)
+  with check ("ownerId" = auth.uid()::text);
+
+create or replace function public.prevent_property_privilege_escalation()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- Trusted server-side contexts bypass this check; only end-user (anon/authenticated)
+  -- PostgREST sessions are restricted. NOTE: this function is SECURITY DEFINER, so
+  -- current_user is always the function owner (postgres) regardless of the caller —
+  -- use auth.role() (reads the request.jwt GUC, unaffected by SECURITY DEFINER) and
+  -- session_user (the real login role, also unaffected) instead.
+  if auth.role() = 'service_role' then
+    return new;
+  end if;
+  if auth.role() is null and session_user = 'postgres' then
+    -- Direct Prisma connection via DATABASE_URL — no PostgREST/JWT context at all.
+    return new;
+  end if;
+
+  if not public.is_admin() then
+    if new.status is distinct from old.status
+      or new."ownerId" is distinct from old."ownerId"
+      or new."isFeatured" is distinct from old."isFeatured"
+    then
+      raise exception 'Modification de status/ownerId/isFeatured réservée à un administrateur';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists guard_property_privilege_escalation on public.properties;
+create trigger guard_property_privilege_escalation
+  before update on public.properties
+  for each row execute function public.prevent_property_privilege_escalation();
 
 drop policy if exists "properties_owner_delete" on public.properties;
 create policy "properties_owner_delete"
@@ -406,21 +475,10 @@ create policy "app_settings_admin_write"
   using (public.is_admin());
 
 -- ------------------------------------------------------------
--- 14. STORAGE — buckets receipts (privé) et property-images (public)
+-- 14. STORAGE — buckets réels : property-images (public), avatars (public),
+--    documents (privé), payment-receipts (privé). Le bucket "receipts"
+--    n'a jamais existé en production — superseded par payment-receipts.
 -- ------------------------------------------------------------
-
-drop policy if exists "receipts_owner_only" on storage.objects;
-create policy "receipts_owner_only"
-  on storage.objects for all
-  using (
-    bucket_id = 'receipts'
-    and (storage.foldername(name))[1] = auth.uid()::text
-  );
-
-drop policy if exists "receipts_admin_read" on storage.objects;
-create policy "receipts_admin_read"
-  on storage.objects for select
-  using (bucket_id = 'receipts' and public.is_admin());
 
 drop policy if exists "property_images_public_read" on storage.objects;
 create policy "property_images_public_read"

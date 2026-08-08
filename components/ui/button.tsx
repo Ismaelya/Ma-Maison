@@ -4,7 +4,7 @@ import { ButtonHTMLAttributes, ReactNode, forwardRef } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ButtonVariant = "primary" | "secondary" | "outline" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "outline" | "danger" | "ghost";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -34,19 +34,22 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     // Variant classes strictly following Partie 8 guidelines
-    // Primary: Blue (#2563EB)
-    // Secondary: Neutral (#F3F4F6) — NEVER success green
-    // Outline: Border (#E5E7EB) + White
+    // Primary: Deep Blue (#13299A), hover Logo Blue (#102281)
+    // Secondary: Neutral Panel (#F1F5F9)
+    // Outline: Border (#E2E8F0)
     // Danger: Red (#DC2626)
+    // Ghost: Transparent
     const variants: Record<ButtonVariant, string> = {
       primary:
-        "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary)]/90 focus-visible:ring-[var(--color-primary)]",
+        "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-700)] focus-visible:ring-[var(--color-primary)] shadow-sm",
       secondary:
-        "bg-[var(--color-muted)] text-[var(--color-text)] border border-[var(--color-border)] hover:bg-neutral-200 focus-visible:ring-neutral-400",
+        "bg-[var(--color-muted)] text-[var(--color-text)] border border-[var(--color-border)] hover:bg-stone-200 focus-visible:ring-stone-400",
       outline:
-        "border border-[var(--color-border)] bg-transparent text-[var(--color-text)] hover:bg-[var(--color-muted)] focus-visible:ring-neutral-400",
+        "border border-[var(--color-border)] bg-transparent text-[var(--color-text)] hover:bg-[var(--color-muted)] focus-visible:ring-stone-400",
       danger:
         "bg-[var(--color-danger)] text-white hover:bg-[var(--color-danger)]/90 focus-visible:ring-[var(--color-danger)]",
+      ghost:
+        "bg-transparent text-[var(--color-text)] hover:bg-[var(--color-muted)]/50 focus-visible:ring-stone-400",
     };
 
     const sizes: Record<ButtonSize, string> = {

@@ -62,6 +62,27 @@ export class PaymentService {
    * Updates payment.status = 'APPROVED', extends subscription by +30 days, and sets badgeVerified = true.
    */
   static async approvePayment(paymentId: string, adminId: string) {
+    let existingPayment: any = null;
+    try {
+      existingPayment = await prisma.payment.findUnique({ where: { id: paymentId } });
+    } catch {
+      // Ignore Prisma error
+    }
+    if (!existingPayment) {
+      const supabaseAdmin = await createAdminClient();
+      const { data } = await supabaseAdmin.from("payments").select("*").eq("id", paymentId).single();
+      existingPayment = data;
+    }
+
+    if (!existingPayment) {
+      throw new Error("Paiement introuvable");
+    }
+    // Idempotence : une approbation déjà appliquée ne doit jamais ré-exécuter
+    // la prolongation d'abonnement (double +30 jours).
+    if (existingPayment.status === "APPROVED") {
+      return existingPayment;
+    }
+
     let payment: any = null;
 
     try {
@@ -94,43 +115,11 @@ export class PaymentService {
       payment = data;
     }
 
-    // Extend Subscription by 30 days and mark badge verified
-    if (payment?.userId) {
-      try {
-        const now = new Date();
-        const expiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-        const existingSub = await prisma.subscription.findFirst({
-          where: { userId: payment.userId },
-        });
-
-        if (existingSub) {
-          await prisma.subscription.update({
-            where: { id: existingSub.id },
-            data: {
-              status: "ACTIVE",
-              endDate: expiry,
-            },
-          });
-        } else {
-          await prisma.subscription.create({
-            data: {
-              userId: payment.userId,
-              status: "ACTIVE",
-              price: payment.amount || 25000,
-              startDate: now,
-              endDate: expiry,
-            },
-          });
-        }
-
-        await prisma.profile.update({
-          where: { id: payment.userId },
-          data: { badgeVerified: true },
-        });
-      } catch (subErr) {
-        console.warn("Approve payment sub sync warning:", subErr);
-      }
-    }
+    // La prolongation de l'abonnement (+30 jours depuis GREATEST(now, endDate
+    // actuel)) et le badgeVerified sont gérés par le trigger DB
+    // on_payment_status_change → handle_payment_approved(), déclenché par le
+    // changement de status ci-dessus (Prisma ou Supabase). Le dupliquer ici
+    // provoquait une double prolongation (+60 jours) à chaque approbation.
 
     try {
       await AuditService.logAudit(adminId, "PAYMENT_APPROVED", paymentId, { amount: payment?.amount });

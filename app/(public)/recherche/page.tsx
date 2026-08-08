@@ -20,6 +20,9 @@ type SearchParams = Promise<{
   maxPrice?: string;
   bedrooms?: string;
   rooms?: string;
+  bathrooms?: string;
+  sortBy?: "createdAt" | "price";
+  sortOrder?: "asc" | "desc";
   page?: string;
   q?: string;
 }>;
@@ -40,6 +43,10 @@ export default async function SearchPage({
     minPrice: params.minPrice ? parseInt(params.minPrice, 10) : undefined,
     maxPrice: params.maxPrice ? parseInt(params.maxPrice, 10) : undefined,
     rooms: params.rooms || params.bedrooms ? parseInt(params.rooms || params.bedrooms!, 10) : undefined,
+    bathrooms: params.bathrooms ? parseInt(params.bathrooms, 10) : undefined,
+    sortBy: params.sortBy,
+    sortOrder: params.sortOrder,
+    q: params.q,
     page: pageNum,
     limit,
   });

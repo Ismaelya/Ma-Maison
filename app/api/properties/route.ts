@@ -4,6 +4,7 @@ import { PropertyService } from "@/lib/properties/property.service";
 import { apiSuccess, apiError } from "@/lib/utils/api-response";
 import { canOwnerPublish } from "@/lib/auth/helpers";
 import { prisma } from "@/lib/prisma/client";
+import { listingSchema } from "@/lib/validations/listing";
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
       maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
       rooms: searchParams.get("rooms") ? Number(searchParams.get("rooms")) : undefined,
       bathrooms: searchParams.get("bathrooms") ? Number(searchParams.get("bathrooms")) : undefined,
-      search: searchParams.get("search") || undefined,
+      q: searchParams.get("q") || searchParams.get("search") || undefined,
       sortBy: (searchParams.get("sortBy") as any) || "createdAt",
       sortOrder: (searchParams.get("sortOrder") as any) || "desc",
       page: searchParams.get("page") ? Number(searchParams.get("page")) : 1,
@@ -113,7 +114,17 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const newProperty = await PropertyService.createProperty(user.id, body);
+
+    const parsed = listingSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiError(
+        "VALIDATION_ERROR",
+        parsed.error.issues[0]?.message || "Données invalides",
+        400
+      );
+    }
+
+    const newProperty = await PropertyService.createProperty(user.id, { ...body, ...parsed.data });
     return apiSuccess(newProperty, "Annonce créée avec succès", 201);
   } catch (err: any) {
     return apiError("BAD_REQUEST", err.message || "Erreur de création de l'annonce", 400);

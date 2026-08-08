@@ -5,6 +5,16 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 
+// N'autorise que les chemins internes relatifs (jamais une URL absolue ou
+// protocol-relative comme "//evil.com", qui redirigerait hors du site).
+function sanitizeNextPath(raw: string | null): string {
+  if (!raw) return "/connexion";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
+    return "/connexion";
+  }
+  return raw;
+}
+
 export default function CallbackHandlePage() {
   const router = useRouter();
   const [message, setMessage] = useState("Traitement en cours...");
@@ -14,13 +24,13 @@ export default function CallbackHandlePage() {
       try {
         const supabase = createClient();
 
-        const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+        const { data, error } = await supabase.auth.getSession();
 
         const url = new URL(window.location.href);
-        const next = url.searchParams.get("next") || "/connexion";
+        const next = sanitizeNextPath(url.searchParams.get("next"));
 
-        if (error) {
-          console.error("getSessionFromUrl error:", error);
+        if (error || !data?.session) {
+          console.error("Supabase auth session error:", error);
           setMessage("Échec de la réinitialisation. Redirection vers la connexion...");
           setTimeout(() => router.push(`/connexion?error=reset_failed`), 1200);
           return;

@@ -12,108 +12,110 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PropertyGrid } from "@/components/property/property-grid";
-import { formatPrice } from "@/lib/utils";
+import { HeroCarousel } from "@/components/property/hero-carousel";
+import { formatHeroProperties } from "@/lib/properties/hero-selection";
 import type { Listing } from "@/types";
 
 export default async function HomePage() {
   const supabase = await createClient();
 
-  // Fetch featured / latest properties
-  const { data: featuredListings } = await supabase
+  // 1. Fetch featured properties (isFeatured = true AND status = APPROVED).
+  // property_images!inner enforces the photo requirement at the SQL level: properties
+  // without an uploaded photo never come back, so we never have to fall back to a stock image.
+  const { data: rawFeatured } = await supabase
+    .from("properties")
+    .select("id, title, city, district, price, type, transactionType, isFeatured, createdAt, property_images!inner(url)")
+    .eq("status", "APPROVED")
+    .eq("isFeatured", true)
+    .order("createdAt", { ascending: false })
+    .limit(6);
+
+  const featuredProps = (rawFeatured ?? []) as any[];
+
+  // 2. Fetch recent APPROVED properties (any isFeatured value) as a graceful fallback if needed,
+  // still requiring a real photo via the same inner join.
+  let recentForFallback: any[] = [];
+  if (featuredProps.length < 4) {
+    const { data: rawRecent } = await supabase
+      .from("properties")
+      .select("id, title, city, district, price, type, transactionType, isFeatured, createdAt, property_images!inner(url)")
+      .eq("status", "APPROVED")
+      .order("createdAt", { ascending: false })
+      .limit(12);
+    recentForFallback = rawRecent ?? [];
+  }
+
+  // 3. Format hero items with robust fallback logic
+  const heroItems = formatHeroProperties(featuredProps, recentForFallback);
+
+  // Fetch all recent approved listings for the main grid below
+  const { data: recentListings } = await supabase
     .from("properties")
     .select("*, property_images(url), profiles(id, name, agencyName, badgeVerified, avatarUrl, phone, role)")
     .eq("status", "APPROVED")
     .order("createdAt", { ascending: false })
     .limit(6);
 
-  const listings = (featuredListings ?? []) as any[];
+  const listings = (recentListings ?? []) as any[];
 
   return (
     <div className="animate-fade-in">
+      {/* Dynamic Hero Banner (Selection isFeatured + Repli gracieux) */}
+      <HeroCarousel items={heroItems} />
+
       {/* ================================================================
-          HERO SECTION
+          FEATURED LISTINGS
           ================================================================ */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900">
-        {/* Background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -left-20 -top-20 h-96 w-96 rounded-full bg-white/20 blur-3xl" />
-          <div className="absolute -bottom-20 -right-20 h-96 w-96 rounded-full bg-secondary-400/20 blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-24 lg:px-8 lg:py-36">
-          <div className="mx-auto max-w-3xl text-center">
-            {/* Badge */}
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 backdrop-blur-sm sm:mb-6 sm:px-4">
-              <Star className="h-3.5 w-3.5 text-yellow-300 sm:h-4 sm:w-4" />
-              <span className="text-xs font-medium text-white/90 sm:text-sm">
-                La plateforme immobilière au Niger
-              </span>
+      <section className="bg-neutral-50 py-12 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-neutral-900 sm:text-4xl">
+                Annonces récentes
+              </h2>
+              <p className="mt-1 text-sm text-neutral-600 sm:mt-2 sm:text-lg">
+                Découvrez les dernières annonces publiées
+              </p>
             </div>
-
-            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Trouvez votre{" "}
-              <span className="relative">
-                <span className="relative z-10 text-secondary-300">logement idéal</span>
-                <span className="absolute bottom-1 left-0 z-0 h-2 w-full bg-secondary-500/30 sm:bottom-2 sm:h-4" />
-              </span>{" "}
-              au Niger
-            </h1>
-
-            <p className="mt-4 text-base leading-relaxed text-white/80 sm:mt-6 sm:text-xl">
-              Parcourez des centaines d'annonces immobilières à Niamey et dans
-              tout le Niger. Location, achat, terrains — Ma Maison simplifie
-              votre recherche.
-            </p>
-
-            {/* Search CTA */}
-            <div className="mt-8 flex flex-col items-stretch gap-3 sm:mt-10 sm:flex-row sm:items-center sm:justify-center sm:gap-4">
-              <Link
-                href="/recherche"
-                className="group flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-sm font-semibold text-primary-700 shadow-xl transition-all hover:shadow-2xl hover:scale-[1.02] sm:px-8 sm:py-4 sm:text-base"
-              >
-                <Search className="h-4 w-4 sm:h-5 sm:w-5" />
-                Rechercher un logement
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link
-                href="/inscription"
-                className="flex items-center justify-center gap-2 rounded-2xl border-2 border-white/30 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/10 sm:px-8 sm:py-4 sm:text-base"
-              >
-                Publier une annonce
-              </Link>
-            </div>
-
+            <Link
+              href="/recherche"
+              className="hidden items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50 sm:flex"
+            >
+              Voir tout
+              <ChevronRight className="h-4 w-4" />
+            </Link>
           </div>
-        </div>
 
-        {/* Bottom wave */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg
-            viewBox="0 0 1440 80"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-full"
-            preserveAspectRatio="none"
-          >
-            <path
-              d="M0 80V40C240 0 480 0 720 40C960 80 1200 80 1440 40V80H0Z"
-              className="fill-neutral-50"
+          <div className="mt-8 sm:mt-10">
+            <PropertyGrid
+              listings={listings}
+              emptyMessage="Les premières annonces arrivent bientôt !"
             />
-          </svg>
+          </div>
+
+          <div className="mt-6 text-center sm:hidden">
+            <Link
+              href="/recherche"
+              className="inline-flex items-center gap-1 rounded-lg px-6 py-3 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50"
+            >
+              Voir toutes les annonces
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* ================================================================
           HOW IT WORKS
           ================================================================ */}
-      <section className="bg-neutral-50 py-12 sm:py-20">
+      <section className="py-12 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-neutral-900 sm:text-4xl">
               Comment ça marche ?
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-base text-neutral-600 sm:mt-4 sm:text-lg">
-              Ma Maison simplifie la recherche et la publication d'annonces
+              Ma Maison simplifie la recherche et la publication d&apos;annonces
               immobilières au Niger.
             </p>
           </div>
@@ -163,55 +165,13 @@ export default async function HomePage() {
       </section>
 
       {/* ================================================================
-          FEATURED LISTINGS
-          ================================================================ */}
-      <section className="py-12 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-neutral-900 sm:text-4xl">
-                Annonces récentes
-              </h2>
-              <p className="mt-1 text-sm text-neutral-600 sm:mt-2 sm:text-lg">
-                Découvrez les dernières annonces publiées
-              </p>
-            </div>
-            <Link
-              href="/recherche"
-              className="hidden items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50 sm:flex"
-            >
-              Voir tout
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="mt-8 sm:mt-10">
-            <PropertyGrid
-              listings={listings}
-              emptyMessage="Les premières annonces arrivent bientôt !"
-            />
-          </div>
-
-          <div className="mt-6 text-center sm:hidden">
-            <Link
-              href="/recherche"
-              className="inline-flex items-center gap-1 rounded-lg px-6 py-3 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50"
-            >
-              Voir toutes les annonces
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ================================================================
           WHY MA MAISON
           ================================================================ */}
       <section className="bg-neutral-50 py-12 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-neutral-900 sm:text-4xl">
-              Pourquoi choisir Ma Maison ?
+              Pourquoi choisir <span className="text-[var(--color-primary-700)]">Ma Maison</span> ?
             </h2>
           </div>
 
@@ -268,20 +228,15 @@ export default async function HomePage() {
                   Vous êtes propriétaire ?
                 </h2>
                 <p className="mt-3 text-base text-white/80 sm:mt-4 sm:text-lg">
-                  Publiez vos annonces gratuitement pendant 30 jours. Touchez
-                  des milliers de locataires potentiels au Niger.
+                  Publiez vos annonces gratuitement, sans limite de temps.
+                  Touchez des milliers de locataires potentiels au Niger.
                 </p>
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 backdrop-blur-sm">
-                  <span className="text-sm font-medium text-white">
-                    Puis seulement {formatPrice(1500)}/mois
-                  </span>
-                </div>
                 <div className="mt-6 sm:mt-8">
                   <Link
                     href="/inscription"
                     className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-semibold text-secondary-700 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] sm:w-auto sm:px-8 sm:text-base"
                   >
-                    Commencer l&apos;essai gratuit
+                    Commencer gratuitement
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Link>
                 </div>

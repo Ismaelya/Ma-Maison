@@ -14,14 +14,6 @@ type ProfileFormProps = {
   profile: Profile;
 };
 
-const PRESET_AVATARS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80",
-  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80",
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&q=80",
-  "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=256&q=80",
-];
-
 export function ProfileForm({ profile }: ProfileFormProps) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -236,19 +228,8 @@ export function ProfileForm({ profile }: ProfileFormProps) {
               </p>
             )}
 
-            {/* Avatars prédéfinis */}
+            {/* Réinitialiser aux initiales */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-neutral-500">Ou choisir :</span>
-              {PRESET_AVATARS.map((url, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setValue("avatarUrl", url, { shouldDirty: true })}
-                  className="relative h-9 w-9 overflow-hidden rounded-full border-2 border-transparent transition-all hover:scale-110 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <img src={url} alt={`Avatar ${idx + 1}`} className="h-full w-full object-cover" />
-                </button>
-              ))}
               <button
                 type="button"
                 onClick={() => setValue("avatarUrl", getAvatarUrl(null, watchedName), { shouldDirty: true })}

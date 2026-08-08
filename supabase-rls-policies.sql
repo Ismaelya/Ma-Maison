@@ -21,7 +21,11 @@ begin
     new.email,
     coalesce(new.raw_user_meta_data->>'name', ''),
     nullif(new.raw_user_meta_data->>'phone', ''),
-    coalesce((new.raw_user_meta_data->>'role')::"UserRole", 'TENANT'),
+    case
+      when new.raw_user_meta_data->>'role' in ('TENANT', 'OWNER', 'AGENCY')
+        then (new.raw_user_meta_data->>'role')::"UserRole"
+      else 'TENANT'::"UserRole"
+    end,
     nullif(trim(new.raw_user_meta_data->>'agencyName'), ''),
     'ACTIVE',
     now(),
@@ -120,27 +124,27 @@ $$;
 -- 4. JOB QUOTIDIEN : expiration Premium (ACTIVE) uniquement
 -- ------------------------------------------------------------
 
+-- Un abonnement Premium expiré retombe en FREE (jamais d'état bloquant) —
+-- cohérent avec le modèle Gratuit permanent.
 create or replace function public.expire_subscriptions()
 returns void
 language sql
 security definer
 set search_path = public
 as $$
-  update public.subscriptions
-  set status = 'EXPIRED'
-  where status = 'ACTIVE'
-    and "endDate" is not null
-    and "endDate" < now();
-
-  update public.profiles p
+  with expired as (
+    update public.subscriptions
+    set status = 'FREE',
+        price = 0,
+        "endDate" = null
+    where status = 'ACTIVE'
+      and "endDate" is not null
+      and "endDate" < now()
+    returning "userId"
+  )
+  update public.profiles
   set "badgeVerified" = false
-  where p.id in (
-    select s."userId"
-    from public.subscriptions s
-    where s.status = 'EXPIRED'
-      and s."endDate" is not null
-      and s."endDate" < now()
-  );
+  where id in (select "userId" from expired);
 $$;
 
 -- ------------------------------------------------------------
@@ -236,7 +240,7 @@ create policy "profiles_admin_full_access"
 -- 8. PROPERTIES
 -- ------------------------------------------------------------
 
-create or replace function public.is_approved_owner(owner_id text)
+create or replace function public.is_active_owner(owner_id text)
 returns boolean
 language sql
 security definer
@@ -256,7 +260,7 @@ create policy "properties_public_read"
   on public.properties for select
   using (
     status = 'APPROVED'
-    and public.is_approved_owner("ownerId")
+    and public.is_active_owner("ownerId")
   );
 
 drop policy if exists "properties_owner_read_own" on public.properties;
@@ -450,21 +454,12 @@ create policy "audit_logs_admin_read"
   using (public.is_admin());
 
 -- ------------------------------------------------------------
--- 14. STORAGE — buckets receipts (privé) et property-images (public)
+-- 14. STORAGE — buckets réels : property-images (public), avatars (public),
+--    documents (privé), payment-receipts (privé). Le bucket "receipts"
+--    n'a jamais existé en production — superseded par payment-receipts.
+--    Voir supabase/migrations/008_schema_reconciliation.sql pour l'état
+--    complet et à jour des policies storage.
 -- ------------------------------------------------------------
-
-drop policy if exists "receipts_owner_only" on storage.objects;
-create policy "receipts_owner_only"
-  on storage.objects for all
-  using (
-    bucket_id = 'receipts'
-    and (storage.foldername(name))[1] = auth.uid()::text
-  );
-
-drop policy if exists "receipts_admin_read" on storage.objects;
-create policy "receipts_admin_read"
-  on storage.objects for select
-  using (bucket_id = 'receipts' and public.is_admin());
 
 drop policy if exists "avatars_public_read" on storage.objects;
 create policy "avatars_public_read"

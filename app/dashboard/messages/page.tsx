@@ -5,7 +5,6 @@ import { requireAuth } from "@/lib/auth/helpers";
 import { MessageService } from "@/lib/messaging/message.service";
 import { formatRelativeTime, cn, getAvatarUrl } from "@/lib/utils";
 import { ChatBox } from "@/components/dashboard/chat-box";
-import { createAdminClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Messages",
@@ -56,35 +55,6 @@ export default async function MessagesPage({
   const firstConv = formattedConversations[0];
   const selectedConvId = params.conv || (firstConv ? firstConv.id : null);
   const activeConversation = formattedConversations.find((c) => c.id === selectedConvId) || firstConv;
-
-  // --- Daily quota for OWNER / AGENCY free accounts ---
-  const userRole = String(profile.role ?? "").toUpperCase();
-  let isOwnerFree = false;
-  let dailyUsed = 0;
-  const dailyLimit = 10;
-
-  if (userRole === "OWNER" || userRole === "AGENCY") {
-    const supabaseAdmin = await createAdminClient();
-
-    // Check for active Premium subscription
-    const { data: activeSub } = await supabaseAdmin
-      .from("subscriptions")
-      .select("id")
-      .eq("userId", profile.id)
-      .eq("status", "ACTIVE")
-      .maybeSingle();
-
-    if (!activeSub) {
-      isOwnerFree = true;
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const { count } = await supabaseAdmin
-        .from("messages")
-        .select("id", { count: "exact", head: true })
-        .eq("senderId", profile.id)
-        .gte("createdAt", since);
-      dailyUsed = count ?? 0;
-    }
-  }
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -162,9 +132,6 @@ export default async function MessagesPage({
                 partnerAvatar={activeConversation.partnerAvatar}
                 conversationId={activeConversation.id}
                 initialMessages={activeConversation.messages}
-                isOwnerFree={isOwnerFree}
-                dailyUsed={dailyUsed}
-                dailyLimit={dailyLimit}
               />
             ) : (
               <div className="flex h-[400px] items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-neutral-400 text-sm">
