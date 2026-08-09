@@ -16,47 +16,33 @@ import { HeroCarousel } from "@/components/property/hero-carousel";
 import { formatHeroProperties } from "@/lib/properties/hero-selection";
 import type { Listing } from "@/types";
 
+export const revalidate = 60;
+
 export default async function HomePage() {
   const supabase = await createClient();
 
-  // 1. Fetch featured properties (isFeatured = true AND status = APPROVED).
-  // property_images!inner enforces the photo requirement at the SQL level: properties
-  // without an uploaded photo never come back, so we never have to fall back to a stock image.
-  const { data: rawFeatured } = await supabase
-    .from("properties")
-    .select("id, title, city, district, price, type, transactionType, isFeatured, createdAt, property_images!inner(url)")
-    .eq("status", "APPROVED")
-    .eq("isFeatured", true)
-    .order("createdAt", { ascending: false })
-    .limit(6);
-
-  const featuredProps = (rawFeatured ?? []) as any[];
-
-  // 2. Fetch recent APPROVED properties (any isFeatured value) as a graceful fallback if needed,
-  // still requiring a real photo via the same inner join.
-  let recentForFallback: any[] = [];
-  if (featuredProps.length < 4) {
-    const { data: rawRecent } = await supabase
+  // Execute queries in parallel to minimize TTFB
+  const [featuredResult, recentResult] = await Promise.all([
+    supabase
       .from("properties")
       .select("id, title, city, district, price, type, transactionType, isFeatured, createdAt, property_images!inner(url)")
       .eq("status", "APPROVED")
+      .eq("isFeatured", true)
       .order("createdAt", { ascending: false })
-      .limit(12);
-    recentForFallback = rawRecent ?? [];
-  }
+      .limit(6),
+    supabase
+      .from("properties")
+      .select("*, property_images(url), profiles(id, name, agencyName, badgeVerified, avatarUrl, phone, role)")
+      .eq("status", "APPROVED")
+      .order("createdAt", { ascending: false })
+      .limit(6),
+  ]);
 
-  // 3. Format hero items with robust fallback logic
-  const heroItems = formatHeroProperties(featuredProps, recentForFallback);
+  const featuredProps = (featuredResult.data ?? []) as any[];
+  const listings = (recentResult.data ?? []) as any[];
 
-  // Fetch all recent approved listings for the main grid below
-  const { data: recentListings } = await supabase
-    .from("properties")
-    .select("*, property_images(url), profiles(id, name, agencyName, badgeVerified, avatarUrl, phone, role)")
-    .eq("status", "APPROVED")
-    .order("createdAt", { ascending: false })
-    .limit(6);
-
-  const listings = (recentListings ?? []) as any[];
+  // Format hero items with graceful fallback
+  const heroItems = formatHeroProperties(featuredProps, listings);
 
   return (
     <div className="animate-fade-in">

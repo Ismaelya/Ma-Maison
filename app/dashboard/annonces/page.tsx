@@ -103,12 +103,11 @@ export default async function MyListingsPage() {
                   {formatPrice(listing.price)} · {listing.city} ·{" "}
                   {formatRelativeTime(listing.createdAt)}
                 </p>
-                {premiumEnabled && (profile.badgeVerified || (profile as any).badge_verified) && (
-                  <p className="mt-1 text-xs text-neutral-500">
-                    Vues : {listing.viewCount ?? 0}
+                  <p className="mt-1 text-xs text-neutral-500 font-medium flex items-center gap-1.5">
+                    <Eye className="h-3.5 w-3.5 text-neutral-400" />
+                    <span>{listing.viewCount ?? 0} vue{(listing.viewCount ?? 0) !== 1 ? "s" : ""}</span>
                   </p>
-                )}
-              </div>
+                </div>
 
               <div className="flex items-center gap-2">
                 <Link

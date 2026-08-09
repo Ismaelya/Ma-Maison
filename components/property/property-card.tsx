@@ -190,10 +190,13 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false }: 
             </div>
           )}
           <div className="ml-auto flex items-center gap-1.5" title={ownerDisplayName}>
-            <img
+            <Image
               src={ownerAvatarUrl}
               alt={ownerDisplayName}
+              width={20}
+              height={20}
               className="h-5 w-5 rounded-full object-cover border border-neutral-200"
+              loading="lazy"
             />
             <span className="text-xs font-medium text-neutral-500 line-clamp-1 max-w-[90px]">
               {ownerDisplayName !== "Annonceur" ? ownerDisplayName : formatRelativeTime(listing.createdAt || listing.created_at)}

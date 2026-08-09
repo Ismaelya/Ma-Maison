@@ -198,6 +198,18 @@ begin
 end;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.handle_auth_user_deleted()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+begin
+  update public.profiles set status = 'DELETED' where id = old.id::text;
+  return old;
+end;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.handle_new_owner_trial()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -638,6 +650,11 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_auth_user();
+
+drop trigger if exists on_auth_user_deleted on auth.users;
+create trigger on_auth_user_deleted
+  after delete on auth.users
+  for each row execute function public.handle_auth_user_deleted();
 
 drop trigger if exists on_profile_owner_created on public.profiles;
 create trigger on_profile_owner_created

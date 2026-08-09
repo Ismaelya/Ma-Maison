@@ -15,15 +15,21 @@ export default async function DashboardPage() {
   const isOwner = (profile.role ?? "").toUpperCase() === "OWNER" || (profile.role ?? "").toUpperCase() === "AGENCY";
 
   // Fetch stats and subscription
-  const [propertiesResult, favoritesResult, messagesResult, subResult] = await Promise.all([
+  const [propertiesResult, viewsResult, favoritesResult, messagesResult, subResult] = await Promise.all([
     isOwner
       ? supabase
           .from("properties")
-          .select("id, title, price, createdAt, status", { count: "exact" })
+          .select("id, title, price, createdAt, status, viewCount", { count: "exact" })
           .eq("ownerId", profile.id)
           .order("createdAt", { ascending: false })
           .limit(5)
       : Promise.resolve({ data: [], count: 0 }),
+    isOwner
+      ? supabase
+          .from("properties")
+          .select("viewCount")
+          .eq("ownerId", profile.id)
+      : Promise.resolve({ data: [] }),
     supabase
       .from("favorites")
       .select("id", { count: "exact" })
@@ -45,6 +51,10 @@ export default async function DashboardPage() {
   ]);
 
   const listingCount = propertiesResult.count ?? 0;
+  const totalViews = ((viewsResult as any).data ?? []).reduce(
+    (acc: number, item: any) => acc + (item.viewCount ?? 0),
+    0
+  );
   const favoriteCount = favoritesResult.count ?? 0;
   const unreadCount = messagesResult.count ?? 0;
   const sub = subResult.data as any;
@@ -72,6 +82,14 @@ export default async function DashboardPage() {
             label="Annonces"
             value={String(listingCount)}
             color="primary"
+          />
+        )}
+        {isOwner && (
+          <StatCard
+            icon={<Eye className="h-5 w-5" />}
+            label="Vues au total"
+            value={String(totalViews)}
+            color="info"
           />
         )}
         <StatCard
@@ -161,7 +179,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="mt-4 rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
-            {propertiesResult.data.map((listing, i) => (
+            {propertiesResult.data.map((listing: any, i: number) => (
               <Link
                 key={listing.id}
                 href={`/annonces/${listing.id}`}
@@ -173,7 +191,7 @@ export default async function DashboardPage() {
                 <div>
                   <p className="font-medium text-neutral-900">{listing.title}</p>
                   <p className="text-sm text-neutral-500">
-                    {formatPrice(listing.price)}
+                    {formatPrice(listing.price)} · <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5 inline text-neutral-400" /> {listing.viewCount ?? 0} vue{(listing.viewCount ?? 0) !== 1 ? "s" : ""}</span>
                   </p>
                 </div>
                 <span

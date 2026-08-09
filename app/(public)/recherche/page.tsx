@@ -12,6 +12,8 @@ export const metadata: Metadata = {
     "Recherchez parmi des centaines d'annonces immobilières au Niger. Filtrez par ville, type de bien, budget et plus.",
 };
 
+export const revalidate = 60;
+
 type SearchParams = Promise<{
   city?: string;
   type?: PropertyType;

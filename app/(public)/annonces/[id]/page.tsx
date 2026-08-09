@@ -317,10 +317,13 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                   </h3>
                   <div className="mt-4 flex items-center gap-3">
                     <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-secondary-600 shadow-sm">
-                      <img
+                      <Image
                         src={getAvatarUrl(owner.avatarUrl || owner.avatar_url, owner.name)}
                         alt={owner.name || "Propriétaire"}
+                        width={48}
+                        height={48}
                         className="h-full w-full object-cover"
+                        loading="lazy"
                       />
                     </div>
                     <div>

@@ -53,6 +53,7 @@ export default async function AdminUsersPage() {
               {users.map((u) => {
                 const roleStr = String(u.role || "TENANT").toUpperCase();
                 const statusStr = String(u.status || u.account_status || "ACTIVE").toUpperCase();
+                const isDeleted = statusStr === "DELETED";
                 const isSuspended = statusStr === "SUSPENDED";
                 const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
                 const isAdmin = roleStr === "ADMIN";
@@ -61,7 +62,7 @@ export default async function AdminUsersPage() {
                 const subStatus = activeSub ? activeSub.status : "EXPIRED";
 
                 return (
-                  <tr key={u.id} className="hover:bg-neutral-900/50 transition-colors">
+                  <tr key={u.id} className={cn("transition-colors", isDeleted ? "opacity-60 bg-neutral-900/30" : "hover:bg-neutral-900/50")}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-neutral-700 bg-neutral-800">
@@ -106,12 +107,14 @@ export default async function AdminUsersPage() {
                       <span
                         className={cn(
                           "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
-                          !isSuspended
-                            ? "bg-green-950 text-green-400 border border-green-800"
-                            : "bg-red-950 text-red-400 border border-red-800"
+                          isDeleted
+                            ? "bg-neutral-800 text-neutral-400 border border-neutral-700"
+                            : isSuspended
+                              ? "bg-red-950 text-red-400 border border-red-800"
+                              : "bg-green-950 text-green-400 border border-green-800"
                         )}
                       >
-                        {!isSuspended ? "Actif" : "Suspendu"}
+                        {isDeleted ? "Supprimé" : isSuspended ? "Suspendu" : "Actif"}
                       </span>
                     </td>
 
