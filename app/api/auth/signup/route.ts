@@ -42,117 +42,98 @@ export async function POST(request: Request) {
     const basePhone = phone ? String(phone).trim() : `+227${Math.floor(80000000 + Math.random() * 19999999)}`;
 
     let user: any = null;
-    let supabaseAdmin: any = null;
-    let createdViaAdmin = false;
+    let emailSent = true;
+    let authErrorMsg: string | null = null;
 
+    // 1. Primary Flow: Standard supabase.auth.signUp()
     try {
-      supabaseAdmin = await createAdminClient();
-    } catch (e) {
-      console.warn("createAdminClient error:", e);
-    }
+      const supabase = await createClient();
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email: userEmail,
+        password,
+        options: {
+          data: {
+            name,
+            phone: basePhone,
+            role: normalizedRole,
+            agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+            avatarUrl,
+          },
+        },
+      });
 
-    // 1. Try Supabase Auth Admin creation
-    if (supabaseAdmin) {
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const { data: adminAuthData, error: adminAuthErr } = await supabaseAdmin.auth.admin.createUser({
-            email: userEmail,
-            password,
-            user_metadata: {
-              name,
-              phone: basePhone,
-              role: normalizedRole,
-              agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-              avatarUrl,
-            },
-          });
-
-          if (!adminAuthErr && adminAuthData?.user) {
-            user = adminAuthData.user;
-            createdViaAdmin = true;
-            break;
-          }
-
-          if (adminAuthErr) {
-            const msg = adminAuthErr.message?.toLowerCase() || "";
-            if (msg.includes("already") || msg.includes("déjà") || (adminAuthErr as any).status === 422) {
-              try {
-                const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-                const existing = listData?.users?.find((u: any) => u.email === userEmail);
-                if (existing) {
-                  await supabaseAdmin.auth.admin.updateUserById(existing.id, {
-                    password,
-                  });
-                  user = existing;
-                  createdViaAdmin = !existing.email_confirmed_at;
-                  break;
-                }
-              } catch {
-                // Ignore list error
-              }
-            }
-
-            if (attempt < 2) {
-              await new Promise((r) => setTimeout(r, 1000));
-              continue;
-            }
-          }
-        } catch (attemptErr) {
-          if (attempt < 2) {
-            await new Promise((r) => setTimeout(r, 1000));
-            continue;
-          }
+      if (!signUpErr && signUpData?.user) {
+        user = signUpData.user;
+      } else if (signUpErr) {
+        authErrorMsg = signUpErr.message || null;
+        const msgLower = (signUpErr.message || "").toLowerCase();
+        if (msgLower.includes("already registered") || msgLower.includes("déjà") || (signUpErr as any).status === 422) {
+          return NextResponse.json(
+            { error: "Un compte existe déjà avec cette adresse e-mail." },
+            { status: 400 }
+          );
         }
       }
+    } catch (clientErr: any) {
+      console.warn("Client signUp exception:", clientErr);
+      authErrorMsg = clientErr?.message || String(clientErr);
     }
 
-    // 2. Fallback to client signUp if admin auth did not return a user
+    // 2. Secondary Flow: Fallback to Admin API if client signUp failed due to mailer/SMTP issues
     if (!user) {
       try {
-        const supabase = await createClient();
-        const { data: signUpData } = await supabase.auth.signUp({
+        const supabaseAdmin = await createAdminClient();
+        const { data: adminData, error: adminErr } = await supabaseAdmin.auth.admin.createUser({
           email: userEmail,
           password,
-          options: {
-            data: {
-              name,
-              phone: basePhone,
-              role: normalizedRole,
-              agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-              avatarUrl,
-            },
+          email_confirm: false,
+          user_metadata: {
+            name,
+            phone: basePhone,
+            role: normalizedRole,
+            agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+            avatarUrl,
           },
         });
 
-        if (signUpData?.user) {
-          user = signUpData.user;
+        if (!adminErr && adminData?.user) {
+          user = adminData.user;
+          emailSent = false;
+
+          // Attempt separate confirmation email dispatch via resend
+          try {
+            const supabase = await createClient();
+            const { error: resendErr } = await supabase.auth.resend({ type: "signup", email: userEmail });
+            if (!resendErr) {
+              emailSent = true;
+            }
+          } catch {
+            emailSent = false;
+          }
+        } else if (adminErr) {
+          console.warn("Admin createUser fallback failed:", adminErr);
+          const adminMsgLower = (adminErr.message || "").toLowerCase();
+          if (adminMsgLower.includes("already registered") || adminMsgLower.includes("déjà") || (adminErr as any).status === 422) {
+            return NextResponse.json(
+              { error: "Un compte existe déjà avec cette adresse e-mail." },
+              { status: 400 }
+            );
+          }
         }
-      } catch (signUpErr) {
-        console.warn("Supabase client signUp fallback exception:", signUpErr);
+      } catch (adminException) {
+        console.warn("Admin client fallback exception:", adminException);
       }
     }
 
-    // 3. Fallback UUID generation if Auth APIs are completely unreachable
+    // 3. Strict Check: NO mock UUID generation. If Auth API failed, return explicit error to caller.
     if (!user) {
-      user = {
-        id: crypto.randomUUID(),
-        email: userEmail,
-        user_metadata: { name, phone: basePhone, role: normalizedRole },
-      };
+      return NextResponse.json(
+        { error: authErrorMsg || "Impossible de créer le compte. L'envoi de l'email de confirmation a échoué." },
+        { status: 500 }
+      );
     }
 
-    // The Admin API (createUser/updateUserById) never dispatches a confirmation
-    // email by itself — it must be triggered explicitly via the public resend endpoint.
-    if (createdViaAdmin) {
-      try {
-        const supabase = await createClient();
-        await supabase.auth.resend({ type: "signup", email: userEmail });
-      } catch (resendErr) {
-        console.warn("Confirmation email resend warning:", resendErr);
-      }
-    }
-
-    // Ensure Profile record exists in profiles table using Prisma ORM with phone conflict resolution
+    // 4. Ensure Profile record exists in profiles table using Prisma ORM with phone conflict resolution
     try {
       await prisma.profile.upsert({
         where: { id: user.id },
@@ -199,7 +180,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create a permanent FREE subscription for owners and agencies
+    // 5. Create permanent FREE subscription for owners and agencies
     if (normalizedRole === "OWNER" || normalizedRole === "AGENCY") {
       try {
         const now = new Date();
@@ -228,10 +209,15 @@ export async function POST(request: Request) {
       }
     }
 
+    const message = emailSent
+      ? "Compte créé avec succès. Vérifiez votre boîte de réception pour confirmer votre e-mail."
+      : "Compte créé, mais l'email n'a pas pu être envoyé — réessayez depuis la page de connexion.";
+
     return NextResponse.json({
       success: true,
       user,
-      message: "Compte créé avec succès. Vérifiez votre boîte de réception pour confirmer votre e-mail.",
+      emailSent,
+      message,
     });
   } catch (err: any) {
     console.error("Fatal Signup Error:", err);

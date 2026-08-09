@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 export default function InscriptionPage() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [emailSent, setEmailSent] = useState(true);
   const router = useRouter();
   const toast = useToast();
 
@@ -38,25 +39,9 @@ export default function InscriptionPage() {
 
   async function onSubmit(data: RegisterFormData) {
     setServerError(null);
-    const supabase = createClient();
     const normalizedRole = data.role.toUpperCase();
 
-    // 1. Attempt client sign up
-    let { data: signUpData, error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          name: data.fullName,
-          phone: data.phone || "",
-          role: normalizedRole,
-          agencyName: normalizedRole === "AGENCY" ? data.agencyName || "" : null,
-        },
-      },
-    });
-
-    // 2. Fallback to API route if client signUp returned error
-    if (error || !signUpData.user) {
+    try {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -77,10 +62,20 @@ export default function InscriptionPage() {
         toast.error(errorMsg);
         return;
       }
-    }
 
-    setIsSuccess(true);
-    toast.success("Compte créé ! Vérifiez votre boîte de réception.");
+      const wasEmailSent = result.emailSent !== false;
+      setEmailSent(wasEmailSent);
+      setIsSuccess(true);
+      if (wasEmailSent) {
+        toast.success("Compte créé ! Vérifiez votre boîte de réception.");
+      } else {
+        toast.info("Compte créé, mais l'email n'a pas pu être envoyé — réessayez depuis la page de connexion.");
+      }
+    } catch (err: any) {
+      const errorMsg = err?.message || "Erreur réseau lors de l'inscription.";
+      setServerError(errorMsg);
+      toast.error(errorMsg);
+    }
   }
 
   return (
@@ -134,13 +129,37 @@ export default function InscriptionPage() {
           </div>
 
           {isSuccess ? (
-            <div className="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-8 text-center space-y-4 animate-scale-in">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
+            <div
+              className={cn(
+                "rounded-3xl border p-8 text-center space-y-4 animate-scale-in",
+                emailSent ? "border-emerald-200 bg-emerald-50/70" : "border-amber-200 bg-amber-50/70"
+              )}
+            >
+              <div
+                className={cn(
+                  "mx-auto flex h-14 w-14 items-center justify-center rounded-2xl",
+                  emailSent ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
+                )}
+              >
                 <CheckCircle2 className="h-8 w-8" />
               </div>
-              <h2 className="text-h4 font-bold text-emerald-900 font-heading">Vérifiez votre boîte de réception</h2>
-              <p className="text-sm text-emerald-700 max-w-md mx-auto font-sans">
-                Un email de confirmation vous a été envoyé. Cliquez sur le lien qu&apos;il contient pour activer votre compte avant de vous connecter.
+              <h2
+                className={cn(
+                  "text-h4 font-bold font-heading",
+                  emailSent ? "text-emerald-900" : "text-amber-900"
+                )}
+              >
+                {emailSent ? "Vérifiez votre boîte de réception" : "Compte créé"}
+              </h2>
+              <p
+                className={cn(
+                  "text-sm max-w-md mx-auto font-sans",
+                  emailSent ? "text-emerald-700" : "text-amber-800"
+                )}
+              >
+                {emailSent
+                  ? "Un email de confirmation vous a été envoyé. Cliquez sur le lien qu'il contient pour activer votre compte avant de vous connecter."
+                  : "Compte créé, mais l'email n'a pas pu être envoyé — réessayez depuis la page de connexion."}
               </p>
               <div className="pt-4">
                 <Button
