@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { loginRateLimiter } from "@/lib/rate-limit";
+import { prisma } from "@/lib/prisma/client";
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Authenticate with real password only — no fallback, no account creation
+    // Authenticate with real password only
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email: userEmail,
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
       if (error?.code === "email_not_confirmed") {
         return NextResponse.json(
           {
-            error: "Merci de confirmer votre email avant de vous connecter — vérifiez votre boîte de réception.",
+            error: "Veuillez confirmer votre adresse e-mail avant de vous connecter. Vérifiez votre boîte de réception.",
             remaining: rateLimit.remaining,
           },
           { status: 401 }
@@ -58,11 +59,36 @@ export async function POST(request: Request) {
       );
     }
 
+    // Obligation de confirmation par e-mail avant la connexion
+    if (!data.user.email_confirmed_at) {
+      try {
+        await supabase.auth.signOut();
+      } catch {}
+      return NextResponse.json(
+        {
+          error: "Veuillez confirmer votre adresse e-mail avant de vous connecter. Vérifiez votre boîte de réception.",
+          remaining: rateLimit.remaining,
+        },
+        { status: 401 }
+      );
+    }
+
     loginRateLimiter.reset(identifier);
+
+    let profile: any = null;
+    try {
+      profile = await prisma.profile.findUnique({
+        where: { id: data.user.id },
+        select: { role: true, status: true, name: true },
+      });
+    } catch (dbErr) {
+      console.warn("Could not fetch profile in login route:", dbErr);
+    }
 
     return NextResponse.json({
       success: true,
       user: data.user,
+      profile: profile || { role: "TENANT", status: "ACTIVE" },
     });
   } catch (err: any) {
     return NextResponse.json(

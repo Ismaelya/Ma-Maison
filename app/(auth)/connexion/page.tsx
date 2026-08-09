@@ -31,16 +31,12 @@ export default function ConnexionPage() {
     setServerError(null);
     const supabase = createClient();
 
-    // 1. Try browser client sign-in directly for fast session sync
-    const { data: authResult, error: clientAuthError } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
+    let loggedUser: any = null;
+    let userRole = "";
+    let userStatus = "";
 
-    let loggedUser = authResult?.user;
-
-    // 2. If client sign-in failed, fallback to API route
-    if (clientAuthError || !loggedUser) {
+    try {
+      // 1. Call API route to authenticate and establish server cookies
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,13 +45,51 @@ export default function ConnexionPage() {
 
       const result = await res.json();
 
-      if (!res.ok || !result.success) {
-        const errorMsg = result.error || "Email ou mot de passe incorrect.";
+      if (res.ok && result.success) {
+        loggedUser = result.user;
+        userRole = String(result.profile?.role || "").toUpperCase();
+        userStatus = String(result.profile?.status || "").toUpperCase();
+
+        // Sync browser client session
+        try {
+          await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: data.password,
+          });
+        } catch {
+          // Non-critical if browser client auto-refreshes from cookie
+        }
+      } else {
+        // Fallback: direct browser client sign-in
+        const { data: authResult, error: clientAuthError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+
+        if (clientAuthError || !authResult?.user) {
+          const errorMsg = result.error || clientAuthError?.message || "Email ou mot de passe incorrect.";
+          setServerError(errorMsg);
+          toast.error(errorMsg);
+          return;
+        }
+
+        loggedUser = authResult.user;
+      }
+    } catch (err: any) {
+      // Network fallback
+      const { data: authResult, error: clientAuthError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (clientAuthError || !authResult?.user) {
+        const errorMsg = err?.message || "Erreur de connexion.";
         setServerError(errorMsg);
         toast.error(errorMsg);
         return;
       }
-      loggedUser = result.user;
+
+      loggedUser = authResult.user;
     }
 
     if (!loggedUser) {
@@ -63,17 +97,19 @@ export default function ConnexionPage() {
       return;
     }
 
-    // 3. Query user profile to determine redirect role
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, status")
-      .eq("id", loggedUser.id)
-      .single();
+    // Determine role if not already obtained
+    if (!userRole) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, status")
+        .eq("id", loggedUser.id)
+        .single();
 
-    const role = String(profile?.role || "").toUpperCase();
-    const status = String(profile?.status || "").toUpperCase();
+      userRole = String(profile?.role || loggedUser.user_metadata?.role || "").toUpperCase();
+      userStatus = String(profile?.status || "").toUpperCase();
+    }
 
-    if (status === "SUSPENDED") {
+    if (userStatus === "SUSPENDED") {
       toast.error("Votre compte est suspendu.");
       router.push("/compte-suspendu");
       return;
@@ -84,7 +120,7 @@ export default function ConnexionPage() {
     const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
     const redirectTo = searchParams?.get("redirectTo");
 
-    if (role === "ADMIN") {
+    if (userRole === "ADMIN") {
       router.push("/admin");
     } else if (redirectTo && redirectTo.startsWith("/")) {
       router.push(redirectTo);

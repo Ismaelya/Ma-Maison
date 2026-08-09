@@ -65,8 +65,8 @@ export async function POST(request: Request) {
       if (!signUpErr && signUpData?.user) {
         user = signUpData.user;
       } else if (signUpErr) {
-        authErrorMsg = signUpErr.message || null;
-        const msgLower = (signUpErr.message || "").toLowerCase();
+        authErrorMsg = signUpErr.message || (signUpErr as any).error_description || String(signUpErr);
+        const msgLower = (authErrorMsg || "").toLowerCase();
         const errCode = (signUpErr as any).code || "";
         if (
           errCode === "user_already_exists" ||
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
         }
       }
     } catch (clientErr: any) {
-      console.warn("Client signUp exception:", clientErr);
+      console.warn("Client signUp exception:", clientErr?.message || String(clientErr));
       authErrorMsg = clientErr?.message || String(clientErr);
     }
 
@@ -105,20 +105,10 @@ export async function POST(request: Request) {
         if (!adminErr && adminData?.user) {
           user = adminData.user;
           emailSent = false;
-
-          // Attempt separate confirmation email dispatch via resend
-          try {
-            const supabase = await createClient();
-            const { error: resendErr } = await supabase.auth.resend({ type: "signup", email: userEmail });
-            if (!resendErr) {
-              emailSent = true;
-            }
-          } catch {
-            emailSent = false;
-          }
         } else if (adminErr) {
-          console.warn("Admin createUser fallback failed:", adminErr);
-          const adminMsgLower = (adminErr.message || "").toLowerCase();
+          const adminErrMsg = adminErr.message || (adminErr as any).error_description || String(adminErr);
+          console.warn("Admin createUser fallback failed:", adminErrMsg);
+          const adminMsgLower = adminErrMsg.toLowerCase();
           const adminErrCode = (adminErr as any).code || "";
           if (
             adminErrCode === "user_already_exists" ||
@@ -132,8 +122,8 @@ export async function POST(request: Request) {
             );
           }
         }
-      } catch (adminException) {
-        console.warn("Admin client fallback exception:", adminException);
+      } catch (adminException: any) {
+        console.warn("Admin client fallback exception:", adminException?.message || String(adminException));
       }
     }
 
@@ -146,51 +136,40 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Ensure Profile record exists in profiles table using Prisma ORM with phone conflict resolution
+    // 4. Ensure Profile record exists in profiles table using Prisma ORM with conflict resolution
     try {
-      await prisma.profile.upsert({
+      const existingProfile = await prisma.profile.findUnique({
         where: { id: user.id },
-        update: {
-          email: userEmail,
-          name: name,
-          phone: basePhone,
-          role: normalizedRole as any,
-          agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
-          avatarUrl: avatarUrl,
-          status: "ACTIVE",
-        },
-        create: {
-          id: user.id,
-          email: userEmail,
-          name: name,
-          phone: basePhone,
-          role: normalizedRole as any,
-          agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
-          avatarUrl: avatarUrl,
-          status: "ACTIVE",
-        },
       });
-    } catch (profileErr: any) {
-      console.error("Prisma profile upsert error:", profileErr?.message || profileErr);
-      if (profileErr?.code === "P2002" || String(profileErr).includes("unique")) {
-        const uniquePhone = `${basePhone.slice(0, 10)}${Math.floor(100 + Math.random() * 899)}`;
-        try {
-          await prisma.profile.upsert({
-            where: { id: user.id },
-            update: { phone: uniquePhone, status: "ACTIVE" },
-            create: {
-              id: user.id,
-              email: userEmail,
-              name: name,
-              phone: uniquePhone,
-              role: normalizedRole as any,
-              status: "ACTIVE",
-            },
-          });
-        } catch (retryErr) {
-          console.error("Retry profile upsert failed:", retryErr);
-        }
+
+      if (existingProfile) {
+        await prisma.profile.update({
+          where: { id: user.id },
+          data: {
+            email: userEmail,
+            name: name,
+            role: normalizedRole as any,
+            agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
+            avatarUrl: avatarUrl,
+            status: "ACTIVE",
+          },
+        });
+      } else {
+        await prisma.profile.create({
+          data: {
+            id: user.id,
+            email: userEmail,
+            name: name,
+            phone: basePhone,
+            role: normalizedRole as any,
+            agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
+            avatarUrl: avatarUrl,
+            status: "ACTIVE",
+          },
+        });
       }
+    } catch (profileErr: any) {
+      console.error("Prisma profile sync error:", profileErr?.message || profileErr);
     }
 
     // 5. Create permanent FREE subscription for owners and agencies
@@ -222,9 +201,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const message = emailSent
-      ? "Compte créé avec succès. Vérifiez votre boîte de réception pour confirmer votre e-mail."
-      : "Compte créé, mais l'email n'a pas pu être envoyé — réessayez depuis la page de connexion.";
+    const message = "Compte créé avec succès. Un e-mail de confirmation vous a été envoyé. Veuillez obligatoirement confirmer votre e-mail avant de vous connecter.";
 
     return NextResponse.json({
       success: true,
