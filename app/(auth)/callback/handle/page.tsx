@@ -24,10 +24,18 @@ export default function CallbackHandlePage() {
       try {
         const supabase = createClient();
 
-        const { data, error } = await supabase.auth.getSession();
-
         const url = new URL(window.location.href);
+        const code = url.searchParams.get("code");
         const next = sanitizeNextPath(url.searchParams.get("next"));
+
+        if (code) {
+          const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeErr) {
+            console.error("Exchange code error:", exchangeErr);
+          }
+        }
+
+        const { data, error } = await supabase.auth.getSession();
 
         if (error || !data?.session) {
           console.error("Supabase auth session error:", error);
