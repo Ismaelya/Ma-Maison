@@ -67,7 +67,13 @@ export async function POST(request: Request) {
       } else if (signUpErr) {
         authErrorMsg = signUpErr.message || null;
         const msgLower = (signUpErr.message || "").toLowerCase();
-        if (msgLower.includes("already registered") || msgLower.includes("déjà") || (signUpErr as any).status === 422) {
+        const errCode = (signUpErr as any).code || "";
+        if (
+          errCode === "user_already_exists" ||
+          errCode === "email_exists" ||
+          msgLower.includes("already registered") ||
+          msgLower.includes("déjà")
+        ) {
           return NextResponse.json(
             { error: "Un compte existe déjà avec cette adresse e-mail." },
             { status: 400 }
@@ -113,7 +119,13 @@ export async function POST(request: Request) {
         } else if (adminErr) {
           console.warn("Admin createUser fallback failed:", adminErr);
           const adminMsgLower = (adminErr.message || "").toLowerCase();
-          if (adminMsgLower.includes("already registered") || adminMsgLower.includes("déjà") || (adminErr as any).status === 422) {
+          const adminErrCode = (adminErr as any).code || "";
+          if (
+            adminErrCode === "user_already_exists" ||
+            adminErrCode === "email_exists" ||
+            adminMsgLower.includes("already registered") ||
+            adminMsgLower.includes("déjà")
+          ) {
             return NextResponse.json(
               { error: "Un compte existe déjà avec cette adresse e-mail." },
               { status: 400 }
@@ -127,8 +139,9 @@ export async function POST(request: Request) {
 
     // 3. Strict Check: NO mock UUID generation. If Auth API failed, return explicit error to caller.
     if (!user) {
+      console.error("Signup failed on both primary and fallback paths:", authErrorMsg);
       return NextResponse.json(
-        { error: authErrorMsg || "Impossible de créer le compte. L'envoi de l'email de confirmation a échoué." },
+        { error: "Impossible de créer le compte pour le moment. Veuillez réessayer dans quelques instants." },
         { status: 500 }
       );
     }
