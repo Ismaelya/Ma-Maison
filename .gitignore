@@ -50,3 +50,4 @@ playwright-report/
 scratch/
 coverage/
 \n# Local env and build output\n.env\n.env.local\n.next\ncoverage\n
+.env*

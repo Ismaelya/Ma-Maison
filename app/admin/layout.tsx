@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Home } from "lucide-react";
 import { getUser } from "@/lib/auth/helpers";
+import { createClient } from "@/lib/supabase/server";
 import { DashboardSignOut } from "@/components/dashboard/sign-out-button";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Logo } from "@/components/ui/logo";
@@ -15,6 +16,13 @@ export default async function AdminLayout({
   const authUser = await getUser();
 
   if (!authUser) {
+    // Break redirect loops: sign out stale session before redirecting
+    try {
+      const supabase = await createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore signOut errors in read-only Server Component context
+    }
     redirect("/connexion");
   }
 

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { getUser } from "@/lib/auth/helpers";
+import { createClient } from "@/lib/supabase/server";
 import { getTrialDaysRemaining, getAvatarUrl } from "@/lib/utils";
 import { DashboardSignOut } from "@/components/dashboard/sign-out-button";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
@@ -14,14 +15,20 @@ export default async function DashboardLayout({
 }) {
   const authUser = await getUser();
 
-  if (!authUser) {
+  if (!authUser || !authUser.profile) {
+    // Break potential redirect loops: sign out to clear stale cookies
+    // before redirecting to login. Without this, the middleware may see
+    // a valid JWT and redirect right back to /dashboard, causing a loop.
+    try {
+      const supabase = await createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore signOut errors in read-only Server Component context
+    }
     redirect("/connexion");
   }
 
   const profile = authUser.profile;
-  if (!profile) {
-    redirect("/connexion");
-  }
 
   const roleStr = String(profile.role || "").toUpperCase();
   const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";

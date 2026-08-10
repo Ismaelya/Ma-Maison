@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { loginRateLimiter } from "@/lib/rate-limit";
-import { prisma } from "@/lib/prisma/client";
 
 export async function POST(request: Request) {
   try {
@@ -75,20 +74,24 @@ export async function POST(request: Request) {
 
     loginRateLimiter.reset(identifier);
 
-    let profile: any = null;
-    try {
-      profile = await prisma.profile.findUnique({
-        where: { id: data.user.id },
-        select: { role: true, status: true, name: true },
-      });
-    } catch (dbErr) {
-      console.warn("Could not fetch profile in login route:", dbErr);
+    // Fetch exact profile from Supabase (source of truth)
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role, status, name")
+      .eq("id", data.user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json(
+        { error: "Impossible de charger le profil utilisateur." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       success: true,
       user: data.user,
-      profile: profile || { role: "TENANT", status: "ACTIVE" },
+      profile,
     });
   } catch (err: any) {
     return NextResponse.json(

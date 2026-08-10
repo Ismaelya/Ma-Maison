@@ -51,28 +51,14 @@ export async function POST(request: Request) {
     return apiError("UNAUTHORIZED", "Non authentifié", 401);
   }
 
-  // Fetch profile with Prisma fallback
-  let profile: any = null;
-  try {
-    const { data: pData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-    profile = pData;
-  } catch {
-    // Ignore Supabase REST error
-  }
+  // Fetch profile
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
 
-  if (!profile) {
-    try {
-      profile = await prisma.profile.findUnique({ where: { id: user.id } });
-    } catch {
-      // Ignore DB error
-    }
-  }
-
-  if (!profile) {
+  if (profileError || !profile) {
     return apiError("UNAUTHORIZED", "Profil utilisateur introuvable", 401);
   }
 

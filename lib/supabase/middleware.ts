@@ -44,6 +44,12 @@ export async function updateSession(request: NextRequest) {
     user = data.user;
   } catch (error) {
     if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
+      // Redirect loop breaker: if we already came from /connexion, don't redirect back
+      const referer = request.headers.get("referer") || "";
+      if (referer.includes("/connexion")) {
+        // Let the Server Component handle the error gracefully
+        return response;
+      }
       const url = request.nextUrl.clone();
       url.pathname = "/connexion";
       url.searchParams.set("error", "session_check_failed");
@@ -55,6 +61,11 @@ export async function updateSession(request: NextRequest) {
   // Protect /dashboard and /admin routes
   if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
     if (!user) {
+      // Redirect loop breaker: if we already came from /connexion, don't redirect back
+      const referer = request.headers.get("referer") || "";
+      if (referer.includes("/connexion")) {
+        return response;
+      }
       const url = request.nextUrl.clone();
       url.pathname = "/connexion";
       return NextResponse.redirect(url);
@@ -86,6 +97,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages
+  // BUT add loop breaker: don't redirect if we came from /dashboard (would cause loop)
   if (
     user &&
     (pathname === "/connexion" ||
@@ -93,9 +105,21 @@ export async function updateSession(request: NextRequest) {
       pathname.startsWith("/auth/login") ||
       pathname.startsWith("/auth/register"))
   ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    const referer = request.headers.get("referer") || "";
+    const isLoopingFromDashboard = referer.includes("/dashboard") || referer.includes("/admin");
+
+    if (!isLoopingFromDashboard) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+    // If looping from dashboard, let them see the login page to break the loop
+    // Also sign them out to clean up the broken session
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // ignore signOut errors
+    }
   }
 
   return response;

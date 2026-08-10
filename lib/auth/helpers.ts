@@ -10,8 +10,7 @@ export type AuthUser = {
 
 /**
  * Gets the current authenticated user and their profile.
- * Redirects to /compte-suspendu if the user's account is suspended.
- * Returns null if not authenticated.
+ * Returns null if not authenticated or profile not found.
  */
 export async function getUser(): Promise<AuthUser | null> {
   const supabase = await createClient();

@@ -16,24 +16,8 @@ export async function PATCH(
     return apiError("UNAUTHORIZED", "Non authentifié", 401);
   }
 
-  let profileRole = "";
-  try {
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-    profileRole = profile?.role || "";
-  } catch {
-    // Ignore Supabase REST error
-  }
-
-  if (!profileRole) {
-    try {
-      const p = await prisma.profile.findUnique({ where: { id: user.id } });
-      profileRole = p?.role || "";
-    } catch {
-      // Ignore DB error
-    }
-  }
-
-  const userRole = String(profileRole || user.user_metadata?.role || "").toUpperCase();
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const userRole = String(profile?.role || "").toUpperCase();
 
   if (userRole !== "ADMIN") {
     return apiError("FORBIDDEN", "Accès réservé aux administrateurs", 403);
