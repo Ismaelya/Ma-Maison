@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { loginRateLimiter } from "@/lib/rate-limit";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { email, password } = body;
@@ -31,8 +31,24 @@ export async function POST(request: Request) {
       );
     }
 
+    const pendingCookies: { name: string; value: string; options: any }[] = [];
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach((cookie) => pendingCookies.push(cookie));
+          },
+        },
+      }
+    );
+
     // Authenticate with real password only
-    const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email: userEmail,
       password,
@@ -88,11 +104,17 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: data.user,
       profile,
     });
+
+    pendingCookies.forEach(({ name, value, options }) => {
+      response.cookies.set(name, value, options);
+    });
+
+    return response;
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Erreur serveur" },
