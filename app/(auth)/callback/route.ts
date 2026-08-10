@@ -7,9 +7,10 @@ import { createClient } from "@/lib/supabase/server";
  * in the user's metadata, and redirects to the dashboard.
  */
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ma-maison-niger.vercel.app";
 
   if (code) {
     const supabase = await createClient();
@@ -36,10 +37,10 @@ export async function GET(request: Request) {
         }
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${siteUrl}${next}`);
     }
   }
 
   // If something went wrong, redirect to login with error
-  return NextResponse.redirect(`${origin}/connexion?error=auth_failed`);
+  return NextResponse.redirect(`${siteUrl}/connexion?error=auth_failed`);
 }

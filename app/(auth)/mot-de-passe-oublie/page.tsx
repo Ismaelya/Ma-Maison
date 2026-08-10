@@ -40,10 +40,10 @@ export default function MotDePasseOubliePage() {
     setServerError(null);
     const supabase = createClient();
 
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ma-maison-niger.vercel.app";
 
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${origin}/callback/handle?next=/nouveau-mot-de-passe`,
+      redirectTo: `${siteUrl}/callback/handle?next=/nouveau-mot-de-passe`,
     });
 
     if (error) {

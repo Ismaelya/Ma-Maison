@@ -48,10 +48,12 @@ export async function POST(request: Request) {
     // 1. Primary Flow: Standard supabase.auth.signUp()
     try {
       const supabase = await createClient();
+      const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ma-maison-niger.vercel.app";
       const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
         email: userEmail,
         password,
         options: {
+          emailRedirectTo: `${siteUrl}/callback`,
           data: {
             name,
             phone: basePhone,
