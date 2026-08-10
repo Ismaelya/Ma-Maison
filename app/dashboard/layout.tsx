@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   LayoutDashboard,
@@ -6,15 +5,13 @@ import {
   Heart,
   MessageSquare,
   User,
-  Plus,
-  LogOut,
   AlertTriangle,
-  Home,
   CreditCard,
 } from "lucide-react";
 import { getUser } from "@/lib/auth/helpers";
-import { getTrialDaysRemaining, cn, getAvatarUrl } from "@/lib/utils";
+import { getTrialDaysRemaining, getAvatarUrl } from "@/lib/utils";
 import { DashboardSignOut } from "@/components/dashboard/sign-out-button";
+import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -82,7 +79,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] transition-colors">
       {/* Top bar */}
-      <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg)]/85 backdrop-blur-lg transition-colors">
+      <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg)]/85 shadow-[0_1px_0_rgba(15,23,42,0.03)] backdrop-blur-lg transition-colors">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Logo />
 
@@ -92,15 +89,15 @@ export default async function DashboardLayout({
               <p className="text-sm font-medium text-[var(--color-text)]">
                 {profile.name || "Utilisateur"}
               </p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="text-xs font-medium uppercase tracking-wide text-secondary-600">
                 {isOwner ? "Propriétaire" : "Locataire"}
               </p>
             </div>
-            <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary-600 shadow-sm">
+            <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-brand p-[2px] shadow-sm">
               <img
                 src={getAvatarUrl(profile.avatarUrl || (profile as any).avatar_url, profile.name)}
                 alt={profile.name || "Profil"}
-                className="h-full w-full object-cover"
+                className="h-full w-full rounded-full border-2 border-[var(--color-bg)] object-cover"
               />
             </div>
           </div>
@@ -136,19 +133,13 @@ export default async function DashboardLayout({
         <div className="flex flex-col gap-8 lg:flex-row">
           {/* Sidebar navigation */}
           <aside className="w-full lg:w-60 lg:flex-shrink-0">
-            <nav className="space-y-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3 shadow-[var(--shadow-card)]">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href as any}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-muted)] hover:text-primary-600"
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              ))}
+            <nav className="space-y-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3 shadow-[var(--shadow-card)] lg:sticky lg:top-24">
+              <p className="px-3 pb-1 pt-1 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                Menu
+              </p>
+              <DashboardNav items={navItems} />
 
-              <div className="my-2 h-px bg-neutral-200" />
+              <div className="my-2 h-px bg-[var(--color-border)]" />
 
               <DashboardSignOut />
             </nav>

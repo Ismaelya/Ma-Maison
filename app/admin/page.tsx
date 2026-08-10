@@ -44,140 +44,131 @@ export default async function AdminDashboardPage() {
   );
 
   return (
-    <div className="animate-fade-in space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white sm:text-3xl">
-          Tableau de bord Administration
-        </h1>
-        <p className="mt-1 text-neutral-400">
-          Vue d&apos;ensemble de la plateforme Ma Maison Niger
-        </p>
+    <div className="animate-fade-in space-y-6">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-white sm:text-2xl">
+            Tableau de bord Administration
+          </h1>
+          <p className="mt-0.5 text-sm text-neutral-400">
+            Vue d&apos;ensemble de la plateforme Ma Maison Niger
+          </p>
+        </div>
       </div>
 
       {/* Action required banners */}
-      {pendingListings > 0 && (
-        <div className="rounded-2xl border border-blue-800 bg-blue-950/50 p-4 text-blue-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Building2 className="h-6 w-6 text-blue-400 flex-shrink-0" />
-              <div>
-                <p className="font-semibold text-sm">
-                  {pendingListings} demande{pendingListings > 1 ? "s" : ""} d&apos;annonce en attente de modération / validation
-                </p>
-                <p className="text-xs text-blue-400/80">
-                  Examinez et validez les annonces soumises par les propriétaires.
+      {(pendingListings > 0 || pendingPayments > 0) && (
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          {pendingListings > 0 && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-blue-800/70 bg-blue-950/40 px-4 py-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <Building2 className="h-5 w-5 flex-shrink-0 text-blue-400" />
+                <p className="truncate text-sm text-blue-200">
+                  <strong className="font-semibold">{pendingListings}</strong> annonce{pendingListings > 1 ? "s" : ""} en attente de validation
                 </p>
               </div>
+              <Link
+                href="/admin/annonces"
+                className="flex flex-shrink-0 items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-blue-500"
+              >
+                Modérer <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
-            <Link
-              href="/admin/annonces"
-              className="flex items-center gap-1 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-500"
-            >
-              Modérer <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-      )}
+          )}
 
-      {pendingPayments > 0 && (
-        <div className="rounded-2xl border border-yellow-800 bg-yellow-950/50 p-4 text-yellow-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ShieldAlert className="h-6 w-6 text-yellow-400 flex-shrink-0" />
-              <div>
-                <p className="font-semibold text-sm">
-                  {pendingPayments} demande{pendingPayments > 1 ? "s" : ""} de paiement en attente de vérification
-                </p>
-                <p className="text-xs text-yellow-400/80">
-                  Vérifiez les reçus de paiement Wave/Amanata/Mynita pour valider les abonnements.
+          {pendingPayments > 0 && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-800/70 bg-amber-950/40 px-4 py-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <ShieldAlert className="h-5 w-5 flex-shrink-0 text-amber-400" />
+                <p className="truncate text-sm text-amber-200">
+                  <strong className="font-semibold">{pendingPayments}</strong> paiement{pendingPayments > 1 ? "s" : ""} à vérifier
                 </p>
               </div>
+              <Link
+                href="/admin/paiements"
+                className="flex flex-shrink-0 items-center gap-1 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-amber-500"
+              >
+                Vérifier <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
-            <Link
-              href="/admin/paiements"
-              className="flex items-center gap-1 rounded-xl bg-yellow-600 px-4 py-2 text-xs font-bold text-black transition-colors hover:bg-yellow-500"
-            >
-              Vérifier <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
+          )}
         </div>
       )}
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <MetricCard
-          icon={<Users className="h-5 w-5 text-blue-400" />}
+          icon={<Users className="h-4 w-4" />}
+          accent="text-blue-400 bg-blue-500/10"
           label="Utilisateurs totaux"
           value={String(totalUsers)}
           subtext={`${totalOwners} propriétaires`}
         />
         <MetricCard
-          icon={<Building2 className="h-5 w-5 text-green-400" />}
+          icon={<Building2 className="h-4 w-4" />}
+          accent="text-green-400 bg-green-500/10"
           label="Annonces créées"
           value={String(totalListings)}
-          subtext={pendingListings > 0 ? `${pendingListings} en attente de validation` : "Sur tout le territoire"}
+          subtext={pendingListings > 0 ? `${pendingListings} en attente` : "Sur tout le territoire"}
           highlight={pendingListings > 0}
         />
         <MetricCard
-          icon={<CreditCard className="h-5 w-5 text-yellow-400" />}
-          label="Paiements attente"
+          icon={<CreditCard className="h-4 w-4" />}
+          accent="text-amber-400 bg-amber-500/10"
+          label="Paiements en attente"
           value={String(pendingPayments)}
           subtext="À valider manuellement"
           highlight={pendingPayments > 0}
         />
         <MetricCard
-          icon={<Flag className="h-5 w-5 text-red-400" />}
+          icon={<Flag className="h-4 w-4" />}
+          accent="text-red-400 bg-red-500/10"
           label="Signalements"
           value={String(pendingReports)}
           subtext="En attente de traitement"
+          highlight={pendingReports > 0}
         />
         <MetricCard
-          icon={<DollarSign className="h-5 w-5 text-emerald-400" />}
-          label="Revenus Totaux"
+          icon={<DollarSign className="h-4 w-4" />}
+          accent="text-emerald-400 bg-emerald-500/10"
+          label="Revenus totaux"
           value={formatPrice(totalRevenue)}
           subtext="Paiements validés"
         />
       </div>
 
-      {/* Quick Nav Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* Quick actions toolbar */}
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-950 p-2 shadow-xl">
+        <span className="px-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-600">
+          Accès rapide
+        </span>
         <Link
           href="/admin/paiements"
-          className="group rounded-2xl border border-neutral-800 bg-neutral-950 p-6 shadow-xl transition-all hover:border-neutral-700"
+          className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white"
         >
-          <CreditCard className="h-8 w-8 text-yellow-500 mb-3" />
-          <h3 className="font-bold text-white group-hover:text-yellow-400 transition-colors">
-            Gestion des Paiements
-          </h3>
-          <p className="mt-1 text-xs text-neutral-400">
-            Validez ou refusez les reçus d&apos;abonnement 1500 FCFA.
-          </p>
+          <CreditCard className="h-3.5 w-3.5 text-amber-500" />
+          Paiements
         </Link>
-
         <Link
           href="/admin/utilisateurs"
-          className="group rounded-2xl border border-neutral-800 bg-neutral-950 p-6 shadow-xl transition-all hover:border-neutral-700"
+          className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white"
         >
-          <Users className="h-8 w-8 text-blue-500 mb-3" />
-          <h3 className="font-bold text-white group-hover:text-blue-400 transition-colors">
-            Gestion des Utilisateurs
-          </h3>
-          <p className="mt-1 text-xs text-neutral-400">
-            Consultez et suspendez des comptes en cas d&apos;abus.
-          </p>
+          <Users className="h-3.5 w-3.5 text-blue-500" />
+          Utilisateurs
         </Link>
-
         <Link
           href="/admin/annonces"
-          className="group rounded-2xl border border-neutral-800 bg-neutral-950 p-6 shadow-xl transition-all hover:border-neutral-700"
+          className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white"
         >
-          <Building2 className="h-8 w-8 text-green-500 mb-3" />
-          <h3 className="font-bold text-white group-hover:text-green-400 transition-colors">
-            Modération des Annonces
-          </h3>
-          <p className="mt-1 text-xs text-neutral-400">
-            Masquez ou supprimez les annonces non conformes.
-          </p>
+          <Building2 className="h-3.5 w-3.5 text-green-500" />
+          Annonces
+        </Link>
+        <Link
+          href="/admin/signalements"
+          className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white"
+        >
+          <Flag className="h-3.5 w-3.5 text-red-500" />
+          Signalements
         </Link>
       </div>
     </div>
@@ -186,12 +177,14 @@ export default async function AdminDashboardPage() {
 
 function MetricCard({
   icon,
+  accent,
   label,
   value,
   subtext,
   highlight = false,
 }: {
   icon: React.ReactNode;
+  accent: string;
   label: string;
   value: string;
   subtext: string;
@@ -199,16 +192,14 @@ function MetricCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-5 shadow-xl bg-neutral-950 ${
-        highlight ? "border-yellow-600/80 bg-yellow-950/20" : "border-neutral-800"
+      className={`rounded-xl border p-4 shadow-xl transition-colors ${
+        highlight ? "border-amber-600/60 bg-amber-950/10" : "border-neutral-800 bg-neutral-950"
       }`}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase text-neutral-400">{label}</span>
-        {icon}
-      </div>
-      <p className="mt-3 text-2xl font-extrabold text-white">{value}</p>
-      <p className="mt-1 text-xs text-neutral-500">{subtext}</p>
+      <div className={`inline-flex rounded-lg p-2 ${accent}`}>{icon}</div>
+      <p className="mt-2.5 truncate text-xl font-extrabold tracking-tight text-white">{value}</p>
+      <p className="text-xs font-medium text-neutral-400">{label}</p>
+      <p className="mt-0.5 truncate text-[11px] text-neutral-600">{subtext}</p>
     </div>
   );
 }

@@ -89,12 +89,12 @@ export default async function AdminListingsPage() {
               <table className="w-full text-left text-sm text-neutral-300">
                 <thead className="bg-neutral-900 text-xs uppercase text-neutral-400">
                   <tr>
-                    <th className="px-6 py-4 font-semibold">Annonce</th>
-                    <th className="px-6 py-4 font-semibold">Propriétaire</th>
-                    <th className="px-6 py-4 font-semibold">Prix</th>
-                    <th className="px-6 py-4 font-semibold">Statut</th>
-                    <th className="px-6 py-4 font-semibold">Soumise le</th>
-                    <th className="px-6 py-4 text-right font-semibold">Action Modération</th>
+                    <th className="px-4 py-3 font-semibold">Annonce</th>
+                    <th className="px-4 py-3 font-semibold">Propriétaire</th>
+                    <th className="px-4 py-3 font-semibold">Prix</th>
+                    <th className="px-4 py-3 font-semibold">Statut</th>
+                    <th className="px-4 py-3 font-semibold">Soumise le</th>
+                    <th className="px-4 py-3 text-right font-semibold">Action Modération</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800">
@@ -102,7 +102,7 @@ export default async function AdminListingsPage() {
                     const owner = l.owner || l.profiles || {};
                     return (
                       <tr key={l.id} className="hover:bg-neutral-900/50 transition-colors">
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           <div>
                             <Link
                               href={`/admin/annonces/${l.id}`}
@@ -117,28 +117,28 @@ export default async function AdminListingsPage() {
                           </div>
                         </td>
 
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           <p className="font-semibold text-white">
                             {owner.name || "Propriétaire"}
                           </p>
                           <p className="text-xs text-neutral-400">{owner.email}</p>
                         </td>
 
-                        <td className="px-6 py-4 font-bold text-primary-400">
+                        <td className="px-4 py-3 font-bold text-primary-400">
                           {formatPrice(l.price)}
                         </td>
 
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           <span className="inline-block rounded-full bg-yellow-950 text-yellow-400 border border-yellow-800 px-2.5 py-0.5 text-xs font-bold uppercase">
                             En attente
                           </span>
                         </td>
 
-                        <td className="px-6 py-4 text-xs text-neutral-400">
+                        <td className="px-4 py-3 text-xs text-neutral-400">
                           {formatDate(l.createdAt || l.created_at)}
                         </td>
 
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 py-3 text-right">
                           <ListingActionButtons
                             listingId={l.id}
                             status="PENDING"
@@ -172,12 +172,12 @@ export default async function AdminListingsPage() {
               <table className="w-full text-left text-sm text-neutral-300">
                 <thead className="bg-neutral-900 text-xs uppercase text-neutral-400">
                   <tr>
-                    <th className="px-6 py-4 font-semibold">Annonce</th>
-                    <th className="px-6 py-4 font-semibold">Propriétaire</th>
-                    <th className="px-6 py-4 font-semibold">Prix</th>
-                    <th className="px-6 py-4 font-semibold">Statut</th>
-                    <th className="px-6 py-4 font-semibold">Date</th>
-                    <th className="px-6 py-4 text-right font-semibold">Actions</th>
+                    <th className="px-4 py-3 font-semibold">Annonce</th>
+                    <th className="px-4 py-3 font-semibold">Propriétaire</th>
+                    <th className="px-4 py-3 font-semibold">Prix</th>
+                    <th className="px-4 py-3 font-semibold">Statut</th>
+                    <th className="px-4 py-3 font-semibold">Date</th>
+                    <th className="px-4 py-3 text-right font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800">
@@ -188,7 +188,7 @@ export default async function AdminListingsPage() {
 
                     return (
                       <tr key={l.id} className="hover:bg-neutral-900/50 transition-colors">
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           <div>
                             <Link
                               href={`/admin/annonces/${l.id}`}
@@ -203,18 +203,18 @@ export default async function AdminListingsPage() {
                           </div>
                         </td>
 
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           <p className="font-semibold text-white">
                             {owner.name || "Propriétaire"}
                           </p>
                           <p className="text-xs text-neutral-400">{owner.email}</p>
                         </td>
 
-                        <td className="px-6 py-4 font-bold text-primary-400">
+                        <td className="px-4 py-3 font-bold text-primary-400">
                           {formatPrice(l.price)}
                         </td>
 
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           <span
                             className={cn(
                               "inline-block rounded-full px-2.5 py-0.5 text-xs font-bold uppercase text-center w-fit",
@@ -229,11 +229,11 @@ export default async function AdminListingsPage() {
                           </span>
                         </td>
 
-                        <td className="px-6 py-4 text-xs text-neutral-400">
+                        <td className="px-4 py-3 text-xs text-neutral-400">
                           {formatDate(l.createdAt || l.created_at)}
                         </td>
 
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 py-3 text-right">
                           <ListingActionButtons
                             listingId={l.id}
                             status={statusStr}

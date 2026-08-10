@@ -74,11 +74,11 @@ export default async function AdminPaymentsPage() {
               <table className="w-full text-left text-sm text-neutral-300">
                 <thead className="bg-neutral-900 text-xs uppercase text-neutral-400">
                   <tr>
-                    <th className="px-6 py-4 font-semibold">Propriétaire</th>
-                    <th className="px-6 py-4 font-semibold">Méthode</th>
-                    <th className="px-6 py-4 font-semibold">Montant</th>
-                    <th className="px-6 py-4 font-semibold">Date de soumission</th>
-                    <th className="px-6 py-4 text-right font-semibold">Action</th>
+                    <th className="px-4 py-3 font-semibold">Propriétaire</th>
+                    <th className="px-4 py-3 font-semibold">Méthode</th>
+                    <th className="px-4 py-3 font-semibold">Montant</th>
+                    <th className="px-4 py-3 font-semibold">Date de soumission</th>
+                    <th className="px-4 py-3 text-right font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800">
@@ -86,7 +86,7 @@ export default async function AdminPaymentsPage() {
                     const profile = p.user || {};
                     return (
                       <tr key={p.id} className="hover:bg-neutral-900/50 transition-colors">
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           <p className="font-semibold text-white">
                             {profile.name || "Sans nom"}
                           </p>
@@ -96,21 +96,21 @@ export default async function AdminPaymentsPage() {
                           )}
                         </td>
 
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           <span className="rounded-full bg-yellow-950 text-yellow-400 border border-yellow-800 px-3 py-1 text-xs font-bold uppercase">
                             {p.method || p.provider}
                           </span>
                         </td>
 
-                        <td className="px-6 py-4 font-bold text-white">
+                        <td className="px-4 py-3 font-bold text-white">
                           {formatPrice(p.amount)}
                         </td>
 
-                        <td className="px-6 py-4 text-xs text-neutral-400">
+                        <td className="px-4 py-3 text-xs text-neutral-400">
                           {formatDate(p.createdAt || p.created_at)}
                         </td>
 
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 py-3 text-right">
                           <PaymentVerificationModal payment={p} />
                         </td>
                       </tr>
@@ -139,12 +139,12 @@ export default async function AdminPaymentsPage() {
               <table className="w-full text-left text-sm text-neutral-300">
                 <thead className="bg-neutral-900 text-xs uppercase text-neutral-400">
                   <tr>
-                    <th className="px-6 py-4 font-semibold">Propriétaire</th>
-                    <th className="px-6 py-4 font-semibold">Méthode</th>
-                    <th className="px-6 py-4 font-semibold">Montant</th>
-                    <th className="px-6 py-4 font-semibold">Statut</th>
-                    <th className="px-6 py-4 font-semibold">Date</th>
-                    <th className="px-6 py-4 text-right font-semibold">Reçu</th>
+                    <th className="px-4 py-3 font-semibold">Propriétaire</th>
+                    <th className="px-4 py-3 font-semibold">Méthode</th>
+                    <th className="px-4 py-3 font-semibold">Montant</th>
+                    <th className="px-4 py-3 font-semibold">Statut</th>
+                    <th className="px-4 py-3 font-semibold">Date</th>
+                    <th className="px-4 py-3 text-right font-semibold">Reçu</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800">
@@ -154,22 +154,22 @@ export default async function AdminPaymentsPage() {
 
                     return (
                       <tr key={p.id} className="hover:bg-neutral-900/50 transition-colors">
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           <p className="font-semibold text-white">
                             {profile.name || "Sans nom"}
                           </p>
                           <p className="text-xs text-neutral-400">{profile.email}</p>
                         </td>
 
-                        <td className="px-6 py-4 text-xs font-semibold uppercase text-neutral-300">
+                        <td className="px-4 py-3 text-xs font-semibold uppercase text-neutral-300">
                           {p.method || p.provider}
                         </td>
 
-                        <td className="px-6 py-4 font-bold text-white">
+                        <td className="px-4 py-3 font-bold text-white">
                           {formatPrice(p.amount)}
                         </td>
 
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           <span
                             className={cn(
                               "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
@@ -182,11 +182,11 @@ export default async function AdminPaymentsPage() {
                           </span>
                         </td>
 
-                        <td className="px-6 py-4 text-xs text-neutral-400">
+                        <td className="px-4 py-3 text-xs text-neutral-400">
                           {formatDate(p.createdAt || p.created_at)}
                         </td>
 
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-4 py-3 text-right">
                           <PaymentVerificationModal payment={p} />
                         </td>
                       </tr>

@@ -41,12 +41,12 @@ export default async function AdminUsersPage() {
           <table className="w-full text-left text-sm text-neutral-300">
             <thead className="bg-neutral-900 text-xs uppercase text-neutral-400">
               <tr>
-                <th className="px-6 py-4 font-semibold">Utilisateur</th>
-                <th className="px-6 py-4 font-semibold">Rôle</th>
-                <th className="px-6 py-4 font-semibold">Statut Compte</th>
-                <th className="px-6 py-4 font-semibold">Statut Abonnement</th>
-                <th className="px-6 py-4 font-semibold">Inscrit le</th>
-                <th className="px-6 py-4 text-right font-semibold">Actions</th>
+                <th className="px-4 py-3 font-semibold">Utilisateur</th>
+                <th className="px-4 py-3 font-semibold">Rôle</th>
+                <th className="px-4 py-3 font-semibold">Statut Compte</th>
+                <th className="px-4 py-3 font-semibold">Statut Abonnement</th>
+                <th className="px-4 py-3 font-semibold">Inscrit le</th>
+                <th className="px-4 py-3 text-right font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800">
@@ -63,7 +63,7 @@ export default async function AdminUsersPage() {
 
                 return (
                   <tr key={u.id} className={cn("transition-colors", isDeleted ? "opacity-60 bg-neutral-900/30" : "hover:bg-neutral-900/50")}>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-neutral-700 bg-neutral-800">
                           <img
@@ -88,7 +88,7 @@ export default async function AdminUsersPage() {
                       </div>
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <span
                         className={cn(
                           "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
@@ -103,7 +103,7 @@ export default async function AdminUsersPage() {
                       </span>
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <span
                         className={cn(
                           "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
@@ -118,7 +118,7 @@ export default async function AdminUsersPage() {
                       </span>
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       {isOwner ? (
                         <span
                           className={cn(
@@ -141,11 +141,11 @@ export default async function AdminUsersPage() {
                       )}
                     </td>
 
-                    <td className="px-6 py-4 text-xs text-neutral-400">
+                    <td className="px-4 py-3 text-xs text-neutral-400">
                       {formatDate(u.createdAt || u.created_at)}
                     </td>
 
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 py-3 text-right">
                       <UserActionButton
                         userId={u.id}
                         currentStatus={statusStr as any}

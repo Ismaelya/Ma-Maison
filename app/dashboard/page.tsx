@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Building2, Heart, MessageSquare, Plus, TrendingUp, Clock, Eye } from "lucide-react";
+import { Building2, Heart, MessageSquare, Plus, Clock, Eye, ArrowRight } from "lucide-react";
 import { requireAuth } from "@/lib/auth/helpers";
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice, getTrialDaysRemaining, cn } from "@/lib/utils";
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {isOwner && (
           <StatCard
             icon={<Building2 className="h-5 w-5" />}
@@ -117,41 +117,63 @@ export default async function DashboardPage() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {isOwner && (
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {isOwner ? (
           <Link
             href="/dashboard/annonces/nouveau"
-            className="group flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)]"
+            className="group relative flex items-center gap-4 overflow-hidden rounded-2xl bg-gradient-brand p-6 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)] lg:col-span-1"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-100 text-primary-600 transition-colors group-hover:bg-primary-600 group-hover:text-white">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-inset ring-white/30 transition-transform group-hover:scale-105">
               <Plus className="h-6 w-6" />
             </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-white">Publier une annonce</p>
+              <p className="text-sm text-white/80">Ajoutez un nouveau bien</p>
+            </div>
+            <ArrowRight className="h-5 w-5 flex-shrink-0 text-white/70 transition-transform group-hover:translate-x-1" />
+          </Link>
+        ) : (
+          <Link
+            href="/recherche"
+            className="group relative flex items-center gap-4 overflow-hidden rounded-2xl bg-gradient-brand p-6 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)] lg:col-span-1"
+          >
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-inset ring-white/30 transition-transform group-hover:scale-105">
+              <Eye className="h-6 w-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-white">Parcourir les annonces</p>
+              <p className="text-sm text-white/80">Découvrez les dernières offres</p>
+            </div>
+            <ArrowRight className="h-5 w-5 flex-shrink-0 text-white/70 transition-transform group-hover:translate-x-1" />
+          </Link>
+        )}
+
+        {isOwner && (
+          <Link
+            href="/recherche"
+            className="group flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)]"
+          >
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-secondary-100 text-secondary-600 transition-colors group-hover:bg-secondary-600 group-hover:text-white">
+              <Eye className="h-6 w-6" />
+            </div>
             <div>
-              <p className="font-semibold text-neutral-900">Publier une annonce</p>
-              <p className="text-sm text-neutral-500">Ajoutez un nouveau bien</p>
+              <p className="font-semibold text-neutral-900">Parcourir les annonces</p>
+              <p className="text-sm text-neutral-500">Découvrez les dernières offres</p>
             </div>
           </Link>
         )}
 
         <Link
-          href="/recherche"
-          className="group flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)]"
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary-100 text-secondary-600 transition-colors group-hover:bg-secondary-600 group-hover:text-white">
-            <Eye className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="font-semibold text-neutral-900">Parcourir les annonces</p>
-            <p className="text-sm text-neutral-500">Découvrez les dernières offres</p>
-          </div>
-        </Link>
-
-        <Link
           href="/dashboard/messages"
-          className="group flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)]"
+          className="group relative flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)]"
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+          <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
             <MessageSquare className="h-6 w-6" />
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger-600 px-1 text-[11px] font-bold text-white ring-2 ring-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </div>
           <div>
             <p className="font-semibold text-neutral-900">Messages</p>
@@ -237,14 +259,14 @@ function StatCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)]",
+        "group rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]",
         highlight && "ring-2 ring-yellow-300"
       )}
     >
-      <div className={cn("inline-flex rounded-xl p-2.5", colorMap[color])}>
+      <div className={cn("inline-flex rounded-xl p-2.5 transition-transform group-hover:scale-105", colorMap[color])}>
         {icon}
       </div>
-      <p className="mt-3 text-2xl font-bold text-neutral-900">{value}</p>
+      <p className="mt-3 text-2xl font-bold tracking-tight text-neutral-900">{value}</p>
       <p className="text-sm text-neutral-500">{label}</p>
     </div>
   );

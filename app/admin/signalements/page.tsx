@@ -52,12 +52,12 @@ export default async function AdminReportsPage() {
             <table className="w-full text-left text-sm text-neutral-300">
               <thead className="bg-neutral-900 text-xs uppercase text-neutral-400">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">Annonce</th>
-                  <th className="px-6 py-4 font-semibold">Signalé par</th>
-                  <th className="px-6 py-4 font-semibold">Motif</th>
-                  <th className="px-6 py-4 font-semibold">Statut</th>
-                  <th className="px-6 py-4 font-semibold">Date</th>
-                  <th className="px-6 py-4 text-right font-semibold">Actions</th>
+                  <th className="px-4 py-3 font-semibold">Annonce</th>
+                  <th className="px-4 py-3 font-semibold">Signalé par</th>
+                  <th className="px-4 py-3 font-semibold">Motif</th>
+                  <th className="px-4 py-3 font-semibold">Statut</th>
+                  <th className="px-4 py-3 font-semibold">Date</th>
+                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800">
@@ -68,7 +68,7 @@ export default async function AdminReportsPage() {
 
                   return (
                     <tr key={r.id} className="hover:bg-neutral-900/50 transition-colors">
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         {targetProperty ? (
                           <Link
                             href={`/admin/signalements/${r.id}`}
@@ -82,21 +82,21 @@ export default async function AdminReportsPage() {
                         )}
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <p className="font-semibold text-white">
                           {reporter.name || "Utilisateur"}
                         </p>
                         <p className="text-xs text-neutral-400">{reporter.email}</p>
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <p className="font-semibold text-red-400">{r.reason}</p>
                         {r.details && (
                           <p className="text-xs text-neutral-400 mt-0.5">{r.details}</p>
                         )}
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <span
                           className={cn(
                             "rounded-full px-2.5 py-1 text-xs font-bold uppercase",
@@ -115,11 +115,11 @@ export default async function AdminReportsPage() {
                         </span>
                       </td>
 
-                      <td className="px-6 py-4 text-xs text-neutral-400">
+                      <td className="px-4 py-3 text-xs text-neutral-400">
                         {formatDate(r.createdAt || r.created_at)}
                       </td>
 
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-4 py-3 text-right">
                         <ReportStatusButtons reportId={r.id} currentStatus={statusStr} />
                       </td>
                     </tr>
