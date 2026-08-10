@@ -120,14 +120,14 @@ export default function ConnexionPage() {
     const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
     const redirectTo = searchParams?.get("redirectTo");
 
+    let target = "/dashboard";
     if (userRole === "ADMIN") {
-      router.push("/admin");
+      target = "/admin";
     } else if (redirectTo && redirectTo.startsWith("/")) {
-      router.push(redirectTo);
-    } else {
-      router.push("/dashboard");
+      target = redirectTo;
     }
-    router.refresh();
+
+    window.location.href = target;
   }
 
   return (
