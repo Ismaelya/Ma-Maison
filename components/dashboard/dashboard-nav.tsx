@@ -2,21 +2,61 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  Building2,
+  Heart,
+  MessageSquare,
+  User,
+  CreditCard,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type DashboardNavItem = {
-  href: string;
-  icon: LucideIcon;
-  label: string;
-};
-
-export function DashboardNav({ items }: { items: DashboardNavItem[] }) {
+export function DashboardNav({ isOwner }: { isOwner: boolean }) {
   const pathname = usePathname();
+
+  const navItems = [
+    {
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      label: "Vue d'ensemble",
+      show: true,
+    },
+    {
+      href: "/dashboard/annonces",
+      icon: Building2,
+      label: "Mes biens",
+      show: isOwner,
+    },
+    {
+      href: "/dashboard/abonnement",
+      icon: CreditCard,
+      label: "Abonnement",
+      show: isOwner,
+    },
+    {
+      href: "/dashboard/favoris",
+      icon: Heart,
+      label: "Favoris",
+      show: true,
+    },
+    {
+      href: "/dashboard/messages",
+      icon: MessageSquare,
+      label: "Messages",
+      show: true,
+    },
+    {
+      href: "/dashboard/profil",
+      icon: User,
+      label: "Mon profil",
+      show: true,
+    },
+  ].filter((item) => item.show);
 
   return (
     <>
-      {items.map((item) => {
+      {navItems.map((item) => {
         const isActive =
           item.href === "/dashboard"
             ? pathname === "/dashboard"

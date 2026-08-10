@@ -2,22 +2,43 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, Building2, CreditCard, Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type AdminNavItem = {
-  href: string;
-  icon: LucideIcon;
-  label: string;
-  count?: number;
-};
+const navItems = [
+  {
+    href: "/admin",
+    icon: LayoutDashboard,
+    label: "Vue d'ensemble",
+  },
+  {
+    href: "/admin/annonces",
+    icon: Building2,
+    label: "Validation Annonces",
+  },
+  {
+    href: "/admin/utilisateurs",
+    icon: Users,
+    label: "Gestion Utilisateurs",
+  },
+  {
+    href: "/admin/paiements",
+    icon: CreditCard,
+    label: "Paiements",
+  },
+  {
+    href: "/admin/signalements",
+    icon: Flag,
+    label: "Signalements",
+  },
+];
 
-export function AdminNav({ items }: { items: AdminNavItem[] }) {
+export function AdminNav() {
   const pathname = usePathname();
 
   return (
     <>
-      {items.map((item) => {
+      {navItems.map((item) => {
         const isActive =
           item.href === "/admin"
             ? pathname === "/admin"
@@ -38,11 +59,6 @@ export function AdminNav({ items }: { items: AdminNavItem[] }) {
               className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-primary-400" : "text-neutral-500")}
             />
             <span className="flex-1">{item.label}</span>
-            {!!item.count && (
-              <span className="rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
-                {item.count > 99 ? "99+" : item.count}
-              </span>
-            )}
           </Link>
         );
       })}

@@ -1,13 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  LayoutDashboard,
-  Users,
-  Building2,
-  CreditCard,
-  Flag,
-  Home,
-} from "lucide-react";
+import { Home } from "lucide-react";
 import { getUser } from "@/lib/auth/helpers";
 import { DashboardSignOut } from "@/components/dashboard/sign-out-button";
 import { AdminNav } from "@/components/admin/admin-nav";
@@ -31,34 +24,6 @@ export default async function AdminLayout({
   if (profile.role !== "ADMIN") {
     redirect("/dashboard");
   }
-
-  const navItems = [
-    {
-      href: "/admin",
-      icon: LayoutDashboard,
-      label: "Vue d'ensemble",
-    },
-    {
-      href: "/admin/annonces",
-      icon: Building2,
-      label: "Validation Annonces",
-    },
-    {
-      href: "/admin/utilisateurs",
-      icon: Users,
-      label: "Gestion Utilisateurs",
-    },
-    {
-      href: "/admin/paiements",
-      icon: CreditCard,
-      label: "Paiements",
-    },
-    {
-      href: "/admin/signalements",
-      icon: Flag,
-      label: "Signalements",
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-neutral-900 text-neutral-100">
@@ -99,7 +64,7 @@ export default async function AdminLayout({
               <p className="px-3 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-600">
                 Administration
               </p>
-              <AdminNav items={navItems} />
+              <AdminNav />
 
               <div className="my-2 h-px bg-neutral-800" />
 

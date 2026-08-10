@@ -1,13 +1,5 @@
 import { redirect } from "next/navigation";
-import {
-  LayoutDashboard,
-  Building2,
-  Heart,
-  MessageSquare,
-  User,
-  AlertTriangle,
-  CreditCard,
-} from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { getUser } from "@/lib/auth/helpers";
 import { getTrialDaysRemaining, getAvatarUrl } from "@/lib/utils";
 import { DashboardSignOut } from "@/components/dashboard/sign-out-button";
@@ -36,45 +28,6 @@ export default async function DashboardLayout({
   const rawDate = profile.createdAt || (profile as any).created_at;
   const trialDays = getTrialDaysRemaining(typeof rawDate === "string" ? rawDate : (rawDate ? new Date(rawDate).toISOString() : ""));
   const isExpired = isOwner && (profile as any).subscriptionStatus !== "ACTIVE" && trialDays <= 0;
-
-  const navItems = [
-    {
-      href: "/dashboard",
-      icon: LayoutDashboard,
-      label: "Vue d'ensemble",
-      show: true,
-    },
-    {
-      href: "/dashboard/annonces",
-      icon: Building2,
-      label: "Mes biens",
-      show: isOwner,
-    },
-    {
-      href: "/dashboard/abonnement",
-      icon: CreditCard,
-      label: "Abonnement",
-      show: isOwner,
-    },
-    {
-      href: "/dashboard/favoris",
-      icon: Heart,
-      label: "Favoris",
-      show: true,
-    },
-    {
-      href: "/dashboard/messages",
-      icon: MessageSquare,
-      label: "Messages",
-      show: true,
-    },
-    {
-      href: "/dashboard/profil",
-      icon: User,
-      label: "Mon profil",
-      show: true,
-    },
-  ].filter((item) => item.show);
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] transition-colors">
@@ -137,7 +90,7 @@ export default async function DashboardLayout({
               <p className="px-3 pb-1 pt-1 text-xs font-semibold uppercase tracking-wider text-neutral-400">
                 Menu
               </p>
-              <DashboardNav items={navItems} />
+              <DashboardNav isOwner={isOwner} />
 
               <div className="my-2 h-px bg-[var(--color-border)]" />
 
