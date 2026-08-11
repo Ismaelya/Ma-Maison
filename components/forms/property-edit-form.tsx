@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Save, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { listingSchema, NIGER_CITIES } from "@/lib/validations/listing";
+import { cn } from "@/lib/utils";
 
 type PropertyEditFormProps = {
   initialData: any;
@@ -19,6 +20,8 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<any>({
     resolver: zodResolver(listingSchema) as any,
@@ -34,8 +37,14 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
       rooms: initialData.rooms || initialData.bedrooms || 1,
       bathrooms: initialData.bathrooms || 1,
       surface: initialData.surface || initialData.area_sqm || null,
+      furnished: Boolean(initialData.furnished),
+      rentalPeriod: String(initialData.rentalPeriod || "MONTHLY").toUpperCase(),
     },
   });
+
+  const selectedTransaction = watch("transactionType") || "RENT";
+  const isRent = String(selectedTransaction).toUpperCase() === "RENT";
+  const selectedFurnished = watch("furnished") ?? false;
 
   async function onSubmit(formData: any) {
     setServerError(null);
@@ -57,6 +66,10 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
           rooms: formData.rooms,
           bathrooms: formData.bathrooms,
           surface: formData.surface || null,
+          furnished: Boolean(formData.furnished),
+          rentalPeriod: formData.transactionType.toUpperCase() === "RENT"
+            ? (formData.rentalPeriod || null)
+            : null,
         } as any)
         .eq("id", initialData.id);
 
@@ -122,6 +135,7 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
           <option value="OFFICE">Bureau</option>
           <option value="SHOP">Boutique / Local commercial</option>
           <option value="LAND">Terrain</option>
+          <option value="RESIDENCE">Résidence</option>
         </select>
       </div>
 
@@ -138,6 +152,53 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
         </select>
         {errors.transactionType && (
           <p className="mt-1 text-xs text-red-500">{errors.transactionType.message as string}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">
+            Ameublement
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { value: false, label: "Non meublé" },
+              { value: true, label: "Meublé" },
+            ].map((option) => (
+              <button
+                key={String(option.value)}
+                type="button"
+                onClick={() => setValue("furnished", option.value)}
+                className={cn(
+                  "rounded-xl border px-3 py-3 text-sm font-medium transition-all",
+                  selectedFurnished === option.value
+                    ? "border-primary-500 bg-primary-50 text-primary-700 font-semibold"
+                    : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-neutral-100"
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {isRent && (
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Période de location *
+            </label>
+            <select
+              {...register("rentalPeriod")}
+              className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-3 text-sm focus:border-primary-500 focus:bg-white focus:outline-none"
+            >
+              <option value="DAILY">Journalière</option>
+              <option value="MONTHLY">Mensuelle</option>
+              <option value="YEARLY">Annuelle</option>
+            </select>
+            {errors.rentalPeriod && (
+              <p className="mt-1 text-xs text-red-500">{errors.rentalPeriod.message as string}</p>
+            )}
+          </div>
         )}
       </div>
 

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { PropertyRepository } from "@/lib/properties/property.repository";
 import { PropertyGrid } from "@/components/property/property-grid";
 import { SearchFilters } from "@/components/property/search-filters";
-import type { PropertyType, TransactionType } from "@/types";
+import type { PropertyType, TransactionType, RentalPeriod } from "@/types";
 
 export const metadata: Metadata = {
   title: "Rechercher un logement",
@@ -24,6 +24,8 @@ type SearchParams = Promise<{
   bedrooms?: string;
   rooms?: string;
   bathrooms?: string;
+  furnished?: string;
+  rentalPeriod?: RentalPeriod;
   sortBy?: "createdAt" | "price";
   sortOrder?: "asc" | "desc";
   page?: string;
@@ -47,6 +49,8 @@ export default async function SearchPage({
     maxPrice: params.maxPrice ? parseInt(params.maxPrice, 10) : undefined,
     rooms: params.rooms || params.bedrooms ? parseInt(params.rooms || params.bedrooms!, 10) : undefined,
     bathrooms: params.bathrooms ? parseInt(params.bathrooms, 10) : undefined,
+    furnished: params.furnished ? params.furnished === "true" : undefined,
+    rentalPeriod: params.rentalPeriod,
     sortBy: params.sortBy,
     sortOrder: params.sortOrder,
     q: params.q,

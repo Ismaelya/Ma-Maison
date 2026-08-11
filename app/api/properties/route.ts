@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
       maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
       rooms: searchParams.get("rooms") ? Number(searchParams.get("rooms")) : undefined,
       bathrooms: searchParams.get("bathrooms") ? Number(searchParams.get("bathrooms")) : undefined,
+      furnished: searchParams.get("furnished") ? searchParams.get("furnished") === "true" : undefined,
+      rentalPeriod: searchParams.get("rentalPeriod") || undefined,
       q: searchParams.get("q") || searchParams.get("search") || undefined,
       sortBy: (searchParams.get("sortBy") as any) || "createdAt",
       sortOrder: (searchParams.get("sortOrder") as any) || "desc",

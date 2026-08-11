@@ -147,6 +147,7 @@ describe("API Integration: POST /api/properties", () => {
         description: "Un bel appartement bien situé au centre-ville avec toutes commodités.",
         propertyType: "APARTMENT",
         transactionType: "RENT",
+        rentalPeriod: "MONTHLY",
         price: 150000,
         city: "Niamey",
         district: "Plateau",

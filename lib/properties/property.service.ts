@@ -23,6 +23,7 @@ export class PropertyService {
       title: payload.title,
       description: payload.description,
       type: (payload.propertyType || payload.type || "HOUSE").toUpperCase(),
+      transactionType: (payload.transactionType || "RENT").toUpperCase(),
       price: Number(payload.price),
       city: payload.city,
       district: payload.district || payload.neighborhood || payload.city,
@@ -30,6 +31,10 @@ export class PropertyService {
       rooms: Number(payload.rooms || payload.bedrooms || 1),
       bathrooms: Number(payload.bathrooms || 1),
       surface: payload.surface ? Number(payload.surface) : null,
+      furnished: Boolean(payload.furnished),
+      rentalPeriod: payload.rentalPeriod
+        ? String(payload.rentalPeriod).toUpperCase()
+        : null,
       status,
       images: payload.images || [],
       createdAt: new Date().toISOString(),

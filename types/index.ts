@@ -30,6 +30,7 @@ export {
   PropertyStatus,
   PropertyType,
   TransactionType,
+  RentalPeriod,
   ReportStatus,
   AuditAction,
 } from "@prisma/client";

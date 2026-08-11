@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PropertyService } from "@/lib/properties/property.service";
 import { apiSuccess, apiError } from "@/lib/utils/api-response";
 import { canOwnerPublish } from "@/lib/auth/helpers";
-import { listingSchema } from "@/lib/validations/listing";
+import { listingObjectSchema } from "@/lib/validations/listing";
 
 export async function GET(
   _request: NextRequest,
@@ -109,7 +109,7 @@ export async function PATCH(
 
     const body = await request.json();
 
-    const parsed = listingSchema.partial().safeParse(body);
+    const parsed = listingObjectSchema.partial().safeParse(body);
     if (!parsed.success) {
       return apiError(
         "VALIDATION_ERROR",

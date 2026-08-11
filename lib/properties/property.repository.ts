@@ -11,6 +11,8 @@ export type PropertyFilterOptions = {
   maxPrice?: number;
   rooms?: number;
   bathrooms?: number;
+  furnished?: boolean;
+  rentalPeriod?: string;
   page?: number;
   limit?: number;
   q?: string;
@@ -64,6 +66,12 @@ export class PropertyRepository {
     if (filters.bathrooms !== undefined) {
       query = query.gte("bathrooms", filters.bathrooms);
     }
+    if (filters.furnished !== undefined) {
+      query = query.eq("furnished", filters.furnished);
+    }
+    if (filters.rentalPeriod) {
+      query = query.eq("rentalPeriod", filters.rentalPeriod.toUpperCase());
+    }
     if (filters.q) {
       const q = escapePostgrestValue(filters.q);
       query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
@@ -113,6 +121,7 @@ export class PropertyRepository {
           title: rest.title,
           description: rest.description,
           type: (rest.type || "HOUSE").toUpperCase() as any,
+          transactionType: (rest.transactionType || "RENT").toUpperCase() as any,
           price: Number(rest.price),
           city: rest.city,
           district: rest.district || rest.city,
@@ -120,6 +129,8 @@ export class PropertyRepository {
           rooms: Number(rest.rooms || 1),
           bathrooms: Number(rest.bathrooms || 1),
           surface: rest.surface ? Number(rest.surface) : null,
+          furnished: Boolean(rest.furnished),
+          rentalPeriod: rest.rentalPeriod ? (String(rest.rentalPeriod).toUpperCase() as any) : null,
           status: (rest.status || "PENDING").toUpperCase() as any,
         },
       });
@@ -164,6 +175,8 @@ export class PropertyRepository {
     "surface",
     "type",
     "transactionType",
+    "furnished",
+    "rentalPeriod",
   ] as const;
 
   static async update(id: string, updates: Partial<Property> & { images?: string[] }): Promise<Property> {
@@ -180,6 +193,15 @@ export class PropertyRepository {
     if (sanitized.bathrooms !== undefined) sanitized.bathrooms = Number(sanitized.bathrooms);
     if (sanitized.surface !== undefined) {
       sanitized.surface = sanitized.surface != null ? Number(sanitized.surface) : null;
+    }
+    if (sanitized.furnished !== undefined) sanitized.furnished = Boolean(sanitized.furnished);
+    if (sanitized.rentalPeriod !== undefined) {
+      sanitized.rentalPeriod = sanitized.rentalPeriod ? String(sanitized.rentalPeriod).toUpperCase() : null;
+    }
+    // La période de location n'a de sens qu'en location : on la vide dès que
+    // la transaction bascule en vente, même si l'appelant ne l'a pas renvoyée.
+    if (sanitized.transactionType === "SALE" && sanitized.rentalPeriod === undefined) {
+      sanitized.rentalPeriod = null;
     }
 
     const images = (updates as any).images;

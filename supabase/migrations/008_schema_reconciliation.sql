@@ -681,3 +681,22 @@ drop trigger if exists on_payment_status_change on public.payments;
 create trigger on_payment_status_change
   after update of status on public.payments
   for each row execute function public.handle_payment_approved();
+
+-- ------------------------------------------------------------
+-- 6. AJOUT 2026-08-11 — Type de bien "Résidence", meublé, période de
+--    location. Appliqué directement en base via scratch/apply_residence_
+--    furnished_rental_migration.ts (le CLI `prisma migrate dev` échoue par
+--    timeout réseau sur le pooler Supabase, comme d'habitude sur ce projet),
+--    et miroir de prisma/migrations/20260811190000_add_residence_furnished_
+--    rental_period/migration.sql. Reporté ici pour que ce fichier reste la
+--    photographie exacte de l'état réel de production. Idempotent.
+-- ------------------------------------------------------------
+
+ALTER TYPE "PropertyType" ADD VALUE IF NOT EXISTS 'RESIDENCE';
+
+DO $$ BEGIN
+  CREATE TYPE "RentalPeriod" AS ENUM ('DAILY', 'MONTHLY', 'YEARLY');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS "furnished" boolean NOT NULL DEFAULT false;
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS "rentalPeriod" "RentalPeriod";

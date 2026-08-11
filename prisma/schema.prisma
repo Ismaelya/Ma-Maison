@@ -71,11 +71,19 @@ enum PropertyType {
   OFFICE
   SHOP
   LAND
+  RESIDENCE
 }
 
 enum TransactionType {
   RENT
   SALE
+}
+
+/// Uniquement pertinent si Property.transactionType = RENT.
+enum RentalPeriod {
+  DAILY
+  MONTHLY
+  YEARLY
 }
 
 enum ReportStatus {
@@ -161,6 +169,8 @@ model Property {
   description String
   type            PropertyType
   transactionType TransactionType @default(RENT) // RENT (prix affiché "/mois") ou SALE (prix affiché total)
+  furnished       Boolean         @default(false)
+  rentalPeriod    RentalPeriod? // uniquement pertinent si transactionType = RENT
 
   price Int
 

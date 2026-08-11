@@ -37,11 +37,15 @@ export default function NewListingPage() {
       district: "",
       rooms: 1,
       bathrooms: 1,
+      furnished: false,
+      rentalPeriod: "MONTHLY",
       images: [],
     },
   });
 
   const selectedTransaction = watch("transactionType") || "RENT";
+  const isRent = selectedTransaction.toUpperCase() === "RENT";
+  const selectedFurnished = watch("furnished") ?? false;
 
   async function onSubmit(data: any) {
     setServerError(null);
@@ -151,6 +155,7 @@ export default function NewListingPage() {
                 { value: "OFFICE", label: "Bureau" },
                 { value: "SHOP", label: "Boutique / Local commercial" },
                 { value: "LAND", label: "Terrain" },
+                { value: "RESIDENCE", label: "Résidence" },
               ]}
             />
 
@@ -236,6 +241,47 @@ export default function NewListingPage() {
               {...register("surface")}
               error={errors.surface?.message as string}
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-[var(--color-text)]">
+                Ameublement
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { value: false, label: "Non meublé" },
+                  { value: true, label: "Meublé" },
+                ].map((option) => (
+                  <button
+                    key={String(option.value)}
+                    type="button"
+                    onClick={() => setValue("furnished", option.value)}
+                    className={cn(
+                      "rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-all",
+                      selectedFurnished === option.value
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-bold"
+                        : "border-[var(--color-border)] text-neutral-600 hover:border-neutral-300"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {isRent && (
+              <Select
+                label="Période de location *"
+                {...register("rentalPeriod")}
+                error={errors.rentalPeriod?.message as string}
+                options={[
+                  { value: "DAILY", label: "Journalière" },
+                  { value: "MONTHLY", label: "Mensuelle" },
+                  { value: "YEARLY", label: "Annuelle" },
+                ]}
+              />
+            )}
           </div>
         </div>
 

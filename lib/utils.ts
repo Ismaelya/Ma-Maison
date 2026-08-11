@@ -19,6 +19,51 @@ export function formatPrice(price: number): string {
 }
 
 /**
+ * Maps rental period enum to its French price suffix (e.g. "/mois").
+ */
+export function getRentalPeriodSuffix(rentalPeriod: string | null | undefined): string {
+  const suffixes: Record<string, string> = {
+    DAILY: "/jour",
+    MONTHLY: "/mois",
+    YEARLY: "/an",
+    daily: "/jour",
+    monthly: "/mois",
+    yearly: "/an",
+  };
+  return rentalPeriod ? (suffixes[rentalPeriod] ?? "") : "";
+}
+
+/**
+ * Maps rental period enum to French label.
+ */
+export function getRentalPeriodLabel(rentalPeriod: string | null | undefined): string {
+  const labels: Record<string, string> = {
+    DAILY: "Journalière",
+    MONTHLY: "Mensuelle",
+    YEARLY: "Annuelle",
+    daily: "Journalière",
+    monthly: "Mensuelle",
+    yearly: "Annuelle",
+  };
+  return rentalPeriod ? (labels[rentalPeriod] ?? rentalPeriod) : "";
+}
+
+/**
+ * Formats a property's price for display, appending the rental period suffix
+ * ("/mois", "/jour", "/an") when it's a rental — falls back to "/mois" for
+ * legacy rentals created before rentalPeriod existed.
+ */
+export function formatPropertyPrice(
+  price: number,
+  transactionType: string | null | undefined,
+  rentalPeriod?: string | null
+): string {
+  const isRent = String(transactionType ?? "RENT").toUpperCase() === "RENT";
+  if (!isRent) return formatPrice(price);
+  return formatPrice(price) + getRentalPeriodSuffix(rentalPeriod || "MONTHLY");
+}
+
+/**
  * Formats a date in French locale safely.
  */
 export function formatDate(date: string | Date | null | undefined): string {
@@ -88,6 +133,7 @@ export function getPropertyTypeLabel(type: string): string {
     OFFICE: "Bureau",
     SHOP: "Boutique / Local commercial",
     LAND: "Terrain",
+    RESIDENCE: "Résidence",
     apartment: "Appartement",
     house: "Maison",
     studio: "Studio",

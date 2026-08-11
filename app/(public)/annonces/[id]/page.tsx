@@ -18,9 +18,10 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
-  formatPrice,
+  formatPropertyPrice,
   getPropertyTypeLabel,
   getTransactionTypeLabel,
+  getRentalPeriodLabel,
   formatDate,
   formatRelativeTime,
   cn,
@@ -51,7 +52,7 @@ export async function generateMetadata({
     title: data.title,
     description:
       data.description ??
-      `${data.title} — ${getTransactionTypeLabel(data.transactionType)} à ${data.city} pour ${formatPrice(data.price)}`,
+      `${data.title} — ${getTransactionTypeLabel(data.transactionType)} à ${data.city} pour ${formatPropertyPrice(data.price, data.transactionType)}`,
   };
 }
 
@@ -106,7 +107,10 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
   const surfaceArea = typedListing.surface ?? typedListing.area_sqm ?? null;
   const locationDesc = typedListing.district ?? typedListing.neighborhood ?? typedListing.city;
   const propType = typedListing.type ?? typedListing.property_type ?? "APARTMENT";
-  const transType = typedListing.transaction_type ?? "rent";
+  const transType = String(typedListing.transactionType ?? typedListing.transaction_type ?? "RENT").toUpperCase();
+  const isRent = transType === "RENT";
+  const furnished = Boolean(typedListing.furnished);
+  const rentalPeriod = typedListing.rentalPeriod ?? null;
   const amenitiesList: string[] = typedListing.amenities ?? [];
 
   return (
@@ -176,7 +180,7 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                 <span
                   className={cn(
                     "rounded-full px-3 py-1 text-xs font-semibold",
-                    transType === "rent"
+                    isRent
                       ? "bg-primary-100 text-primary-700"
                       : "bg-secondary-100 text-secondary-700"
                   )}
@@ -186,6 +190,11 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                 <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700">
                   {getPropertyTypeLabel(propType)}
                 </span>
+                {furnished && (
+                  <span className="rounded-full bg-secondary-100 px-3 py-1 text-xs font-semibold text-secondary-700">
+                    Meublé
+                  </span>
+                )}
               </div>
               <h1 className="mt-3 text-2xl font-bold text-neutral-900 sm:text-3xl">
                 {typedListing.title}
@@ -302,10 +311,10 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
               {/* Price card */}
               <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-card)] sm:p-6">
                 <p className="text-2xl font-bold text-primary-700 sm:text-3xl">
-                  {formatPrice(typedListing.price)}
+                  {formatPropertyPrice(typedListing.price, transType, rentalPeriod)}
                 </p>
-                {transType === "rent" && (
-                  <p className="text-neutral-500">par mois</p>
+                {isRent && rentalPeriod && (
+                  <p className="text-neutral-500">Location {getRentalPeriodLabel(rentalPeriod).toLowerCase()}</p>
                 )}
               </div>
 

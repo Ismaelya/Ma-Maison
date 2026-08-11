@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Bed, Bath, Maximize, Heart } from "lucide-react";
-import { cn, formatPrice, getPropertyTypeLabel, getTransactionTypeLabel, formatRelativeTime, getAvatarUrl } from "@/lib/utils";
+import { cn, formatPropertyPrice, getPropertyTypeLabel, getTransactionTypeLabel, formatRelativeTime, getAvatarUrl } from "@/lib/utils";
 
 type PropertyCardProps = {
   listing: any;
@@ -27,6 +27,8 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false }: 
   const rooms = listing.rooms ?? listing.bedrooms ?? null;
   const bathrooms = listing.bathrooms ?? null;
   const surface = listing.surface ?? listing.area_sqm ?? null;
+  const furnished = Boolean(listing.furnished);
+  const rentalPeriod = listing.rentalPeriod ?? null;
 
   const ownerProfile = listing.profiles || listing.owner || {};
   const ownerAvatarUrl = getAvatarUrl(ownerProfile.avatarUrl || ownerProfile.avatar_url, ownerProfile.name || ownerProfile.agencyName || ownerProfile.agency_name);
@@ -42,6 +44,7 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false }: 
     OFFICE: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
     SHOP: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
     LAND: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80",
+    RESIDENCE: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
   };
 
   // Images resolution
@@ -123,6 +126,11 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false }: 
           <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-neutral-700 shadow-sm backdrop-blur-sm">
             {getPropertyTypeLabel(propertyType)}
           </span>
+          {furnished && (
+            <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1 text-xs font-semibold text-white shadow-sm">
+              Meublé
+            </span>
+          )}
         </div>
 
         {/* Favorite button */}
@@ -150,10 +158,7 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false }: 
       <div className="p-4">
         {/* Price */}
         <p className="text-lg font-bold text-[var(--color-primary)]">
-          {formatPrice(price)}
-          {isRent && (
-            <span className="text-sm font-normal text-neutral-500"> /mois</span>
-          )}
+          {formatPropertyPrice(price, rawTrans, rentalPeriod)}
         </p>
 
         {/* Title */}
