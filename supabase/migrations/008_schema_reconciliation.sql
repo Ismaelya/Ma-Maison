@@ -205,7 +205,10 @@ CREATE OR REPLACE FUNCTION public.handle_auth_user_deleted()
  SET search_path TO 'public'
 AS $function$
 begin
-  update public.profiles set status = 'DELETED' where id = old.id::text;
+  update public.profiles 
+  set status = 'DELETED',
+      email = 'deleted-' || old.id::text || '@ma-maison.invalid'
+  where id = old.id::text;
   return old;
 end;
 $function$;
@@ -285,6 +288,9 @@ CREATE OR REPLACE FUNCTION public.prevent_role_status_escalation()
  SET search_path TO 'public'
 AS $function$
 begin
+  if auth.role() = 'service_role' or session_user = 'postgres' or auth.uid() is null then
+    return new;
+  end if;
   if not public.is_admin() then
     if new.role is distinct from old.role or new.status is distinct from old.status then
       raise exception 'Modification de role/status réservée à un administrateur';
