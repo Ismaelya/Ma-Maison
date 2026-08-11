@@ -115,8 +115,6 @@ export default function ConnexionPage() {
       return;
     }
 
-    toast.success("Connexion réussie ! Redirection...");
-
     const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
     const redirectTo = searchParams?.get("redirectTo");
 

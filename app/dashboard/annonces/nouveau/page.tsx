@@ -67,12 +67,6 @@ export default function NewListingPage() {
         return;
       }
 
-      const msg =
-        submitTargetStatus === "DRAFT"
-          ? "Brouillon enregistré avec succès !"
-          : "Annonce soumise pour validation admin !";
-
-      toast.success(msg);
       router.push("/dashboard/annonces");
       router.refresh();
     } catch (err: any) {

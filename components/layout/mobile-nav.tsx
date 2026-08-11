@@ -17,11 +17,10 @@ import {
   LogOut,
   Building2,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { cn, getAvatarUrl } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useSignOut } from "@/lib/hooks/use-sign-out";
 
 type MobileNavProps = {
   user: User | null;
@@ -36,16 +35,13 @@ type MobileNavProps = {
 
 export function MobileNav({ user, profile }: MobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
+  const signOut = useSignOut();
   const roleStr = String(profile?.role || "").toUpperCase();
   const isOwner = roleStr === "OWNER" || roleStr === "AGENCY";
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOut();
     setIsOpen(false);
-    router.refresh();
-    router.push("/");
   }
 
   const profileName = profile?.name;

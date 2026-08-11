@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Home, Search, User, Menu, X, Heart, MessageSquare, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { MobileNav } from "./mobile-nav";
+import { HeaderSignOut } from "./header-sign-out";
 import { cn, getAvatarUrl } from "@/lib/utils";
 import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -80,6 +81,7 @@ export async function Header() {
                 </div>
               </Link>
               <ThemeToggle />
+              <HeaderSignOut />
             </>
           ) : (
             <>

@@ -64,7 +64,15 @@ export async function POST(request: Request) {
         },
       });
 
-      if (!signUpErr && signUpData?.user) {
+      if (!signUpErr && signUpData?.user && signUpData.user.identities?.length === 0) {
+        // Supabase's anti-enumeration behavior: signUp() on an already-registered,
+        // already-confirmed email returns HTTP 200 with a synthetic user (no error,
+        // empty identities) instead of a real error.
+        return NextResponse.json(
+          { error: "Un compte existe déjà avec cette adresse e-mail." },
+          { status: 400 }
+        );
+      } else if (!signUpErr && signUpData?.user) {
         user = signUpData.user;
       } else if (signUpErr) {
         authErrorMsg = signUpErr.message || (signUpErr as any).error_description || String(signUpErr);

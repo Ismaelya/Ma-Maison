@@ -40,12 +40,14 @@ export const listingSchema = z.object({
     .number()
     .min(0, "Le nombre de salles de bain ne peut pas être négatif")
     .max(50, "Valeur trop élevée"),
-  surface: z.coerce
-    .number()
-    .min(1, "La superficie doit être supérieure à 0")
-    .max(100_000, "Valeur trop élevée")
-    .optional()
-    .nullable(),
+  surface: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    z.coerce
+      .number({ invalid_type_error: "La superficie doit être un nombre" })
+      .positive("La superficie doit être supérieure à 0")
+      .max(100_000, "Valeur trop élevée")
+      .optional()
+  ),
   images: z.array(z.string()).default([]),
 });
 

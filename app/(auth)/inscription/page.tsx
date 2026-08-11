@@ -66,11 +66,6 @@ export default function InscriptionPage() {
       const wasEmailSent = result.emailSent !== false;
       setEmailSent(wasEmailSent);
       setIsSuccess(true);
-      if (wasEmailSent) {
-        toast.success("Compte créé ! Vérifiez votre boîte de réception.");
-      } else {
-        toast.info("Compte créé, mais l'email n'a pas pu être envoyé — réessayez depuis la page de connexion.");
-      }
     } catch (err: any) {
       const errorMsg = err?.message || "Erreur réseau lors de l'inscription.";
       setServerError(errorMsg);
