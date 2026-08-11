@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { Search, X } from "lucide-react";
 import { NIGER_CITIES } from "@/lib/validations/listing";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ type SearchFiltersProps = {
 export function SearchFilters({ currentFilters }: SearchFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const updateFilter = useCallback(
     (key: string, value: string) => {
@@ -27,6 +28,14 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
     [router, searchParams]
   );
 
+  const debouncedUpdateFilter = useCallback(
+    (key: string, value: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => updateFilter(key, value), 500);
+    },
+    [updateFilter]
+  );
+
   const clearFilters = useCallback(() => {
     router.push("/recherche");
   }, [router]);
@@ -34,6 +43,8 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
   const hasFilters = Object.values(currentFilters).some(
     (v) => v !== undefined && v !== ""
   );
+
+  const isRentSelected = (currentFilters.transaction ?? "").toUpperCase() === "RENT";
 
   return (
     <div className="space-y-6 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)]">
@@ -65,12 +76,7 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
             type="text"
             placeholder="Ex: villa, studio..."
             defaultValue={currentFilters.q ?? ""}
-            onChange={(e) => {
-              const timeout = setTimeout(() => {
-                updateFilter("q", e.target.value);
-              }, 500);
-              return () => clearTimeout(timeout);
-            }}
+            onChange={(e) => debouncedUpdateFilter("q", e.target.value)}
             className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 py-2.5 pl-10 pr-4 text-sm transition-colors focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           />
         </div>
@@ -146,8 +152,60 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
           <option value="OFFICE">Bureau</option>
           <option value="SHOP">Boutique / Local commercial</option>
           <option value="LAND">Terrain</option>
+          <option value="RESIDENCE">Résidence</option>
         </select>
       </div>
+
+      {/* Furnished */}
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-neutral-700">
+          Ameublement
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { value: "", label: "Tout" },
+            { value: "true", label: "Meublé" },
+            { value: "false", label: "Non meublé" },
+          ].map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => updateFilter("furnished", option.value)}
+              className={cn(
+                "rounded-lg border px-2 py-2 text-sm font-medium transition-all",
+                (currentFilters.furnished ?? "") === option.value
+                  ? "border-primary-500 bg-primary-50 text-primary-700"
+                  : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-neutral-100"
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Rental period — only relevant for a rental transaction */}
+      {isRentSelected && (
+        <div>
+          <label
+            htmlFor="filter-rental-period"
+            className="mb-1.5 block text-sm font-medium text-neutral-700"
+          >
+            Période de location
+          </label>
+          <select
+            id="filter-rental-period"
+            value={currentFilters.rentalPeriod ?? ""}
+            onChange={(e) => updateFilter("rentalPeriod", e.target.value)}
+            className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          >
+            <option value="">Toutes</option>
+            <option value="DAILY">Journalière</option>
+            <option value="MONTHLY">Mensuelle</option>
+            <option value="YEARLY">Annuelle</option>
+          </select>
+        </div>
+      )}
 
       {/* Price range */}
       <div>
@@ -159,24 +217,14 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
             type="number"
             placeholder="Min"
             defaultValue={currentFilters.minPrice ?? ""}
-            onChange={(e) => {
-              const timeout = setTimeout(() => {
-                updateFilter("minPrice", e.target.value);
-              }, 500);
-              return () => clearTimeout(timeout);
-            }}
+            onChange={(e) => debouncedUpdateFilter("minPrice", e.target.value)}
             className="w-1/2 rounded-xl border border-[var(--border)] bg-neutral-50 px-3 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           />
           <input
             type="number"
             placeholder="Max"
             defaultValue={currentFilters.maxPrice ?? ""}
-            onChange={(e) => {
-              const timeout = setTimeout(() => {
-                updateFilter("maxPrice", e.target.value);
-              }, 500);
-              return () => clearTimeout(timeout);
-            }}
+            onChange={(e) => debouncedUpdateFilter("maxPrice", e.target.value)}
             className="w-1/2 rounded-xl border border-[var(--border)] bg-neutral-50 px-3 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           />
         </div>
