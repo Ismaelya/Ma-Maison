@@ -11,11 +11,15 @@ export default async function FavoritesPage() {
   const { profile } = await requireAuth();
   const supabase = await createClient();
 
-  const { data: favorites } = await supabase
+  const { data: favorites, error } = await supabase
     .from("favorites")
-    .select("id, createdAt, property:properties!inner(*, property_images(*), profiles(*))")
+    .select("id, createdAt, property:properties(*, property_images(url), profiles(id, name, agencyName, badgeVerified, avatarUrl, phone, role))")
     .eq("userId", profile.id)
     .order("createdAt", { ascending: false });
+
+  if (error) {
+    console.error("[FavoritesPage] Erreur Supabase:", error);
+  }
 
   return <FavoritesList initialFavorites={favorites ?? []} />;
 }
