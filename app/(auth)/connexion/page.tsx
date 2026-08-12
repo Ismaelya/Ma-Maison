@@ -145,7 +145,7 @@ export default function ConnexionPage() {
             <Logo variant="light" />
             <div className="pt-6 space-y-3">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-secondary-400)]/30 bg-[var(--color-secondary-400)]/10 px-3 py-1 text-xs font-semibold text-[var(--color-secondary-400)]">
-                <Sparkles className="h-3.5 w-3.5" /> Espace Membre Prestige
+                <Sparkles className="h-3.5 w-3.5" /> Espace Membre
               </span>
               <h2 className="text-2xl font-bold font-heading leading-tight text-white sm:text-3xl">
                 La référence immobilière de confiance au Niger
@@ -163,7 +163,7 @@ export default function ConnexionPage() {
             </div>
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-[var(--color-secondary-400)]" />
-              <span>Plateforme immobilière n°1 à Niamey & Niger</span>
+              <span>Plateforme immobilière au Niger</span>
             </div>
           </div>
         </div>
