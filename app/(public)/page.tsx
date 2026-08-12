@@ -21,8 +21,12 @@ export const revalidate = 60;
 export default async function HomePage() {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // Execute queries in parallel to minimize TTFB
-  const [featuredResult, recentResult] = await Promise.all([
+  const [featuredResult, recentResult, profileResult] = await Promise.all([
     supabase
       .from("properties")
       .select("id, title, city, district, price, type, transactionType, isFeatured, createdAt, property_images!inner(url)")
@@ -36,10 +40,18 @@ export default async function HomePage() {
       .eq("status", "APPROVED")
       .order("createdAt", { ascending: false })
       .limit(6),
+    user
+      ? supabase.from("profiles").select("role").eq("id", user.id).single()
+      : Promise.resolve({ data: null }),
   ]);
 
   const featuredProps = (featuredResult.data ?? []) as any[];
   const listings = (recentResult.data ?? []) as any[];
+
+  // Owner CTA: shown to visitors (invitation to join) and OWNER/AGENCY accounts.
+  // Hidden for TENANT accounts, who cannot publish listings.
+  const userRole = (profileResult.data as { role?: string } | null)?.role;
+  const showOwnerCta = !user || userRole === "OWNER" || userRole === "AGENCY";
 
   // Format hero items with graceful fallback
   const heroItems = formatHeroProperties(featuredProps, listings);
@@ -201,36 +213,38 @@ export default async function HomePage() {
       </section>
 
       {/* ================================================================
-          CTA — FOR OWNERS
+          CTA — FOR OWNERS (hidden for logged-in TENANT accounts)
           ================================================================ */}
-      <section className="py-12 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-secondary-600 to-secondary-800 shadow-xl">
-            <div className="relative px-6 py-12 sm:px-16 sm:py-20">
-              <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/5 blur-2xl" />
-              <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-white/5 blur-2xl" />
-              <div className="relative mx-auto max-w-2xl text-center">
-                <h2 className="text-2xl font-bold text-white sm:text-4xl">
-                  Vous êtes propriétaire ?
-                </h2>
-                <p className="mt-3 text-base text-white/80 sm:mt-4 sm:text-lg">
-                  Publiez vos annonces gratuitement, sans limite de temps.
-                  Touchez des milliers de locataires potentiels au Niger.
-                </p>
-                <div className="mt-6 sm:mt-8">
-                  <Link
-                    href="/inscription"
-                    className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-semibold text-secondary-700 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] sm:w-auto sm:px-8 sm:text-base"
-                  >
-                    Commencer gratuitement
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
+      {showOwnerCta && (
+        <section className="py-12 sm:py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-secondary-600 to-secondary-800 shadow-xl">
+              <div className="relative px-6 py-12 sm:px-16 sm:py-20">
+                <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/5 blur-2xl" />
+                <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-white/5 blur-2xl" />
+                <div className="relative mx-auto max-w-2xl text-center">
+                  <h2 className="text-2xl font-bold text-white sm:text-4xl">
+                    Vous êtes propriétaire ?
+                  </h2>
+                  <p className="mt-3 text-base text-white/80 sm:mt-4 sm:text-lg">
+                    Publiez vos annonces gratuitement, sans limite de temps.
+                    Touchez des milliers de locataires potentiels au Niger.
+                  </p>
+                  <div className="mt-6 sm:mt-8">
+                    <Link
+                      href="/inscription"
+                      className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-semibold text-secondary-700 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] sm:w-auto sm:px-8 sm:text-base"
+                    >
+                      Commencer gratuitement
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }
