@@ -104,7 +104,7 @@ export default function InscriptionPage() {
           <div className="relative z-10 pt-8 space-y-3 border-t border-white/10 text-xs text-stone-400">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-[var(--color-secondary-400)]" />
-              <span>Publication illimitée pour les propriétaires</span>
+              <span>Publication illimitée</span>
             </div>
             <div className="flex items-center gap-2">
               <UserCheck className="h-4 w-4 text-[var(--color-secondary-400)]" />
@@ -281,7 +281,7 @@ export default function InscriptionPage() {
                   <div className="rounded-xl border border-[var(--color-secondary-500)]/30 bg-[var(--color-secondary-500)]/10 p-3.5 text-xs text-[var(--color-text)] flex items-start gap-2.5 font-sans">
                     <ShieldCheck className="h-4 w-4 text-[var(--color-secondary-600)] flex-shrink-0 mt-0.5" />
                     <span>
-                      <strong>Compte Gratuit inclus :</strong> publication illimitée et accès immédiat sans carte bancaire.
+                      <strong>Compte Gratuit inclus :</strong> publication illimitée et accès immédiat.
                     </span>
                   </div>
                 )}
