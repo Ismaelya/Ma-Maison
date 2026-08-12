@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { PropertyRepository } from "@/lib/properties/property.repository";
 import { PropertyGrid } from "@/components/property/property-grid";
-import { SearchFilters } from "@/components/property/search-filters";
+import { FiltersPanel } from "@/components/property/filters-panel";
 import type { PropertyType, TransactionType, RentalPeriod } from "@/types";
 
 export const metadata: Metadata = {
@@ -78,28 +78,10 @@ export default async function SearchPage({
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-          {/* Filters: collapsible on mobile, always visible on lg */}
-          <aside className="w-full lg:w-72 lg:flex-shrink-0">
-            {/* Mobile collapse toggle */}
-            <details className="group lg:!open" open={false}>
-              <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3 font-semibold text-neutral-800 shadow-sm lg:hidden">
-                <span className="flex items-center gap-2">
-                  <svg className="h-4 w-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
-                  </svg>
-                  Filtres{hasActiveFilters ? " (actifs)" : ""}
-                </span>
-                <svg className="h-4 w-4 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </summary>
-              <div className="mt-3 lg:mt-0">
-                <Suspense fallback={null}>
-                  <SearchFilters currentFilters={params} />
-                </Suspense>
-              </div>
-            </details>
-          </aside>
+          {/* Filters: collapsible on mobile (React state), always visible on lg */}
+          <Suspense fallback={null}>
+            <FiltersPanel currentFilters={params} hasActiveFilters={hasActiveFilters} />
+          </Suspense>
 
           {/* Results */}
           <div className="flex-1 space-y-6 sm:space-y-8">
