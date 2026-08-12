@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma/client";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import type { Property } from "@/types";
 
 export type PropertyFilterOptions = {
@@ -89,22 +88,18 @@ export class PropertyRepository {
   }
 
   static async findById(id: string): Promise<Property | null> {
-    try {
-      const res = await prisma.property.findUnique({
-        where: { id },
-        include: { images: true, owner: true },
-      });
-      if (res) return res as unknown as Property;
-    } catch {
-      // Ignore
-    }
-
     const supabase = await createClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("properties")
       .select("*, property_images(*), profiles!inner(id, name, badgeVerified, avatarUrl, phone)")
       .eq("id", id)
       .single();
+
+    if (error) {
+      // PGRST116 = no rows returned — not an error worth throwing
+      if (error.code === "PGRST116") return null;
+      throw new Error(error.message);
+    }
 
     return data as unknown as Property | null;
   }
@@ -116,73 +111,57 @@ export class PropertyRepository {
       ? images.filter((url: unknown): url is string => typeof url === "string" && url.length > 0)
       : [];
 
-    // Property row: try Prisma first, fall back to the Supabase REST client on failure.
-    // `usedFallback` tracks which client actually wrote the row, so the images step
-    // below uses that same client instead of risking a duplicate-id insert attempt.
-    let created: Property;
-    let usedFallback = false;
+    // Use a single authenticated Supabase client for both the property row and
+    // its images. If either insertion fails, a real error is thrown immediately —
+    // never a half-created listing with a silent success.
+    const supabase = await createClient();
 
-    try {
-      created = (await prisma.property.create({
-        data: {
-          id: propertyId,
-          ownerId: ownerId,
-          title: rest.title,
-          description: rest.description,
-          type: (rest.type || "HOUSE").toUpperCase() as any,
-          transactionType: (rest.transactionType || "RENT").toUpperCase() as any,
-          price: Number(rest.price),
-          city: rest.city,
-          district: rest.district || rest.city,
-          address: rest.address || null,
-          rooms: Number(rest.rooms || 1),
-          bathrooms: Number(rest.bathrooms || 1),
-          surface: rest.surface ? Number(rest.surface) : null,
-          furnished: Boolean(rest.furnished),
-          rentalPeriod: rest.rentalPeriod ? (String(rest.rentalPeriod).toUpperCase() as any) : null,
-          status: (rest.status || "PENDING").toUpperCase() as any,
-        },
-      })) as unknown as Property;
-    } catch (prismaErr) {
-      console.warn("Prisma property creation failed, falling back to Supabase REST:", prismaErr);
-      usedFallback = true;
+    const { data: created, error: propError } = await supabase
+      .from("properties")
+      .insert({
+        id: propertyId,
+        ownerId,
+        title: rest.title,
+        description: rest.description,
+        type: (rest.type || "HOUSE").toUpperCase(),
+        transactionType: (rest.transactionType || "RENT").toUpperCase(),
+        price: Number(rest.price),
+        city: rest.city,
+        district: rest.district || rest.city,
+        address: rest.address || null,
+        rooms: Number(rest.rooms || 1),
+        bathrooms: Number(rest.bathrooms || 1),
+        surface: rest.surface ? Number(rest.surface) : null,
+        furnished: Boolean(rest.furnished),
+        rentalPeriod: rest.rentalPeriod ? String(rest.rentalPeriod).toUpperCase() : null,
+        status: (rest.status || "PENDING").toUpperCase(),
+        updatedAt: rest.updatedAt || new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-      const supabase = await createClient();
-      const { data, error } = await supabase
-        .from("properties")
-        .insert({
-          id: propertyId,
-          ownerId,
-          ...rest,
-          updatedAt: rest.updatedAt || new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      if (error) throw new Error(error.message);
-      created = data as unknown as Property;
+    if (propError) {
+      throw new Error(`Échec de la création de l'annonce : ${propError.message}`);
     }
 
-    // Photos: same client that wrote the property row writes the images, so a
-    // failure here throws a real error instead of silently publishing a photo-less listing.
     if (imageUrls.length > 0) {
       const imageRows = imageUrls.map((url, index) => ({
         id: crypto.randomUUID(),
-        propertyId: created.id,
+        propertyId: propertyId,
         url,
         order: index,
       }));
 
-      if (!usedFallback) {
-        await prisma.propertyImage.createMany({ data: imageRows });
-      } else {
-        const supabase = await createClient();
-        const { error: imagesError } = await supabase.from("property_images").insert(imageRows);
-        if (imagesError) throw new Error(imagesError.message);
+      const { error: imagesError } = await supabase
+        .from("property_images")
+        .insert(imageRows);
+
+      if (imagesError) {
+        throw new Error(`Propriété créée mais échec de l'insertion des images : ${imagesError.message}`);
       }
     }
 
-    return created;
+    return created as unknown as Property;
   }
 
   private static readonly UPDATABLE_FIELDS = [
@@ -228,22 +207,45 @@ export class PropertyRepository {
 
     const images = (updates as any).images;
 
-    const updated = await prisma.property.update({
-      where: { id },
-      data: sanitized,
-    });
+    // Use the admin client to bypass RLS on updates (owner or admin caller).
+    const supabase = await createAdminClient();
+
+    const { data: updated, error: updateError } = await supabase
+      .from("properties")
+      .update(sanitized)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw new Error(`Échec de la mise à jour de l'annonce : ${updateError.message}`);
+    }
 
     if (Array.isArray(images)) {
-      await prisma.propertyImage.deleteMany({ where: { propertyId: id } });
+      const { error: deleteError } = await supabase
+        .from("property_images")
+        .delete()
+        .eq("propertyId", id);
+
+      if (deleteError) {
+        throw new Error(`Échec de la suppression des anciennes images : ${deleteError.message}`);
+      }
+
       if (images.length > 0) {
-        await prisma.propertyImage.createMany({
-          data: images.map((url: string, index: number) => ({
-            id: crypto.randomUUID(),
-            propertyId: id,
-            url,
-            order: index,
-          })),
-        });
+        const imageRows = images.map((url: string, index: number) => ({
+          id: crypto.randomUUID(),
+          propertyId: id,
+          url,
+          order: index,
+        }));
+
+        const { error: insertError } = await supabase
+          .from("property_images")
+          .insert(imageRows);
+
+        if (insertError) {
+          throw new Error(`Échec de l'insertion des nouvelles images : ${insertError.message}`);
+        }
       }
     }
 
@@ -251,18 +253,46 @@ export class PropertyRepository {
   }
 
   static async delete(id: string): Promise<void> {
-    await prisma.$transaction([
-      prisma.message.deleteMany({ where: { conversation: { propertyId: id } } }),
-      prisma.conversation.deleteMany({ where: { propertyId: id } }),
-      prisma.favorite.deleteMany({ where: { propertyId: id } }),
-      prisma.review.deleteMany({ where: { propertyId: id } }),
-      prisma.report.deleteMany({ where: { propertyId: id } }),
-      prisma.propertyImage.deleteMany({ where: { propertyId: id } }),
-    ]);
+    const supabase = await createAdminClient();
 
-    const result = await prisma.property.deleteMany({ where: { id } });
-    if (result.count === 0) {
-      throw new Error(`Suppression impossible : annonce introuvable (id: ${id})`);
+    // Delete related data first (cascade via FK may handle some, but explicit
+    // order avoids constraint violations if ON DELETE RESTRICT is set).
+    const relatedTables: { table: string; column: string }[] = [
+      { table: "messages", column: "conversationId" },
+      { table: "conversations", column: "propertyId" },
+      { table: "favorites", column: "propertyId" },
+      { table: "reviews", column: "propertyId" },
+      { table: "reports", column: "propertyId" },
+      { table: "property_images", column: "propertyId" },
+    ];
+
+    // Delete messages via conversations first
+    const { data: convRows } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("propertyId", id);
+
+    if (convRows && convRows.length > 0) {
+      const convIds = convRows.map((c: any) => c.id);
+      const { error: msgError } = await supabase
+        .from("messages")
+        .delete()
+        .in("conversationId", convIds);
+      if (msgError) throw new Error(`Échec suppression messages : ${msgError.message}`);
     }
+
+    // Delete the remaining related rows
+    for (const { table, column } of relatedTables.slice(1)) {
+      const { error } = await supabase.from(table).delete().eq(column, id);
+      if (error) throw new Error(`Échec suppression ${table} : ${error.message}`);
+    }
+
+    const { error: propError, count } = await supabase
+      .from("properties")
+      .delete()
+      .eq("id", id);
+
+    if (propError) throw new Error(`Échec suppression annonce : ${propError.message}`);
+    if (count === 0) throw new Error(`Suppression impossible : annonce introuvable (id: ${id})`);
   }
 }

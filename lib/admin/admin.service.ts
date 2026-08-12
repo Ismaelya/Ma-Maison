@@ -2,45 +2,25 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { AuditService } from "@/lib/audit/audit.service";
 import { NotificationService } from "@/lib/notifications/notification.service";
 import type { AuditAction } from "@/types";
-import { prisma } from "@/lib/prisma/client";
 
 export class AdminService {
   /**
    * Suspends or unsuspends a user account.
+   * Uses the service-role admin client directly — no Prisma fallback needed.
    */
   static async toggleUserSuspension(targetUserId: string, suspend: boolean, adminId: string) {
     const newStatus = suspend ? "SUSPENDED" : "ACTIVE";
-    let updatedProfile: any = null;
 
-    try {
-      // 1. Try Prisma update with GUC settings for auth.uid() and service_role
-      await prisma.$transaction([
-        prisma.$executeRawUnsafe(`SELECT set_config('request.jwt.claim.sub', '${adminId}', true);`),
-        prisma.$executeRawUnsafe(`SELECT set_config('request.jwt.claim.role', 'service_role', true);`),
-        prisma.$executeRawUnsafe(`SELECT set_config('request.jwt.claims', '{"sub":"${adminId}","role":"authenticated"}', true);`),
-        prisma.$executeRawUnsafe(`UPDATE public.profiles SET status = '${newStatus}'::"AccountStatus" WHERE id = '${targetUserId}';`),
-      ]);
+    const supabaseAdmin = await createAdminClient();
+    const { data: updatedProfile, error } = await supabaseAdmin
+      .from("profiles")
+      .update({ status: newStatus } as any)
+      .eq("id", targetUserId)
+      .select()
+      .single();
 
-      updatedProfile = await prisma.profile.findUnique({
-        where: { id: targetUserId },
-      });
-    } catch (e) {
-      console.warn("Prisma claim.sub toggle suspension warning:", e);
-    }
-
-    if (!updatedProfile) {
-      const supabaseAdmin = await createAdminClient();
-      const { data, error } = await supabaseAdmin
-        .from("profiles")
-        .update({ status: newStatus } as any)
-        .eq("id", targetUserId)
-        .select()
-        .single();
-
-      if (error && !updatedProfile) {
-        throw new Error(error.message);
-      }
-      updatedProfile = data;
+    if (error) {
+      throw new Error(`Échec de la suspension/réactivation du compte : ${error.message}`);
     }
 
     const action: AuditAction = suspend ? "ACCOUNT_SUSPENDED" : "ADMIN_ACTION";
@@ -52,7 +32,7 @@ export class AdminService {
         { status: newStatus, type: suspend ? "ACCOUNT_SUSPENDED" : "ACCOUNT_REACTIVATED" }
       );
     } catch {
-      // Audit log optional fallback
+      // Audit log is best-effort — never block the primary action
     }
 
     return updatedProfile;
@@ -60,32 +40,19 @@ export class AdminService {
 
   /**
    * Approves, rejects, or hides property listing moderation.
+   * Uses the service-role admin client directly — no Prisma fallback needed.
    */
   static async moderateProperty(propertyId: string, status: "APPROVED" | "REJECTED" | "HIDDEN", adminId: string) {
-    let updatedProperty: any = null;
+    const supabaseAdmin = await createAdminClient();
+    const { data: updatedProperty, error } = await supabaseAdmin
+      .from("properties")
+      .update({ status } as any)
+      .eq("id", propertyId)
+      .select()
+      .single();
 
-    try {
-      updatedProperty = await prisma.property.update({
-        where: { id: propertyId },
-        data: { status: status as any },
-      });
-    } catch {
-      // Ignore Prisma error
-    }
-
-    if (!updatedProperty) {
-      const supabaseAdmin = await createAdminClient();
-      const { data, error } = await supabaseAdmin
-        .from("properties")
-        .update({ status } as any)
-        .eq("id", propertyId)
-        .select()
-        .single();
-
-      if (error && !updatedProperty) {
-        throw new Error(error.message);
-      }
-      updatedProperty = data;
+    if (error) {
+      throw new Error(`Échec de la modération de l'annonce : ${error.message}`);
     }
 
     let auditAction: AuditAction = "ADMIN_ACTION";
@@ -100,7 +67,7 @@ export class AdminService {
         { status }
       );
     } catch {
-      // Audit log optional fallback
+      // Audit log is best-effort — never block the primary action
     }
 
     // Send notification to the property owner
@@ -131,32 +98,19 @@ export class AdminService {
 
   /**
    * Updates report status.
+   * Uses the service-role admin client directly — no Prisma fallback needed.
    */
   static async updateReportStatus(reportId: string, status: "OPEN" | "IN_REVIEW" | "CLOSED", adminId: string) {
-    let updatedReport: any = null;
+    const supabaseAdmin = await createAdminClient();
+    const { data: updatedReport, error } = await supabaseAdmin
+      .from("reports")
+      .update({ status } as any)
+      .eq("id", reportId)
+      .select()
+      .single();
 
-    try {
-      updatedReport = await prisma.report.update({
-        where: { id: reportId },
-        data: { status: status as any },
-      });
-    } catch {
-      // Ignore Prisma error
-    }
-
-    if (!updatedReport) {
-      const supabaseAdmin = await createAdminClient();
-      const { data, error } = await supabaseAdmin
-        .from("reports")
-        .update({ status } as any)
-        .eq("id", reportId)
-        .select()
-        .single();
-
-      if (error && !updatedReport) {
-        throw new Error(error.message);
-      }
-      updatedReport = data;
+    if (error) {
+      throw new Error(`Échec de la mise à jour du signalement : ${error.message}`);
     }
 
     try {
@@ -167,7 +121,7 @@ export class AdminService {
         { status, type: "REPORT_STATUS_UPDATED" }
       );
     } catch {
-      // Audit log optional fallback
+      // Audit log is best-effort — never block the primary action
     }
 
     return updatedReport;
