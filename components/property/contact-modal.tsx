@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Lock, UserPlus, LogIn, X, Phone, MessageSquare } from "lucide-react";
+import { useToast } from "@/components/ui/toast-notification";
 
 type ContactProtectionProps = {
   phone: string | null;
@@ -22,6 +23,7 @@ export function ContactProtection({
   const [isOpen, setIsOpen] = useState(false);
 
   const [isInitializing, setIsInitializing] = useState(false);
+  const toast = useToast();
 
   async function handleStartChat() {
     if (isInitializing) return;
@@ -40,10 +42,10 @@ export function ContactProtection({
       if (json.success && json.data?.id) {
         window.location.href = `/dashboard/messages?conv=${json.data.id}`;
       } else {
-        window.location.href = `/dashboard/messages`;
+        toast.error(json.error?.message || "Impossible de démarrer la discussion. Veuillez réessayer.");
       }
     } catch {
-      window.location.href = `/dashboard/messages`;
+      toast.error("Erreur réseau. Impossible de démarrer la discussion.");
     } finally {
       setIsInitializing(false);
     }

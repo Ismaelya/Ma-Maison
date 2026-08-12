@@ -33,6 +33,7 @@ export class MessageService {
     const { data, error } = await supabase
       .from("conversations")
       .insert({
+        id: crypto.randomUUID(),
         propertyId,
         tenantId,
         ownerId,
@@ -49,6 +50,7 @@ export class MessageService {
     const { data, error } = await supabase
       .from("messages")
       .insert({
+        id: crypto.randomUUID(),
         conversationId,
         senderId,
         content,
