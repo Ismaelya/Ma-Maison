@@ -10,9 +10,10 @@ type PropertyCardProps = {
   listing: any;
   className?: string;
   isFavoriteInitial?: boolean;
+  onFavoriteToggle?: (isFavorite: boolean) => void;
 };
 
-export function PropertyCard({ listing, className, isFavoriteInitial = false }: PropertyCardProps) {
+export function PropertyCard({ listing, className, isFavoriteInitial = false, onFavoriteToggle }: PropertyCardProps) {
   const [isFavorite, setIsFavorite] = useState(isFavoriteInitial);
   const [isToggling, setIsToggling] = useState(false);
 
@@ -64,13 +65,21 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false }: 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ propertyId: listing.id }),
         });
-        if (!res.ok) setIsFavorite(!nextState);
+        if (!res.ok) {
+          setIsFavorite(!nextState);
+        } else {
+          onFavoriteToggle?.(true);
+        }
       } else {
         // Remove from favorites
         const res = await fetch(`/api/favorites?propertyId=${listing.id}`, {
           method: "DELETE",
         });
-        if (!res.ok) setIsFavorite(!nextState);
+        if (!res.ok) {
+          setIsFavorite(!nextState);
+        } else {
+          onFavoriteToggle?.(false);
+        }
       }
     } catch {
       setIsFavorite(!nextState);
