@@ -112,9 +112,18 @@ export class PropertyRepository {
   static async create(propertyData: Partial<Property> & { images?: string[] }): Promise<Property> {
     const propertyId = crypto.randomUUID();
     const { images, ownerId, ...rest } = propertyData as any;
+    const imageUrls: string[] = Array.isArray(images)
+      ? images.filter((url: unknown): url is string => typeof url === "string" && url.length > 0)
+      : [];
+
+    // Property row: try Prisma first, fall back to the Supabase REST client on failure.
+    // `usedFallback` tracks which client actually wrote the row, so the images step
+    // below uses that same client instead of risking a duplicate-id insert attempt.
+    let created: Property;
+    let usedFallback = false;
 
     try {
-      const created = await prisma.property.create({
+      created = (await prisma.property.create({
         data: {
           id: propertyId,
           ownerId: ownerId,
@@ -133,34 +142,47 @@ export class PropertyRepository {
           rentalPeriod: rest.rentalPeriod ? (String(rest.rentalPeriod).toUpperCase() as any) : null,
           status: (rest.status || "PENDING").toUpperCase() as any,
         },
-      });
-
-      if (images && Array.isArray(images) && images.length > 0) {
-        await prisma.propertyImage.createMany({
-          data: images.map((url: string, index: number) => ({
-            id: crypto.randomUUID(),
-            propertyId: created.id,
-            url,
-            order: index,
-          })),
-        });
-      }
-
-      return created as unknown as Property;
+      })) as unknown as Property;
     } catch (prismaErr) {
-      console.warn("Prisma property creation warning:", prismaErr);
+      console.warn("Prisma property creation failed, falling back to Supabase REST:", prismaErr);
+      usedFallback = true;
+
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("properties")
+        .insert({
+          id: propertyId,
+          ownerId,
+          ...rest,
+          updatedAt: rest.updatedAt || new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+      created = data as unknown as Property;
     }
 
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("properties")
-      .insert({ id: propertyId, ownerId, ...rest })
-      .select()
-      .single();
+    // Photos: same client that wrote the property row writes the images, so a
+    // failure here throws a real error instead of silently publishing a photo-less listing.
+    if (imageUrls.length > 0) {
+      const imageRows = imageUrls.map((url, index) => ({
+        id: crypto.randomUUID(),
+        propertyId: created.id,
+        url,
+        order: index,
+      }));
 
-    if (error) throw new Error(error.message);
+      if (!usedFallback) {
+        await prisma.propertyImage.createMany({ data: imageRows });
+      } else {
+        const supabase = await createClient();
+        const { error: imagesError } = await supabase.from("property_images").insert(imageRows);
+        if (imagesError) throw new Error(imagesError.message);
+      }
+    }
 
-    return data as unknown as Property;
+    return created;
   }
 
   private static readonly UPDATABLE_FIELDS = [

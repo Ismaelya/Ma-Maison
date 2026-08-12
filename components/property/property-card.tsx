@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Bed, Bath, Maximize, Heart } from "lucide-react";
+import { MapPin, Bed, Bath, Maximize, Heart, Home } from "lucide-react";
 import { cn, formatPropertyPrice, getPropertyTypeLabel, getTransactionTypeLabel, formatRelativeTime, getAvatarUrl } from "@/lib/utils";
 
 type PropertyCardProps = {
@@ -36,26 +36,15 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false }: 
     ? (ownerProfile.agencyName || ownerProfile.agency_name)
     : (ownerProfile.name || "Annonceur");
 
-  const DEFAULT_PROPERTY_IMAGES: Record<string, string> = {
-    VILLA: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80",
-    APARTMENT: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80",
-    HOUSE: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
-    ROOM: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80",
-    OFFICE: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
-    SHOP: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80",
-    LAND: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80",
-    RESIDENCE: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
-  };
-
-  // Images resolution
-  const rawImageUrl =
+  // Images resolution — no stock/placeholder photo fallback: a listing without a
+  // real uploaded photo shows an honest "no photo" placeholder, never a stock image
+  // that could be mistaken for the actual property (same principle as the hero carousel).
+  const imageUrl =
     Array.isArray(listing.images) && listing.images.length > 0
       ? (typeof listing.images[0] === 'string' ? listing.images[0] : listing.images[0]?.url)
       : Array.isArray(listing.property_images) && listing.property_images.length > 0
         ? listing.property_images[0].url
         : null;
-
-  const imageUrl = rawImageUrl || DEFAULT_PROPERTY_IMAGES[String(propertyType).toUpperCase()] || DEFAULT_PROPERTY_IMAGES.VILLA;
 
   async function handleFavoriteClick(e: React.MouseEvent) {
     e.preventDefault();
@@ -106,8 +95,9 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false }: 
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
-          <div className="flex h-full items-center justify-center">
-            <Maximize className="h-12 w-12 text-neutral-300" />
+          <div className="flex h-full flex-col items-center justify-center gap-2 bg-neutral-100">
+            <Home className="h-10 w-10 text-neutral-300" />
+            <span className="text-xs font-medium text-neutral-400">Aucune photo</span>
           </div>
         )}
 
