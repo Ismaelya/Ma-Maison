@@ -275,16 +275,6 @@ export default function InscriptionPage() {
                     error={errors.confirmPassword?.message}
                   />
                 </div>
-
-                {/* Free plan info banner */}
-                {(selectedRole === "OWNER" || selectedRole === "AGENCY") && (
-                  <div className="rounded-xl border border-[var(--color-secondary-500)]/30 bg-[var(--color-secondary-500)]/10 p-3.5 text-xs text-[var(--color-text)] flex items-start gap-2.5 font-sans">
-                    <ShieldCheck className="h-4 w-4 text-[var(--color-secondary-600)] flex-shrink-0 mt-0.5" />                    <span>
-                     
-                    </span>
-                  </div>
-                )}
-
                 <Button
                   type="submit"
                   variant="primary"
