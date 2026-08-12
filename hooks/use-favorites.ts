@@ -18,11 +18,11 @@ export function useFavorites(userId: string | undefined) {
       if (!userId) return [];
       const { data, error } = await supabase
         .from("favorites")
-        .select("listing_id")
-        .eq("user_id", userId);
+        .select("propertyId")
+        .eq("userId", userId);
 
       if (error) throw error;
-      return data.map((f) => f.listing_id);
+      return (data || []).map((f: any) => f.propertyId);
     },
     enabled: !!userId,
   });
@@ -32,7 +32,7 @@ export function useFavorites(userId: string | undefined) {
       if (!userId) throw new Error("Not authenticated");
       const { error } = await supabase
         .from("favorites")
-        .insert({ user_id: userId, listing_id: listingId });
+        .insert({ id: crypto.randomUUID(), userId, propertyId: listingId } as any);
 
       if (error) throw error;
     },
@@ -47,8 +47,8 @@ export function useFavorites(userId: string | undefined) {
       const { error } = await supabase
         .from("favorites")
         .delete()
-        .eq("user_id", userId)
-        .eq("listing_id", listingId);
+        .eq("userId", userId)
+        .eq("propertyId", listingId);
 
       if (error) throw error;
     },

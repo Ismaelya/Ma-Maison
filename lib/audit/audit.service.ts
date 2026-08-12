@@ -14,9 +14,10 @@ export class AuditService {
     try {
       const supabase = await createAdminClient();
       await supabase.from("audit_logs").insert({
-        actor_id: actorId,
+        id: crypto.randomUUID(),
+        actorId: actorId,
         action: action,
-        target_id: targetId ?? null,
+        targetId: targetId ?? null,
         metadata: metadata ?? {},
       } as any);
     } catch (err) {

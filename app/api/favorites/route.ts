@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from("favorites")
-      .insert({ userId: user.id, propertyId } as any)
+      .insert({ id: crypto.randomUUID(), userId: user.id, propertyId } as any)
       .select()
       .single();
 

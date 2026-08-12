@@ -29,6 +29,7 @@ export class NotificationService {
         const { data, error } = await supabase
           .from("notifications")
           .insert({
+            id: crypto.randomUUID(),
             userId: params.userId,
             type: params.type,
             title: params.title,
@@ -36,7 +37,7 @@ export class NotificationService {
             link: params.link || null,
             isRead: false,
             createdAt: new Date().toISOString(),
-          })
+          } as any)
           .select()
           .single();
 
