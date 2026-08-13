@@ -231,3 +231,20 @@ export function formatAuthError(errorMsg?: string | null): string {
   return errorMsg;
 }
 
+/**
+ * Returns time-of-day greeting in French:
+ * 5h–12h : "Bonjour"
+ * 12h–18h : "Bon après-midi"
+ * 18h–5h : "Bonsoir"
+ */
+export function getGreeting(date: Date = new Date()): string {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 12) {
+    return "Bonjour";
+  }
+  if (hour >= 12 && hour < 18) {
+    return "Bon après-midi";
+  }
+  return "Bonsoir";
+}
+

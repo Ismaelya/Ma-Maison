@@ -195,6 +195,16 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                     Meublé
                   </span>
                 )}
+                {typedListing.availability === "UNAVAILABLE" && (
+                  <span className="rounded-full bg-neutral-200 px-3 py-1 text-xs font-bold text-neutral-800">
+                    Indisponible
+                  </span>
+                )}
+                {typedListing.availability === "SOLD" && (
+                  <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+                    Vendu
+                  </span>
+                )}
               </div>
               <h1 className="mt-3 text-2xl font-bold text-neutral-900 sm:text-3xl">
                 {typedListing.title}

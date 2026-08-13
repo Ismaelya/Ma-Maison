@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Building2, Heart, MessageSquare, Plus, Clock, Eye, ArrowRight } from "lucide-react";
 import { requireAuth } from "@/lib/auth/helpers";
 import { createClient } from "@/lib/supabase/server";
-import { formatPrice, getTrialDaysRemaining, cn } from "@/lib/utils";
+import { formatPrice, getTrialDaysRemaining, getGreeting, cn } from "@/lib/utils";
+import { RealtimeUnreadStatCard, RealtimeUnreadActionLink } from "@/components/dashboard/unread-messages";
 
 export const metadata: Metadata = {
   title: "Tableau de bord",
@@ -13,6 +14,7 @@ export default async function DashboardPage() {
   const { profile } = await requireAuth();
   const supabase = await createClient();
   const isOwner = (profile.role ?? "").toUpperCase() === "OWNER" || (profile.role ?? "").toUpperCase() === "AGENCY";
+  const greeting = getGreeting();
 
   // Fetch stats and subscription
   const [propertiesResult, viewsResult, favoritesResult, messagesResult, subResult] = await Promise.all([
@@ -65,7 +67,7 @@ export default async function DashboardPage() {
       {/* Welcome */}
       <div>
         <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">
-          Bienvenue, {profile.name?.split(" ")[0] ?? "Utilisateur"} 👋
+          {greeting}, {profile.name?.split(" ")[0] ?? "Utilisateur"} 👋
         </h1>
         <p className="mt-1 text-neutral-600">
           {isOwner
@@ -98,12 +100,9 @@ export default async function DashboardPage() {
           value={String(favoriteCount)}
           color="secondary"
         />
-        <StatCard
-          icon={<MessageSquare className="h-5 w-5" />}
-          label="Messages non lus"
-          value={String(unreadCount)}
-          color="info"
-          highlight={unreadCount > 0}
+        <RealtimeUnreadStatCard
+          initialCount={unreadCount}
+          userId={profile.id}
         />
         {isOwner && trialDays !== null && (
           <StatCard
@@ -163,27 +162,10 @@ export default async function DashboardPage() {
           </Link>
         )}
 
-        <Link
-          href="/dashboard/messages"
-          className="group relative flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)]"
-        >
-          <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
-            <MessageSquare className="h-6 w-6" />
-            {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger-600 px-1 text-[11px] font-bold text-white ring-2 ring-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </div>
-          <div>
-            <p className="font-semibold text-neutral-900">Messages</p>
-            <p className="text-sm text-neutral-500">
-              {unreadCount > 0
-                ? `${unreadCount} nouveau${unreadCount > 1 ? "x" : ""}`
-                : "Aucun nouveau message"}
-            </p>
-          </div>
-        </Link>
+        <RealtimeUnreadActionLink
+          initialCount={unreadCount}
+          userId={profile.id}
+        />
       </div>
 
       {/* Recent listings (for owners) */}

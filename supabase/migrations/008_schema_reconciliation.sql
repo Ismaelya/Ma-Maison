@@ -700,3 +700,14 @@ EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS "furnished" boolean NOT NULL DEFAULT false;
 ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS "rentalPeriod" "RentalPeriod";
+
+-- ------------------------------------------------------------
+-- 7. AJOUT 2026-08-12 — Disponibilité des annonces (PropertyAvailability:
+--    AVAILABLE, UNAVAILABLE, SOLD) gérée par le propriétaire.
+-- ------------------------------------------------------------
+
+DO $$ BEGIN
+  CREATE TYPE "PropertyAvailability" AS ENUM ('AVAILABLE', 'UNAVAILABLE', 'SOLD');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS "availability" "PropertyAvailability" NOT NULL DEFAULT 'AVAILABLE';

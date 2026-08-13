@@ -5,6 +5,8 @@ import { requireRole } from "@/lib/auth/helpers";
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice, formatRelativeTime, cn } from "@/lib/utils";
 import type { Listing } from "@/types";
+import { DeletePropertyButton } from "@/components/properties/delete-property-button";
+import { AvailabilitySelector } from "@/components/properties/availability-selector";
 
 export const metadata: Metadata = {
   title: "Mes annonces",
@@ -84,7 +86,7 @@ export default async function MyListingsPage() {
               )}
             >
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <h3 className="truncate font-semibold text-neutral-900">
                     {listing.title}
                   </h3>
@@ -98,6 +100,13 @@ export default async function MyListingsPage() {
                   >
                     {listing.status === "APPROVED" ? "Publiée" : listing.status}
                   </span>
+                  {listing.status === "APPROVED" && (
+                    <AvailabilitySelector
+                      propertyId={listing.id}
+                      transactionType={listing.transactionType}
+                      initialAvailability={listing.availability}
+                    />
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-neutral-600">
                   {formatPrice(listing.price)} · {listing.city} ·{" "}
@@ -124,6 +133,11 @@ export default async function MyListingsPage() {
                 >
                   <Edit className="h-4 w-4" />
                 </Link>
+                <DeletePropertyButton
+                  propertyId={listing.id}
+                  propertyTitle={listing.title}
+                  variant="icon"
+                />
               </div>
             </div>
           ))}

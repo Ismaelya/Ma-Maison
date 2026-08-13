@@ -56,6 +56,9 @@ export const listingObjectSchema = z
     rentalPeriod: z
       .enum(["DAILY", "MONTHLY", "YEARLY", "daily", "monthly", "yearly"])
       .optional(),
+    availability: z
+      .enum(["AVAILABLE", "UNAVAILABLE", "SOLD", "available", "unavailable", "sold"])
+      .optional(),
     images: z.array(z.string()).default([]),
   });
 

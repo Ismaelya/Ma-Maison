@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Save, Trash2 } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { listingSchema, NIGER_CITIES } from "@/lib/validations/listing";
 import { cn } from "@/lib/utils";
+import { DeletePropertyButton } from "@/components/properties/delete-property-button";
 
 type PropertyEditFormProps = {
   initialData: any;
@@ -253,18 +254,26 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:opacity-50"
-      >
-        {isSubmitting ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Save className="h-4 w-4" />
-        )}
-        Enregistrer les modifications
-      </button>
+      <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[var(--border)]">
+        <DeletePropertyButton
+          propertyId={initialData.id}
+          propertyTitle={initialData.title}
+          redirectOnDelete="/dashboard/annonces"
+          variant="button"
+        />
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-primary-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:opacity-50"
+        >
+          {isSubmitting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          Enregistrer les modifications
+        </button>
+      </div>
     </form>
   );
 }

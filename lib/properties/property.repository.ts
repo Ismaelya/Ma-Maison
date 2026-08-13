@@ -178,6 +178,7 @@ export class PropertyRepository {
     "transactionType",
     "furnished",
     "rentalPeriod",
+    "availability",
   ] as const;
 
   static async update(id: string, updates: Partial<Property> & { images?: string[] }): Promise<Property> {
@@ -189,6 +190,7 @@ export class PropertyRepository {
     }
     if (sanitized.type) sanitized.type = String(sanitized.type).toUpperCase();
     if (sanitized.transactionType) sanitized.transactionType = String(sanitized.transactionType).toUpperCase();
+    if (sanitized.availability) sanitized.availability = String(sanitized.availability).toUpperCase();
     if (sanitized.price !== undefined) sanitized.price = Number(sanitized.price);
     if (sanitized.rooms !== undefined) sanitized.rooms = Number(sanitized.rooms);
     if (sanitized.bathrooms !== undefined) sanitized.bathrooms = Number(sanitized.bathrooms);

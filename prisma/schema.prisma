@@ -63,6 +63,12 @@ enum PropertyStatus {
   DELETED
 }
 
+enum PropertyAvailability {
+  AVAILABLE
+  UNAVAILABLE
+  SOLD
+}
+
 enum PropertyType {
   HOUSE
   APARTMENT
@@ -185,8 +191,9 @@ model Property {
   bathrooms Int
   surface   Int?
 
-  status     PropertyStatus @default(DRAFT)
-  isFeatured Boolean        @default(false)
+  status       PropertyStatus       @default(DRAFT)
+  availability PropertyAvailability @default(AVAILABLE)
+  isFeatured   Boolean              @default(false)
   viewCount  Int            @default(0)
 
   createdAt DateTime @default(now())

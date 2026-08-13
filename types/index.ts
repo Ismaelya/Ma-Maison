@@ -28,6 +28,7 @@ export {
   PaymentStatus,
   PaymentMethod,
   PropertyStatus,
+  PropertyAvailability,
   PropertyType,
   TransactionType,
   RentalPeriod,

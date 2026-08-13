@@ -111,7 +111,7 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false, on
         )}
 
         {/* Badges */}
-        <div className="absolute left-3 top-3 flex gap-2">
+        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
           <span
             className={cn(
               "rounded-full px-3 py-1 text-xs font-semibold shadow-sm text-white",
@@ -128,6 +128,16 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false, on
           {furnished && (
             <span className="rounded-full bg-[var(--color-secondary)] px-3 py-1 text-xs font-semibold text-white shadow-sm">
               Meublé
+            </span>
+          )}
+          {listing.availability === "UNAVAILABLE" && (
+            <span className="rounded-full bg-neutral-700 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+              Indisponible
+            </span>
+          )}
+          {listing.availability === "SOLD" && (
+            <span className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+              Vendu
             </span>
           )}
         </div>
