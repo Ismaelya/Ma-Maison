@@ -149,6 +149,7 @@ model Profile {
   properties        Property[]
   favorites         Favorite[]
   sentMessages      Message[]        @relation("MessageSender")
+  receivedMessages  Message[]        @relation("MessageReceiver")
   subscriptions     Subscription[]
   paymentsMade      Payment[]        @relation("PaymentOwner")
   paymentsValidated Payment[]        @relation("PaymentValidator")
@@ -322,15 +323,18 @@ model Message {
 
   conversationId String
   senderId       String
+  receiverId     String
   content        String
   isRead         Boolean @default(false)
 
   conversation Conversation @relation(fields: [conversationId], references: [id])
   sender       Profile       @relation("MessageSender", fields: [senderId], references: [id])
+  receiver     Profile       @relation("MessageReceiver", fields: [receiverId], references: [id])
 
   createdAt DateTime @default(now())
 
   @@index([conversationId])
+  @@index([receiverId])
   @@map("messages")
 }
 

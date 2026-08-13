@@ -14,7 +14,19 @@ export class MessageService {
       return [];
     }
 
-    return data ?? [];
+    return (data ?? []).map((conv: any) => {
+      const messages = Array.isArray(conv.messages) ? conv.messages : [];
+      const unreadCount = messages.filter(
+        (m: any) =>
+          (m.receiverId === userId || m.receiver_id === userId) &&
+          (m.isRead === false || m.is_read === false)
+      ).length;
+
+      return {
+        ...conv,
+        unreadCount,
+      };
+    });
   }
 
   static async createConversation(tenantId: string, propertyId: string, ownerId: string) {
@@ -47,12 +59,27 @@ export class MessageService {
 
   static async sendMessage(conversationId: string, senderId: string, content: string) {
     const supabase = await createClient();
+
+    // Resolve receiverId server-side from conversation participants
+    const { data: conv } = await supabase
+      .from("conversations")
+      .select("tenantId, ownerId")
+      .eq("id", conversationId)
+      .single();
+
+    if (!conv) {
+      throw new Error("Conversation introuvable.");
+    }
+
+    const receiverId = conv.tenantId === senderId ? conv.ownerId : conv.tenantId;
+
     const { data, error } = await supabase
       .from("messages")
       .insert({
         id: crypto.randomUUID(),
         conversationId,
         senderId,
+        receiverId,
         content,
         isRead: false,
       } as any)
@@ -68,5 +95,19 @@ export class MessageService {
       .eq("id", conversationId);
 
     return data;
+  }
+
+  static async markAsRead(conversationId: string, userId: string) {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("messages")
+      .update({ isRead: true })
+      .eq("conversationId", conversationId)
+      .eq("receiverId", userId)
+      .eq("isRead", false);
+
+    if (error) {
+      console.error("Error marking messages as read:", error.message);
+    }
   }
 }

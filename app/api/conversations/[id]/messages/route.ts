@@ -46,7 +46,7 @@ export async function GET(
       .from("messages")
       .update({ isRead: true })
       .eq("conversationId", conversationId)
-      .neq("senderId", user.id)
+      .eq("receiverId", user.id)
       .eq("isRead", false);
 
     return apiSuccess(messages ?? []);

@@ -49,6 +49,22 @@ export async function POST(request: Request) {
     // (see git history on this file) and re-add the FREE_DAILY_LIMIT
     // constant and quota fields in the response.
 
+    // ── Resolve receiverId from conversation participants ─────────────────
+    const { data: conv } = await supabase
+      .from("conversations")
+      .select("tenantId, ownerId")
+      .eq("id", conversationId)
+      .single();
+
+    if (!conv) {
+      return NextResponse.json(
+        { error: "Conversation introuvable." },
+        { status: 404 }
+      );
+    }
+
+    const receiverId = conv.tenantId === senderId ? conv.ownerId : conv.tenantId;
+
     // ── INSERT via authenticated client → RLS messages_participants_send enforced ──
     // Policy: senderId = auth.uid() AND user is tenant OR owner of conversation.
     // This prevents inserting into conversations the sender doesn't belong to.
@@ -58,6 +74,7 @@ export async function POST(request: Request) {
         id: crypto.randomUUID(),
         conversationId,
         senderId,
+        receiverId,
         content,
         isRead: false,
         createdAt: new Date().toISOString(),
@@ -69,7 +86,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: msgErr.message }, { status: 400 });
     }
 
-    await notifyRecipient(conversationId, senderId, content);
+    await notifyRecipient(receiverId, content, conversationId);
 
     return NextResponse.json({
       success: true,
@@ -82,37 +99,27 @@ export async function POST(request: Request) {
 }
 
 /**
- * Sends a NEW_MESSAGE notification to the other participant.
- * Uses admin client here — this is the only legitimate use of elevated privilege
- * in this route: the server needs to read both participant IDs to write a
+ * Sends a NEW_MESSAGE notification to the recipient.
+ * Uses admin client — the server needs elevated privilege to write a
  * notification for the recipient without exposing them to the sender.
  */
 async function notifyRecipient(
-  conversationId: string,
-  senderId: string,
-  content: string
+  recipientId: string,
+  content: string,
+  conversationId: string
 ) {
   try {
-    const supabaseAdmin = await createAdminClient();
-    const { data: conv } = await supabaseAdmin
-      .from("conversations")
-      .select("tenantId, ownerId")
-      .eq("id", conversationId)
-      .single();
-
-    if (conv) {
-      const recipientId = conv.tenantId === senderId ? conv.ownerId : conv.tenantId;
-      if (recipientId) {
-        await NotificationService.createNotification({
-          userId: recipientId,
-          type: "NEW_MESSAGE",
-          title: "Nouveau message reçu",
-          message: `Vous avez reçu un nouveau message : "${content.slice(0, 50)}${content.length > 50 ? "..." : ""}"`,
-          link: `/dashboard/messages?conversationId=${conversationId}`,
-        });
-      }
+    if (recipientId) {
+      await NotificationService.createNotification({
+        userId: recipientId,
+        type: "NEW_MESSAGE",
+        title: "Nouveau message reçu",
+        message: `Vous avez reçu un nouveau message : "${content.slice(0, 50)}${content.length > 50 ? "..." : ""}"`,
+        link: `/dashboard/messages?conversationId=${conversationId}`,
+      });
     }
   } catch {
     // Notification failure is non-fatal — message was already inserted
   }
 }
+

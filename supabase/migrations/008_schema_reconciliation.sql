@@ -711,3 +711,22 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS "availability" "PropertyAvailability" NOT NULL DEFAULT 'AVAILABLE';
+
+-- ------------------------------------------------------------
+-- 8. AJOUT 2026-08-13 — Colonne receiverId sur la table messages
+--    pour le décompte direct et temps réel des messages non lus.
+-- ------------------------------------------------------------
+
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS "receiverId" text;
+
+UPDATE public.messages m 
+SET "receiverId" = CASE 
+  WHEN m."senderId" = c."tenantId" THEN c."ownerId" 
+  ELSE c."tenantId" 
+END
+FROM public.conversations c 
+WHERE c.id = m."conversationId" AND m."receiverId" IS NULL;
+
+ALTER TABLE public.messages ALTER COLUMN "receiverId" SET NOT NULL;
+CREATE INDEX IF NOT EXISTS "messages_receiverId_idx" ON public.messages ("receiverId");
+

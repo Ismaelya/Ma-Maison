@@ -62,6 +62,13 @@ export function ChatBox({
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
+          if (newMsg && (newMsg.receiverId === currentUserId || newMsg.receiver_id === currentUserId)) {
+            supabase
+              .from("messages")
+              .update({ isRead: true })
+              .eq("id", newMsg.id)
+              .then();
+          }
         }
       )
       .subscribe();
