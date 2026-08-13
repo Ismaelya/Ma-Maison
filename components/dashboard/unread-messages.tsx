@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import Link from "next/link";
 import { MessageSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * Starts with initial count from SSR (no zero flash) and listens
  * to Supabase Realtime INSERT/UPDATE on messages.
  */
-export function useRealtimeUnreadCount(initialCount: number, userId: string) {
+function useRealtimeUnreadCount(initialCount: number, userId: string) {
   const [unreadCount, setUnreadCount] = useState(initialCount);
 
   useEffect(() => {
@@ -30,10 +30,11 @@ export function useRealtimeUnreadCount(initialCount: number, userId: string) {
           event: "INSERT",
           schema: "public",
           table: "messages",
+          filter: `receiverId=eq.${userId}`,
         },
         (payload) => {
           const newMsg = payload.new;
-          if (newMsg && newMsg.senderId !== userId) {
+          if (newMsg) {
             setUnreadCount((prev) => prev + 1);
           }
         }
@@ -44,10 +45,11 @@ export function useRealtimeUnreadCount(initialCount: number, userId: string) {
           event: "UPDATE",
           schema: "public",
           table: "messages",
+          filter: `receiverId=eq.${userId}`,
         },
         (payload) => {
           const newMsg = payload.new;
-          if (newMsg && newMsg.senderId !== userId && (newMsg.isRead === true || newMsg.is_read === true)) {
+          if (newMsg && (newMsg.isRead === true || newMsg.is_read === true)) {
             setUnreadCount((prev) => Math.max(0, prev - 1));
           }
         }
@@ -62,14 +64,41 @@ export function useRealtimeUnreadCount(initialCount: number, userId: string) {
   return unreadCount;
 }
 
-export function RealtimeUnreadStatCard({
+const UnreadCountContext = createContext<number | null>(null);
+
+/**
+ * Subscribes once to Realtime unread-message updates and shares the count
+ * via context, so sibling displays (stat card, action link) don't each
+ * open their own channel with the same name.
+ */
+export function UnreadCountProvider({
   initialCount,
   userId,
+  children,
 }: {
   initialCount: number;
   userId: string;
+  children: React.ReactNode;
 }) {
   const unreadCount = useRealtimeUnreadCount(initialCount, userId);
+
+  return (
+    <UnreadCountContext.Provider value={unreadCount}>
+      {children}
+    </UnreadCountContext.Provider>
+  );
+}
+
+function useUnreadCount() {
+  const count = useContext(UnreadCountContext);
+  if (count === null) {
+    throw new Error("useUnreadCount must be used within an UnreadCountProvider");
+  }
+  return count;
+}
+
+export function RealtimeUnreadStatCard() {
+  const unreadCount = useUnreadCount();
 
   return (
     <div
@@ -89,14 +118,8 @@ export function RealtimeUnreadStatCard({
   );
 }
 
-export function RealtimeUnreadActionLink({
-  initialCount,
-  userId,
-}: {
-  initialCount: number;
-  userId: string;
-}) {
-  const unreadCount = useRealtimeUnreadCount(initialCount, userId);
+export function RealtimeUnreadActionLink() {
+  const unreadCount = useUnreadCount();
 
   return (
     <Link

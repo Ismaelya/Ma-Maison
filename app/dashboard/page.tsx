@@ -4,7 +4,7 @@ import { Building2, Heart, MessageSquare, Plus, Clock, Eye, ArrowRight } from "l
 import { requireAuth } from "@/lib/auth/helpers";
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice, getTrialDaysRemaining, getGreeting, cn } from "@/lib/utils";
-import { RealtimeUnreadStatCard, RealtimeUnreadActionLink } from "@/components/dashboard/unread-messages";
+import { UnreadCountProvider, RealtimeUnreadStatCard, RealtimeUnreadActionLink } from "@/components/dashboard/unread-messages";
 
 export const metadata: Metadata = {
   title: "Tableau de bord",
@@ -63,6 +63,7 @@ export default async function DashboardPage() {
   const trialDays = isOwner && sub?.endDate ? getTrialDaysRemaining(sub.endDate) : null;
 
   return (
+    <UnreadCountProvider initialCount={unreadCount} userId={profile.id}>
     <div className="animate-fade-in space-y-8">
       {/* Welcome */}
       <div>
@@ -100,10 +101,7 @@ export default async function DashboardPage() {
           value={String(favoriteCount)}
           color="secondary"
         />
-        <RealtimeUnreadStatCard
-          initialCount={unreadCount}
-          userId={profile.id}
-        />
+        <RealtimeUnreadStatCard />
         {isOwner && trialDays !== null && (
           <StatCard
             icon={<Clock className="h-5 w-5" />}
@@ -162,10 +160,7 @@ export default async function DashboardPage() {
           </Link>
         )}
 
-        <RealtimeUnreadActionLink
-          initialCount={unreadCount}
-          userId={profile.id}
-        />
+        <RealtimeUnreadActionLink />
       </div>
 
       {/* Recent listings (for owners) */}
@@ -214,6 +209,7 @@ export default async function DashboardPage() {
         </div>
       )}
     </div>
+    </UnreadCountProvider>
   );
 }
 
