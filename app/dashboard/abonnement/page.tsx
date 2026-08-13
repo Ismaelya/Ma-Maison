@@ -79,7 +79,7 @@ export default async function SubscriptionPage() {
             </div>
             <div className="mt-6">
               <p className="text-sm font-semibold text-blue-900">
-                Compte Gratuit — publication illimitée, visibilité normale, 10 messages/jour.
+                Compte Gratuit — publication illimitée, visibilité normale.
               </p>
             </div>
           </div>
