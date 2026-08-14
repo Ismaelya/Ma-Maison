@@ -36,7 +36,7 @@ export async function Header() {
         <nav className="hidden items-center gap-1 md:flex">
           <Link
             href="/recherche"
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-text)]"
           >
             <Search className="h-4 w-4" />
             Rechercher
@@ -55,14 +55,14 @@ export async function Header() {
               )}
               <Link
                 href="/dashboard/favoris"
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-200/50 hover:text-stone-900"
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-stone-200/50 dark:hover:bg-stone-700/50 hover:text-stone-900 dark:hover:text-stone-100"
               >
                 <Heart className="h-4 w-4" />
                 Favoris
               </Link>
               <Link
                 href="/dashboard/messages"
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-200/50 hover:text-stone-900"
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-stone-700 dark:text-stone-300 transition-colors hover:bg-stone-200/50 dark:hover:bg-stone-700/50 hover:text-stone-900 dark:hover:text-stone-100"
               >
                 <MessageSquare className="h-4 w-4" />
                 Messages
@@ -87,7 +87,7 @@ export async function Header() {
             <>
               <Link
                 href="/connexion"
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-stone-800 transition-colors hover:bg-stone-200/60"
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-stone-800 dark:text-stone-200 transition-colors hover:bg-stone-200/60 dark:hover:bg-stone-700/60"
               >
                 Se connecter
               </Link>

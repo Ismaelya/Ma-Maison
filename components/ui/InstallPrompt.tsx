@@ -91,7 +91,7 @@ export default function InstallPrompt(): React.ReactElement | null {
       <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-md z-50 p-4 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-xl transition-all duration-300">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-            <Share className="h-4 w-4 text-primary shrink-0" />
+            <Share className="h-4 w-4 text-[var(--color-primary-text)] shrink-0" />
             <span>Installer Ma Maison sur iOS</span>
           </div>
           <button
@@ -122,7 +122,7 @@ export default function InstallPrompt(): React.ReactElement | null {
     <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-md z-50 p-4 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-xl transition-all duration-300">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--color-primary-text)]">
             <Download className="h-5 w-5" />
           </div>
           <div>

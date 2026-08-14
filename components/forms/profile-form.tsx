@@ -135,13 +135,13 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {serverError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           {serverError}
         </div>
       )}
 
       {success && (
-        <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+        <div className="flex items-center gap-2 rounded-xl border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-950/30 px-4 py-3 text-sm text-green-700 dark:text-green-400">
           <CheckCircle className="h-4 w-4 shrink-0" />
           Profil mis à jour avec succès !
         </div>
@@ -150,7 +150,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
       {/* ============================================================
           PHOTO DE PROFIL — Section complète avec upload fichier
          ============================================================ */}
-      <div className="rounded-2xl border border-neutral-200 bg-neutral-50/50 p-5 space-y-5">
+      <div className="rounded-2xl border border-neutral-200 bg-[var(--color-muted)]/50 p-5 space-y-5">
         <label className="block text-sm font-semibold text-neutral-800">
           Photo de profil
         </label>

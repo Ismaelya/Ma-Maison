@@ -93,7 +93,7 @@ export default function NouveauMotDePassePage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--color-muted)]/30 p-4">
         <div className="flex flex-col items-center space-y-4 text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary-text)]" />
           <p className="text-small text-neutral-600">Vérification de la session de réinitialisation...</p>
         </div>
       </div>
@@ -115,12 +115,12 @@ export default function NouveauMotDePassePage() {
         </div>
 
         {!hasSession && !isSuccess ? (
-          <div className="rounded-3xl border border-amber-200 bg-amber-50/70 p-6 text-center space-y-4 animate-scale-in">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+          <div className="rounded-3xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/30 p-6 text-center space-y-4 animate-scale-in">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
               <AlertTriangle className="h-6 w-6" />
             </div>
-            <h2 className="text-h4 font-bold text-amber-900">Session de réinitialisation invalide</h2>
-            <p className="text-xs text-amber-800">
+            <h2 className="text-h4 font-bold text-amber-900 dark:text-amber-300">Session de réinitialisation invalide</h2>
+            <p className="text-xs text-amber-800 dark:text-amber-400">
               Le lien de réinitialisation a expiré ou a déjà été utilisé. Veuillez demander un nouveau lien de réinitialisation.
             </p>
             <div className="pt-2">
@@ -132,12 +132,12 @@ export default function NouveauMotDePassePage() {
             </div>
           </div>
         ) : isSuccess ? (
-          <div className="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-6 text-center space-y-4 animate-scale-in">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+          <div className="rounded-3xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/30 p-6 text-center space-y-4 animate-scale-in">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400">
               <CheckCircle2 className="h-6 w-6" />
             </div>
-            <h2 className="text-h4 font-bold text-emerald-900">Mot de passe mis à jour !</h2>
-            <p className="text-xs text-emerald-800">
+            <h2 className="text-h4 font-bold text-emerald-900 dark:text-emerald-300">Mot de passe mis à jour !</h2>
+            <p className="text-xs text-emerald-800 dark:text-emerald-400">
               Votre nouveau mot de passe a été enregistré. Vous allez être redirigé vers la page de connexion...
             </p>
             <div className="pt-2">
@@ -196,7 +196,7 @@ export default function NouveauMotDePassePage() {
         <div className="border-t border-[var(--color-border)] pt-6 text-center text-xs text-neutral-500">
           <Link
             href="/connexion"
-            className="font-medium text-neutral-600 hover:text-[var(--color-primary)] inline-flex items-center gap-1.5"
+            className="font-medium text-neutral-600 hover:text-[var(--color-primary-text)] inline-flex items-center gap-1.5"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Retour à la page de connexion
           </Link>

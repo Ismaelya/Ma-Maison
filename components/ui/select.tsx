@@ -52,7 +52,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={selectId}
             className={cn(
-              "w-full appearance-none rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 pr-10 text-sm text-[var(--color-text)] transition-colors focus:border-[var(--color-primary)] focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-muted)] disabled:opacity-70",
+              "w-full appearance-none rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 pr-10 text-sm text-[var(--color-text)] transition-colors focus:border-[var(--color-primary)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-muted)] disabled:opacity-70",
               error && "border-[var(--color-danger)] focus:border-[var(--color-danger)]",
               className
             )}

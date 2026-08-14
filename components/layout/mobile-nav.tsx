@@ -51,7 +51,7 @@ export function MobileNav({ user, profile }: MobileNavProps) {
       {/* Trigger button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-10 w-10 items-center justify-center rounded-lg text-neutral-700 transition-colors hover:bg-neutral-100"
+        className="flex h-10 w-10 items-center justify-center rounded-lg text-neutral-700 transition-colors hover:bg-[var(--color-muted)]"
         aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -237,7 +237,7 @@ function NavLink({
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
         highlight
           ? "bg-primary-600 text-white hover:bg-primary-700"
-          : "text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
+          : "text-neutral-700 hover:bg-[var(--color-muted)] hover:text-[var(--color-text)]"
       )}
     >
       {icon}

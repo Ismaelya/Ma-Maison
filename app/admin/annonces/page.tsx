@@ -14,13 +14,13 @@ export default async function AdminListingsPage() {
 
   let { data: listingsData, error } = await supabase
     .from("properties")
-    .select("*, owner:profiles!ownerId(id, name, email, phone)")
+    .select("*, owner:profiles!ownerId(id, name, email, phone), property_images(*)")
     .order("createdAt", { ascending: false });
 
   if (error || !listingsData) {
     const { data: retryData } = await supabase
       .from("properties")
-      .select("*, profiles(id, name, email, phone)")
+      .select("*, profiles(id, name, email, phone), property_images(*)")
       .order("createdAt", { ascending: false });
     if (retryData) {
       listingsData = retryData;
@@ -31,7 +31,7 @@ export default async function AdminListingsPage() {
   if (error || !listingsData || listingsData.length === 0) {
     const { data: rawProps, error: rawErr } = await supabase
       .from("properties")
-      .select("*")
+      .select("*, property_images(*)")
       .order("createdAt", { ascending: false });
 
     if (rawProps && rawProps.length > 0) {
@@ -56,6 +56,27 @@ export default async function AdminListingsPage() {
   const processedListings = listings.filter(
     (l) => String(l.status || "PENDING").toUpperCase() !== "PENDING"
   );
+
+  const renderThumbnail = (l: any) => {
+    const images = l.property_images || l.images || [];
+    const firstUrl = Array.isArray(images) && images.length > 0 ? (typeof images[0] === "string" ? images[0] : images[0]?.url) : null;
+
+    if (firstUrl) {
+      return (
+        <img
+          src={firstUrl}
+          alt={l.title || "Image annonce"}
+          className="h-12 w-12 rounded-xl object-cover border border-neutral-800 flex-shrink-0 bg-neutral-900"
+        />
+      );
+    }
+
+    return (
+      <div className="h-12 w-12 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center flex-shrink-0 text-neutral-500">
+        <Building2 className="h-5 w-5 text-neutral-500" />
+      </div>
+    );
+  };
 
   return (
     <div className="animate-fade-in space-y-8">
@@ -103,17 +124,20 @@ export default async function AdminListingsPage() {
                     return (
                       <tr key={l.id} className="hover:bg-neutral-900/50 transition-colors">
                         <td className="px-4 py-3">
-                          <div>
-                            <Link
-                              href={`/admin/annonces/${l.id}`}
-                              className="font-semibold text-white hover:text-primary-400 flex items-center gap-1.5"
-                            >
-                              {l.title}
-                            </Link>
-                            <p className="text-xs text-neutral-400 flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-3 w-3" />
-                              {l.city} · {getPropertyTypeLabel(l.type || l.property_type || "HOUSE")}
-                            </p>
+                          <div className="flex items-center gap-3">
+                            {renderThumbnail(l)}
+                            <div>
+                              <Link
+                                href={`/admin/annonces/${l.id}`}
+                                className="font-semibold text-white hover:text-primary-400 flex items-center gap-1.5"
+                              >
+                                {l.title}
+                              </Link>
+                              <p className="text-xs text-neutral-400 flex items-center gap-1 mt-0.5">
+                                <MapPin className="h-3 w-3" />
+                                {l.city} · {getPropertyTypeLabel(l.type || l.property_type || "HOUSE")}
+                              </p>
+                            </div>
                           </div>
                         </td>
 
@@ -189,17 +213,20 @@ export default async function AdminListingsPage() {
                     return (
                       <tr key={l.id} className="hover:bg-neutral-900/50 transition-colors">
                         <td className="px-4 py-3">
-                          <div>
-                            <Link
-                              href={`/admin/annonces/${l.id}`}
-                              className="font-semibold text-white hover:text-primary-400 flex items-center gap-1.5"
-                            >
-                              {l.title}
-                            </Link>
-                            <p className="text-xs text-neutral-400 flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-3 w-3" />
-                              {l.city} · {getPropertyTypeLabel(l.type || l.property_type || "HOUSE")}
-                            </p>
+                          <div className="flex items-center gap-3">
+                            {renderThumbnail(l)}
+                            <div>
+                              <Link
+                                href={`/admin/annonces/${l.id}`}
+                                className="font-semibold text-white hover:text-primary-400 flex items-center gap-1.5"
+                              >
+                                {l.title}
+                              </Link>
+                              <p className="text-xs text-neutral-400 flex items-center gap-1 mt-0.5">
+                                <MapPin className="h-3 w-3" />
+                                {l.city} · {getPropertyTypeLabel(l.type || l.property_type || "HOUSE")}
+                              </p>
+                            </div>
                           </div>
                         </td>
 

@@ -5,6 +5,7 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/server";
 import { formatPrice, formatDate, getPropertyTypeLabel } from "@/lib/utils";
 import { ListingActionButtons } from "@/components/admin/listing-action-buttons";
+import { AdminPropertyGallery } from "@/components/admin/admin-property-gallery";
 
 export const metadata: Metadata = {
   title: "Détail de l'annonce — Admin",
@@ -50,7 +51,8 @@ export default async function AdminPropertyDetailPage({
     notFound();
   }
 
-  const owner = property.profiles || {};
+  const owner = property.profiles || property.owner || {};
+  const images = property.property_images || property.images || [];
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -82,6 +84,9 @@ export default async function AdminPropertyDetailPage({
             isFeatured={!!property.is_featured}
           />
         </div>
+
+        {/* Photos Gallery */}
+        <AdminPropertyGallery images={images} title={property.title} />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 text-sm">
           <div className="rounded-xl border border-neutral-900 bg-neutral-900/50 p-4">

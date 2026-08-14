@@ -205,9 +205,9 @@ export function ImageUploader({
 
       {/* File Dropzone */}
       {files.length < maxFiles && (
-        <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-neutral-300 bg-[var(--color-muted)]/50 p-6 text-center transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/10">
+        <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-neutral-300 bg-[var(--color-muted)]/50 p-6 text-center transition-colors hover:border-[var(--color-primary-text)] hover:bg-[var(--color-primary)]/10">
           {isUploading ? (
-            <div className="flex flex-col items-center gap-2 text-[var(--color-primary)]">
+            <div className="flex flex-col items-center gap-2 text-[var(--color-primary-text)]">
               <Loader2 className="h-8 w-8 animate-spin" />
               <span className="text-xs font-semibold">Optimisation WebP et téléversement en cours...</span>
             </div>

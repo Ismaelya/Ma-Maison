@@ -153,6 +153,7 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                       fill
                       className="object-cover"
                       priority
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 800px"
                     />
                   </div>
                   {isAuthenticated &&
@@ -163,6 +164,8 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                           alt={`${typedListing.title} - Photo ${i + 2}`}
                           fill
                           className="object-cover"
+                          loading="lazy"
+                          sizes="(max-width: 768px) 50vw, 400px"
                         />
                       </div>
                     ))}

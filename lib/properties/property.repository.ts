@@ -135,6 +135,9 @@ export class PropertyRepository {
         furnished: Boolean(rest.furnished),
         rentalPeriod: rest.rentalPeriod ? String(rest.rentalPeriod).toUpperCase() : null,
         whatsappNumber: rest.whatsappNumber || null,
+        availability: rest.availability ? String(rest.availability).toUpperCase() : "AVAILABLE",
+        latitude: rest.latitude != null ? Number(rest.latitude) : null,
+        longitude: rest.longitude != null ? Number(rest.longitude) : null,
         status: (rest.status || "PENDING").toUpperCase(),
         updatedAt: rest.updatedAt || new Date().toISOString(),
       })

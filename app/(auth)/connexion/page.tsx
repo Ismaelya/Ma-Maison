@@ -145,7 +145,7 @@ export default function ConnexionPage() {
             <Logo variant="light" />
             <div className="pt-6 space-y-3">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-secondary-400)]/30 bg-[var(--color-secondary-400)]/10 px-3 py-1 text-xs font-semibold text-[var(--color-secondary-400)]">
-                <Sparkles className="h-3.5 w-3.5" /> Espace Membre
+            Espace Membre
               </span>
               <h2 className="text-2xl font-bold font-heading leading-tight text-white sm:text-3xl">
                 La référence immobilière de confiance au Niger
@@ -159,7 +159,7 @@ export default function ConnexionPage() {
           <div className="relative z-10 pt-8 space-y-3 border-t border-white/10 text-xs text-stone-400">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-[var(--color-secondary-400)]" />
-              <span>Annonces et propriétaires 100% vérifiés</span>
+              <span>Mettez-vous en relation avec des propriétaires</span>
             </div>
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-[var(--color-secondary-400)]" />
@@ -173,14 +173,14 @@ export default function ConnexionPage() {
           {/* Header */}
           <div className="space-y-2 mb-6">
             <h1 className="text-h3 font-bold text-[var(--color-text)] font-heading">Connexion à votre compte</h1>
-            <p className="text-small text-stone-500 font-sans">
+            <p className="text-small text-stone-500 dark:text-stone-400 font-sans">
               Accédez à votre espace Ma Maison Niger
             </p>
           </div>
 
           {/* Server Error Alert */}
           {serverError && (
-            <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-medium text-red-700 animate-fade-in">
+            <div className="mb-5 rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4 text-xs font-medium text-red-700 dark:text-red-400 animate-fade-in">
               {serverError}
             </div>
           )}
@@ -208,7 +208,7 @@ export default function ConnexionPage() {
               <div className="flex justify-end pt-1">
                 <Link
                   href="/mot-de-passe-oublie"
-                  className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                  className="text-xs font-semibold text-[var(--color-primary-text)] hover:underline"
                 >
                   Mot de passe oublié ?
                 </Link>
@@ -228,7 +228,7 @@ export default function ConnexionPage() {
           </form>
 
           {/* Footer */}
-          <div className="mt-8 border-t border-stone-200 pt-6 text-center text-xs text-stone-500">
+          <div className="mt-8 border-t border-stone-200 dark:border-stone-800 pt-6 text-center text-xs text-stone-500 dark:text-stone-400">
             Vous n&apos;avez pas encore de compte ?{" "}
             <Link
               href={
@@ -236,7 +236,7 @@ export default function ConnexionPage() {
                   ? `/inscription?redirectTo=${encodeURIComponent(new URLSearchParams(window.location.search).get("redirectTo")!)}`
                   : "/inscription"
               }
-              className="font-bold text-[var(--color-primary)] hover:underline inline-flex items-center gap-1"
+              className="font-bold text-[var(--color-primary-text)] hover:underline inline-flex items-center gap-1"
             >
               S&apos;inscrire <ArrowRight className="h-3 w-3" />
             </Link>

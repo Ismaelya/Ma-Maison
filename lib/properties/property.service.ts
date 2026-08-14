@@ -35,6 +35,12 @@ export class PropertyService {
       rentalPeriod: payload.rentalPeriod
         ? String(payload.rentalPeriod).toUpperCase()
         : null,
+      whatsappNumber: payload.whatsappNumber || null,
+      availability: payload.availability
+        ? String(payload.availability).toUpperCase()
+        : "AVAILABLE",
+      latitude: payload.latitude != null ? Number(payload.latitude) : null,
+      longitude: payload.longitude != null ? Number(payload.longitude) : null,
       status,
       images: payload.images || [],
       createdAt: new Date().toISOString(),

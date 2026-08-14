@@ -43,13 +43,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       primary:
         "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-700)] focus-visible:ring-[var(--color-primary)] shadow-sm",
       secondary:
-        "bg-[var(--color-muted)] text-[var(--color-text)] border border-[var(--color-border)] hover:bg-stone-200 focus-visible:ring-stone-400",
+        "bg-[var(--color-muted)] text-[var(--color-text)] border border-[var(--color-border)] hover:bg-[var(--color-border)] focus-visible:ring-stone-400 dark:focus-visible:ring-stone-600",
       outline:
-        "border border-[var(--color-border)] bg-transparent text-[var(--color-text)] hover:bg-[var(--color-muted)] focus-visible:ring-stone-400",
+        "border border-[var(--color-border)] bg-transparent text-[var(--color-text)] hover:bg-[var(--color-muted)] focus-visible:ring-stone-400 dark:focus-visible:ring-stone-600",
       danger:
         "bg-[var(--color-danger)] text-white hover:bg-[var(--color-danger)]/90 focus-visible:ring-[var(--color-danger)]",
       ghost:
-        "bg-transparent text-[var(--color-text)] hover:bg-[var(--color-muted)]/50 focus-visible:ring-stone-400",
+        "bg-transparent text-[var(--color-text)] hover:bg-[var(--color-muted)]/50 focus-visible:ring-stone-400 dark:focus-visible:ring-stone-600",
     };
 
     const sizes: Record<ButtonSize, string> = {

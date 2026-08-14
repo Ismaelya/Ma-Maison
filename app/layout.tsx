@@ -75,6 +75,15 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${manrope.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <head>
+        {/* Runs before hydration to apply the stored theme immediately — avoids a
+            flash of the wrong theme while ThemeProvider's effect is still mounting. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('ma-maison-theme');var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`,
+          }}
+        />
+        <link rel="preconnect" href="https://wvxojyoblzlvbedtorwq.supabase.co" />
+        <link rel="dns-prefetch" href="https://wvxojyoblzlvbedtorwq.supabase.co" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
         <meta name="theme-color" content="#102281" />

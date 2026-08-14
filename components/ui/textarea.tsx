@@ -30,7 +30,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={textareaId}
           rows={rows}
           className={cn(
-            "w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4 text-sm text-[var(--color-text)] transition-colors placeholder:text-neutral-400 focus:border-[var(--color-primary)] focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-muted)] disabled:opacity-70 resize-y",
+            "w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4 text-sm text-[var(--color-text)] transition-colors placeholder:text-neutral-400 focus:border-[var(--color-primary)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-muted)] disabled:opacity-70 resize-y",
             error && "border-[var(--color-danger)] focus:border-[var(--color-danger)]",
             className
           )}

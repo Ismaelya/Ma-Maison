@@ -73,12 +73,12 @@ export default function MotDePasseOubliePage() {
         </div>
 
         {isSubmitted ? (
-          <div className="rounded-3xl border border-blue-100 bg-blue-50/70 p-6 text-center space-y-4 animate-scale-in">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-[var(--color-primary)]">
+          <div className="rounded-3xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/70 dark:bg-blue-950/30 p-6 text-center space-y-4 animate-scale-in">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-[var(--color-primary-text)]">
               <CheckCircle2 className="h-6 w-6" />
             </div>
-            <h2 className="text-h4 font-bold text-blue-900">E-mail envoyé !</h2>
-            <p className="text-xs text-blue-800">
+            <h2 className="text-h4 font-bold text-blue-900 dark:text-blue-300">E-mail envoyé !</h2>
+            <p className="text-xs text-blue-800 dark:text-blue-400">
               Si un compte est associé à cet e-mail, vous recevrez un lien de réinitialisation d&apos;ici quelques instants.
             </p>
             <div className="pt-2">
@@ -127,7 +127,7 @@ export default function MotDePasseOubliePage() {
         <div className="border-t border-[var(--color-border)] pt-6 text-center text-xs text-neutral-500">
           <Link
             href="/connexion"
-            className="font-medium text-neutral-600 hover:text-[var(--color-primary)] inline-flex items-center gap-1.5"
+            className="font-medium text-neutral-600 hover:text-[var(--color-primary-text)] inline-flex items-center gap-1.5"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Retour à la page de connexion
           </Link>

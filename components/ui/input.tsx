@@ -55,7 +55,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={actualType}
             className={cn(
-              "w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 text-sm text-[var(--color-text)] transition-colors placeholder:text-neutral-400 focus:border-[var(--color-primary)] focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-muted)] disabled:opacity-70",
+              "w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 text-sm text-[var(--color-text)] transition-colors placeholder:text-neutral-400 focus:border-[var(--color-primary)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-muted)] disabled:opacity-70",
               leftIcon && "pl-11",
               (rightIcon || isPasswordType) && "pr-11",
               error && "border-[var(--color-danger)] focus:border-[var(--color-danger)] focus:ring-[var(--color-danger)]",

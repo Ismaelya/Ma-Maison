@@ -90,7 +90,7 @@ export default function InscriptionPage() {
             <Logo variant="light" />
             <div className="pt-4 space-y-3">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-secondary-400)]/30 bg-[var(--color-secondary-400)]/10 px-3 py-1 text-xs font-semibold text-[var(--color-secondary-400)]">
-                <Sparkles className="h-3.5 w-3.5" /> Inscription Gratuite
+            Rejoignez-nous
               </span>
               <h2 className="text-2xl font-bold font-heading leading-tight text-white sm:text-3xl">
                 Rejoignez le réseau immobilier d&apos;exception
@@ -118,7 +118,7 @@ export default function InscriptionPage() {
           {/* Header */}
           <div className="space-y-2 mb-6">
             <h1 className="text-h3 font-bold text-[var(--color-text)] font-heading">Créer votre compte</h1>
-            <p className="text-small text-stone-500 font-sans">
+            <p className="text-small text-stone-500 dark:text-stone-400 font-sans">
               Rejoignez la plateforme immobilière de référence au Niger
             </p>
           </div>
@@ -127,13 +127,17 @@ export default function InscriptionPage() {
             <div
               className={cn(
                 "rounded-3xl border p-8 text-center space-y-4 animate-scale-in",
-                emailSent ? "border-emerald-200 bg-emerald-50/70" : "border-amber-200 bg-amber-50/70"
+                emailSent
+                  ? "border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/30"
+                  : "border-amber-200 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/30"
               )}
             >
               <div
                 className={cn(
                   "mx-auto flex h-14 w-14 items-center justify-center rounded-2xl",
-                  emailSent ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
+                  emailSent
+                    ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
+                    : "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"
                 )}
               >
                 <CheckCircle2 className="h-8 w-8" />
@@ -141,7 +145,7 @@ export default function InscriptionPage() {
               <h2
                 className={cn(
                   "text-h4 font-bold font-heading",
-                  emailSent ? "text-emerald-900" : "text-amber-900"
+                  emailSent ? "text-emerald-900 dark:text-emerald-300" : "text-amber-900 dark:text-amber-300"
                 )}
               >
                 {emailSent ? "Vérifiez votre boîte de réception" : "Compte créé"}
@@ -149,7 +153,7 @@ export default function InscriptionPage() {
               <p
                 className={cn(
                   "text-sm max-w-md mx-auto font-sans",
-                  emailSent ? "text-emerald-700" : "text-amber-800"
+                  emailSent ? "text-emerald-700 dark:text-emerald-400" : "text-amber-800 dark:text-amber-400"
                 )}
               >
                 {emailSent
@@ -178,7 +182,7 @@ export default function InscriptionPage() {
             <>
               {/* Server Error Alert */}
               {serverError && (
-                <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-medium text-red-700 animate-fade-in">
+                <div className="mb-5 rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4 text-xs font-medium text-red-700 dark:text-red-400 animate-fade-in">
                   {serverError}
                 </div>
               )}
@@ -187,7 +191,7 @@ export default function InscriptionPage() {
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 {/* Role Selection */}
                 <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-700 font-sans">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 font-sans">
                     Je m&apos;inscris en tant que *
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -203,8 +207,8 @@ export default function InscriptionPage() {
                         className={cn(
                           "flex flex-col items-center justify-center p-3 rounded-xl border transition-all text-center",
                           selectedRole === roleOpt.value
-                            ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-bold shadow-sm"
-                            : "border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
+                            ? "border-[var(--color-primary-text)] bg-[var(--color-primary)]/10 text-[var(--color-primary-text)] font-bold shadow-sm"
+                            : "border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600 hover:bg-stone-50 dark:hover:bg-stone-800/50"
                         )}
                       >
                         <div className="mb-1">{roleOpt.icon}</div>
@@ -289,7 +293,7 @@ export default function InscriptionPage() {
           )}
 
           {/* Footer */}
-          <div className="mt-6 border-t border-stone-200 pt-6 text-center text-xs text-stone-500 font-sans">
+          <div className="mt-6 border-t border-stone-200 dark:border-stone-800 pt-6 text-center text-xs text-stone-500 dark:text-stone-400 font-sans">
             Vous avez déjà un compte ?{" "}
             <Link
               href={
@@ -297,7 +301,7 @@ export default function InscriptionPage() {
                   ? `/connexion?redirectTo=${encodeURIComponent(new URLSearchParams(window.location.search).get("redirectTo")!)}`
                   : "/connexion"
               }
-              className="font-bold text-[var(--color-primary)] hover:underline inline-flex items-center gap-1"
+              className="font-bold text-[var(--color-primary-text)] hover:underline inline-flex items-center gap-1"
             >
               Se connecter <ArrowRight className="h-3 w-3" />
             </Link>
