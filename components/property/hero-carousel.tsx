@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, MapPin, ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { Search, MapPin, ArrowRight, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
 export interface HeroFeaturedItem {
@@ -17,168 +17,50 @@ export interface HeroFeaturedItem {
   imageUrl: string;
 }
 
-interface HeroCarouselProps {
-  items: HeroFeaturedItem[];
-}
+interface HeroCarouselProps { items: HeroFeaturedItem[] }
 
 export function HeroCarousel({ items }: HeroCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-
   useEffect(() => {
     if (items.length <= 1) return;
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % items.length);
-    }, 6000);
+    const timer = setInterval(() => setCurrentIndex((prev) => (prev + 1) % items.length), 6500);
     return () => clearInterval(timer);
   }, [items.length]);
 
   const activeItem = items[currentIndex] || items[0];
-
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-  };
-
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % items.length);
-  };
+  const move = (delta: number) => setCurrentIndex((prev) => (prev + delta + items.length) % items.length);
 
   return (
-    <section className="relative h-[85vh] min-h-[580px] max-h-[780px] w-full overflow-hidden bg-[var(--color-primary-950)]">
-      {/* Background Ken Burns & Cross-Fade Slides */}
-      {items.map((item, index) => {
-        const isActive = index === currentIndex;
-        return (
-          <div
-            key={item.id + index}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-            }`}
-          >
-            {item.imageUrl ? (
-              <Image
-                src={item.imageUrl}
-                alt={item.title}
-                fill
-                priority={index === 0}
-                className={`object-cover transition-transform duration-[7000ms] ease-out ${
-                  isActive ? "scale-105" : "scale-100"
-                }`}
-                sizes="100vw"
-              />
-            ) : (
-              <div className="h-full w-full bg-gradient-to-br from-[var(--color-primary-950)] via-[var(--color-primary-900)] to-[var(--color-secondary-950)]" />
-            )}
-            {/* Multi-stage dark gradient overlay for optimal AA text contrast */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-primary-950)] via-[var(--color-primary-950)]/65 to-[var(--color-primary-950)]/30" />
-          </div>
-        );
-      })}
-
-      {/* Hero Content Overlay */}
-      <div className="relative z-20 mx-auto flex h-full max-w-7xl flex-col justify-between px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        {/* Top Tagline Badge */}
-        <div className="pt-6 sm:pt-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 backdrop-blur-md">
-            <Star className="h-4 w-4 text-[var(--color-secondary-400)]" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-white">
-              La plateforme immobilière au Niger
-            </span>
-          </div>
+    <section className="relative isolate min-h-[680px] overflow-hidden bg-[#081235] sm:min-h-[760px]">
+      {items.map((item, index) => (
+        <div key={item.id + index} className={`absolute inset-0 transition-opacity duration-1000 ${index === currentIndex ? "z-10 opacity-100" : "pointer-events-none z-0 opacity-0"}`}>
+          {item.imageUrl ? <Image src={item.imageUrl} alt={item.title} fill priority={index === 0} className={`object-cover transition-transform duration-[8000ms] ${index === currentIndex ? "scale-105" : "scale-100"}`} sizes="100vw" /> : <div className="h-full w-full bg-[radial-gradient(circle_at_70%_20%,#1e4f9d,transparent_45%),linear-gradient(135deg,#071130,#0d675e)]" />}
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,12,45,.96)_0%,rgba(5,12,45,.78)_42%,rgba(5,12,45,.22)_100%)]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#081235] via-transparent to-[#081235]/20" />
         </div>
+      ))}
 
-        {/* Center Headline & Dynamic Property Card */}
-        <div className="my-auto max-w-3xl space-y-6">
-          <h1 className="text-3xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl tracking-tight font-heading">
-            Trouvez votre logement idéal{" "}
-            <span className="text-[var(--color-secondary-400)]">au Niger</span>
+      <div className="relative z-20 mx-auto flex min-h-[680px] max-w-7xl flex-col justify-center px-5 py-20 sm:min-h-[760px] sm:px-8 lg:px-10">
+        <div className="max-w-3xl pt-8">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-bold uppercase tracking-[.16em] text-white/90 backdrop-blur-xl">
+            <Sparkles className="h-4 w-4 text-[#61f4d9]" /> La nouvelle façon d’habiter le Niger
+          </div>
+          <h1 className="max-w-3xl text-4xl font-bold leading-[.98] tracking-[-.045em] text-white sm:text-6xl lg:text-[76px]">
+            Un lieu pour vivre.<br /><span className="text-[#60f0d5]">Une histoire à écrire.</span>
           </h1>
+          <p className="mt-6 max-w-xl text-base leading-7 text-white/72 sm:text-lg">Trouvez un logement qui vous ressemble à Niamey et partout au Niger. Des annonces claires, des propriétaires vérifiés, une recherche qui va droit à l’essentiel.</p>
 
-          <p className="text-base text-stone-300 sm:text-xl leading-relaxed font-sans max-w-2xl">
-            Parcourez des centaines d&apos;annonces immobilières à Niamey et dans tout le Niger. Location, achat, terrains — Ma Maison simplifie votre recherche.
-          </p>
-
-          {/* Active Featured Property Preview Pill */}
-          {activeItem && (
-            <Link
-              href={`/annonces/${activeItem.id}`}
-              className="group inline-flex items-center gap-4 rounded-2xl border border-white/15 bg-stone-900/80 p-3 pr-5 text-white backdrop-blur-lg transition-all hover:border-[var(--color-secondary-400)] hover:bg-stone-900/95 shadow-xl"
-            >
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--color-secondary-500)]/20 text-[var(--color-secondary-400)]">
-                <MapPin className="h-5 w-5" />
-              </div>
-              <div className="text-left">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-[var(--color-secondary-400)] uppercase tracking-wider">
-                    {activeItem.city} • {activeItem.district}
-                  </span>
-                  <span className="rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-stone-200">
-                    {activeItem.transactionType === "RENT" ? "Location" : "Vente"}
-                  </span>
-                </div>
-                <h2 className="text-sm font-bold text-white line-clamp-1 group-hover:text-[var(--color-secondary-400)] transition-colors">
-                  {activeItem.title}
-                </h2>
-                <div className="text-xs font-extrabold text-white">
-                  {formatPrice(activeItem.price)}
-                  {activeItem.transactionType === "RENT" && <span className="text-stone-400 font-normal"> /mois</span>}
-                </div>
-              </div>
-              <ArrowRight className="ml-auto h-5 w-5 text-stone-400 transition-transform group-hover:translate-x-1 group-hover:text-[var(--color-secondary-400)]" />
-            </Link>
-          )}
-
-          {/* CTA Search Button */}
-          <div className="pt-2 flex flex-col sm:flex-row gap-4">
-            <Link
-              href="/recherche"
-              className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-brand px-7 py-4 text-base font-bold text-white shadow-lg transition-all hover:brightness-110 hover:scale-[1.02]"
-            >
-              <Search className="h-5 w-5" />
-              Rechercher un logement
-            </Link>
-            <Link
-              href="/inscription"
-              className="inline-flex items-center justify-center gap-2.5 rounded-xl border border-white/30 bg-white/10 px-7 py-4 text-base font-bold text-white backdrop-blur-md transition-all hover:bg-white/20"
-            >
-              Publier une annonce
-            </Link>
-          </div>
-        </div>
-
-        {/* Bottom Carousel Controls & Indicators */}
-        <div className="flex items-center justify-between pt-6 border-t border-white/10">
-          <div className="flex items-center gap-2">
-            {items.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentIndex(idx)}
-                aria-label={`Aller à la diapositive ${idx + 1}`}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  idx === currentIndex ? "w-8 bg-[var(--color-secondary-400)]" : "w-2 bg-white/40 hover:bg-white/70"
-                }`}
-              />
-            ))}
+          <div className="mt-8 max-w-2xl rounded-[24px] border border-white/20 bg-white/95 p-2 shadow-2xl shadow-black/20 backdrop-blur-xl sm:flex sm:items-center sm:gap-2 sm:rounded-2xl">
+            <div className="flex flex-1 items-center gap-3 rounded-2xl px-3 py-3 sm:px-4"><Search className="h-5 w-5 text-[#13299A]" /><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Je recherche</p><p className="text-sm font-semibold text-slate-900">Maison, appartement, terrain…</p></div></div>
+            <div className="hidden h-10 w-px bg-slate-200 sm:block" />
+            <div className="flex flex-1 items-center gap-3 rounded-2xl px-3 py-3 sm:px-4"><MapPin className="h-5 w-5 text-[#05a98e]" /><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Où ?</p><p className="text-sm font-semibold text-slate-900">Toutes les villes</p></div></div>
+            <Link href="/recherche" className="flex items-center justify-center gap-2 rounded-2xl bg-[#13299A] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#0c1a64] sm:py-3.5">Rechercher <ArrowRight className="h-4 w-4" /></Link>
           </div>
 
-          {items.length > 1 && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handlePrev}
-                aria-label="Diapositive précédente"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-white/20"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                onClick={handleNext}
-                aria-label="Diapositive suivante"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-white/20"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-          )}
+          {activeItem && <Link href={`/annonces/${activeItem.id}`} className="group mt-7 inline-flex max-w-full items-center gap-3 rounded-2xl border border-white/15 bg-black/25 p-2.5 pr-4 text-white backdrop-blur-xl transition hover:bg-black/45"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#60f0d5]/15 text-[#60f0d5]"><MapPin className="h-5 w-5" /></div><div className="min-w-0 text-left"><p className="text-[10px] font-bold uppercase tracking-wider text-[#60f0d5]">À la une · {activeItem.city}</p><p className="truncate text-sm font-bold">{activeItem.title}</p><p className="text-xs text-white/60">{formatPrice(activeItem.price)}{activeItem.transactionType === "RENT" ? " / mois" : ""}</p></div><ArrowRight className="ml-2 h-4 w-4 transition group-hover:translate-x-1" /></Link>}
         </div>
+
+        <div className="absolute bottom-8 left-5 right-5 flex items-center justify-between sm:left-8 sm:right-8 lg:left-10 lg:right-10"><div className="flex gap-2">{items.map((_, index) => <button key={index} onClick={() => setCurrentIndex(index)} aria-label={`Aller à la diapositive ${index + 1}`} className={`h-1.5 rounded-full transition-all ${index === currentIndex ? "w-10 bg-[#60f0d5]" : "w-2 bg-white/35"}`} />)}</div>{items.length > 1 && <div className="flex gap-2"><button onClick={() => move(-1)} aria-label="Précédente" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur hover:bg-white/20"><ChevronLeft className="h-5 w-5" /></button><button onClick={() => move(1)} aria-label="Suivante" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur hover:bg-white/20"><ChevronRight className="h-5 w-5" /></button></div>}</div>
       </div>
     </section>
   );
