@@ -103,14 +103,14 @@ export default async function MessagesPage({
                     className={cn(
                       "flex items-center gap-3 rounded-xl p-3 transition-colors relative",
                       isSelected
-                        ? "bg-primary-50 text-primary-900 border border-primary-200"
-                        : "hover:bg-neutral-50"
+                        ? "bg-[var(--color-primary)]/10 text-primary-900 border border-[var(--color-primary)]/30"
+                        : "hover:bg-[var(--color-muted)]"
                     )}
                   >
                     <div className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-neutral-200 shadow-sm">
                       <img src={getAvatarUrl(conv.partnerAvatar, conv.partnerName)} alt={conv.partnerName} className="h-full w-full rounded-full object-cover" />
                       {displayUnread > 0 && (
-                        <span className="absolute top-0 right-0 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 ring-2 ring-white" />
+                        <span className="absolute top-0 right-0 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 ring-2 ring-[var(--color-bg)]" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">

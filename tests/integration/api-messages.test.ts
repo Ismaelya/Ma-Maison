@@ -26,6 +26,15 @@ vi.mock("@/lib/supabase/server", () => ({
           }),
         };
       }
+      if (table === "conversations") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: mockSingleConv,
+            }),
+          }),
+        };
+      }
       if (table === "messages") {
         return {
           insert: () => ({

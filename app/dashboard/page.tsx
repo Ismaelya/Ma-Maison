@@ -150,7 +150,7 @@ export default async function DashboardPage() {
             href="/recherche"
             className="group flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-card)] transition-all hover:shadow-[var(--shadow-card-hover)]"
           >
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-secondary-100 text-secondary-600 transition-colors group-hover:bg-secondary-600 group-hover:text-white">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--color-secondary)]/15 text-secondary-600 transition-colors group-hover:bg-secondary-600 group-hover:text-white">
               <Eye className="h-6 w-6" />
             </div>
             <div>
@@ -172,7 +172,7 @@ export default async function DashboardPage() {
             </h2>
             <Link
               href="/dashboard/annonces"
-              className="text-sm font-medium text-primary-600 hover:text-primary-700"
+              className="text-sm font-medium text-primary-600 hover:opacity-70"
             >
               Voir tout →
             </Link>
@@ -183,7 +183,7 @@ export default async function DashboardPage() {
                 key={listing.id}
                 href={`/annonces/${listing.id}`}
                 className={cn(
-                  "flex items-center justify-between px-5 py-4 transition-colors hover:bg-neutral-50",
+                  "flex items-center justify-between px-5 py-4 transition-colors hover:bg-[var(--color-muted)]",
                   i !== 0 && "border-t border-[var(--border)]"
                 )}
               >
@@ -227,8 +227,8 @@ function StatCard({
   highlight?: boolean;
 }) {
   const colorMap = {
-    primary: "bg-primary-100 text-primary-600",
-    secondary: "bg-secondary-100 text-secondary-600",
+    primary: "bg-[var(--color-primary)]/15 text-primary-600",
+    secondary: "bg-[var(--color-secondary)]/15 text-secondary-600",
     info: "bg-blue-100 text-blue-600",
     success: "bg-green-100 text-green-600",
     warning: "bg-yellow-100 text-yellow-700",

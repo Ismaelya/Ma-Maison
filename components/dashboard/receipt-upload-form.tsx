@@ -98,12 +98,12 @@ export function ReceiptUploadForm() {
 
   if (success) {
     return (
-      <div className="rounded-2xl border border-green-200 bg-green-50 p-6 text-center">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
+      <div className="rounded-2xl border border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-950/30 p-6 text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400">
           <CheckCircle2 className="h-6 w-6" />
         </div>
-        <h3 className="text-lg font-bold text-green-900">Demande envoyée avec succès !</h3>
-        <p className="mt-1 text-sm text-green-700">
+        <h3 className="text-lg font-bold text-green-900 dark:text-green-300">Demande envoyée avec succès !</h3>
+        <p className="mt-1 text-sm text-green-700 dark:text-green-400">
           Un administrateur va vérifier votre reçu de paiement sous 24h. Vous recevrez la confirmation dès validation.
         </p>
         <button
@@ -119,7 +119,7 @@ export function ReceiptUploadForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4 text-sm text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
@@ -142,10 +142,12 @@ export function ReceiptUploadForm() {
               className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 py-3 px-2 font-bold text-xs sm:text-sm transition-all ${
                 provider === item.id
                   ? item.color
-                  : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-neutral-100"
+                  : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-[var(--color-border)]"
               }`}
             >
-              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white p-0.5 shadow-sm border border-neutral-200">
+              {/* bg-ivory (not bg-white): logo tiles for third-party payment providers stay
+                  fixed white in both themes, like a brand mark on its own card. */}
+              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-ivory p-0.5 shadow-sm border border-neutral-200">
                 <img src={item.logo} alt={item.name} className="h-full w-full object-contain" />
               </div>
               <span>{item.name}</span>
@@ -188,13 +190,13 @@ export function ReceiptUploadForm() {
             <button
               type="button"
               onClick={() => setFile(null)}
-              className="text-xs font-medium text-red-600 hover:text-red-700"
+              className="text-xs font-medium text-red-600 hover:opacity-70"
             >
               Supprimer
             </button>
           </div>
         ) : (
-          <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center transition-colors hover:border-primary-400 hover:bg-primary-50/30">
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center transition-colors hover:border-primary-400 hover:bg-[var(--color-primary)]/10">
             <Upload className="h-8 w-8 text-neutral-400" />
             <p className="mt-2 text-sm font-medium text-neutral-700">
               Cliquez pour choisir votre reçu

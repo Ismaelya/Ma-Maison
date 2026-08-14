@@ -40,6 +40,7 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
       surface: initialData.surface || initialData.area_sqm || null,
       furnished: Boolean(initialData.furnished),
       rentalPeriod: String(initialData.rentalPeriod || "MONTHLY").toUpperCase(),
+      whatsappNumber: initialData.whatsappNumber || initialData.whatsapp_number || "",
     },
   });
 
@@ -71,6 +72,7 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
           rentalPeriod: formData.transactionType.toUpperCase() === "RENT"
             ? (formData.rentalPeriod || null)
             : null,
+          whatsappNumber: formData.whatsappNumber || null,
         } as any)
         .eq("id", initialData.id);
 
@@ -241,6 +243,27 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
           {...register("district")}
           className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-3 text-sm focus:border-primary-500 focus:bg-white focus:outline-none"
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 mb-1">
+          Numéro WhatsApp (optionnel)
+        </label>
+        <div className="relative flex items-center">
+          <span className="absolute left-3.5 text-xs font-bold text-neutral-500 pointer-events-none">+227</span>
+          <input
+            type="text"
+            placeholder="90 00 00 00"
+            {...register("whatsappNumber")}
+            className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 pl-14 pr-4 py-3 text-sm focus:border-primary-500 focus:bg-white focus:outline-none"
+          />
+        </div>
+        {errors.whatsappNumber && (
+          <p className="mt-1 text-xs text-red-500">{errors.whatsappNumber.message as string}</p>
+        )}
+        <p className="mt-1 text-xs text-neutral-500">
+          Format Niger (+227). Si renseigné, les locataires connectés pourront vous contacter directement sur WhatsApp.
+        </p>
       </div>
 
       <div>

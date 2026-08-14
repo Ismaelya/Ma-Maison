@@ -36,14 +36,16 @@ export function ThemeProvider({
 
   useEffect(() => {
     setMounted(true);
-    // Temporarily force light theme to avoid dark-mode visibility regressions.
-    const forcedTheme: Theme = "light";
+    let storedTheme: Theme | null = null;
     try {
-      localStorage.setItem(storageKey, forcedTheme);
+      const raw = localStorage.getItem(storageKey);
+      if (raw === "light" || raw === "dark" || raw === "system") {
+        storedTheme = raw;
+      }
     } catch {
       // ignore
     }
-    setThemeState(forcedTheme);
+    setThemeState(storedTheme ?? defaultTheme);
   }, [defaultTheme, storageKey]);
 
   useEffect(() => {

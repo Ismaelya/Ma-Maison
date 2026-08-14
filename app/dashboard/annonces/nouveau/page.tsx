@@ -88,7 +88,7 @@ export default function NewListingPage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="mb-2 inline-flex items-center gap-1 text-xs font-semibold text-neutral-500 hover:text-[var(--color-primary)] transition-colors"
+            className="mb-2 inline-flex items-center gap-1 text-xs font-semibold text-neutral-500 hover:text-[var(--color-primary-text)] transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Retour à mes annonces
           </button>
@@ -127,8 +127,8 @@ export default function NewListingPage() {
                 className={cn(
                   "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all text-center",
                   selectedTransaction.toUpperCase() === option.value
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-bold"
-                    : "border-[var(--color-border)] text-neutral-600 hover:border-neutral-300"
+                    ? "border-[var(--color-primary-text)] bg-[var(--color-primary)]/10 text-[var(--color-primary-text)] font-bold"
+                    : "border-[var(--color-border)] text-neutral-600 hover:border-[var(--color-primary-text)]/50"
                 )}
               >
                 <span className="text-base font-bold">{option.label}</span>
@@ -210,6 +210,15 @@ export default function NewListingPage() {
             {...register("address")}
             error={errors.address?.message as string}
           />
+
+          <Input
+            label="Numéro WhatsApp (optionnel)"
+            placeholder="90 00 00 00"
+            leftIcon={<span className="text-xs font-bold text-neutral-500">+227</span>}
+            {...register("whatsappNumber")}
+            error={errors.whatsappNumber?.message as string}
+            helperText="Format Niger (+227). Si renseigné, un bouton WhatsApp apparaîtra pour les visiteurs connectés."
+          />
         </div>
 
         {/* Caractéristiques Card */}
@@ -260,8 +269,8 @@ export default function NewListingPage() {
                     className={cn(
                       "rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-all",
                       selectedFurnished === option.value
-                        ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-bold"
-                        : "border-[var(--color-border)] text-neutral-600 hover:border-neutral-300"
+                        ? "border-[var(--color-primary-text)] bg-[var(--color-primary)]/10 text-[var(--color-primary-text)] font-bold"
+                        : "border-[var(--color-border)] text-neutral-600 hover:border-[var(--color-primary-text)]/50"
                     )}
                   >
                     {option.label}

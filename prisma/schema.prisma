@@ -195,7 +195,9 @@ model Property {
   status       PropertyStatus       @default(DRAFT)
   availability PropertyAvailability @default(AVAILABLE)
   isFeatured   Boolean              @default(false)
-  viewCount  Int            @default(0)
+  viewCount    Int                  @default(0)
+
+  whatsappNumber String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

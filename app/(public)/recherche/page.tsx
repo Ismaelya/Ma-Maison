@@ -105,7 +105,7 @@ export default async function SearchPage({
                   className={`rounded-xl border px-3 py-2 text-xs font-semibold sm:px-4 ${
                     pageNum <= 1
                       ? "pointer-events-none opacity-40 border-neutral-200"
-                      : "border-neutral-300 hover:bg-neutral-50"
+                      : "border-neutral-300 hover:bg-[var(--color-muted)]"
                   }`}
                 >
                   ← Précédente
@@ -123,7 +123,7 @@ export default async function SearchPage({
                   className={`rounded-xl border px-3 py-2 text-xs font-semibold sm:px-4 ${
                     listings.length < limit
                       ? "pointer-events-none opacity-40 border-neutral-200"
-                      : "border-neutral-300 hover:bg-neutral-50"
+                      : "border-neutral-300 hover:bg-[var(--color-muted)]"
                   }`}
                 >
                   Suivante →

@@ -354,6 +354,7 @@ GRANT INSERT, UPDATE, DELETE ON public.app_settings TO authenticated;
 
 alter table public.profiles enable row level security;
 alter table public.properties enable row level security;
+alter table public.properties add column if not exists "whatsappNumber" text;
 alter table public.property_images enable row level security;
 alter table public.favorites enable row level security;
 alter table public.subscriptions enable row level security;

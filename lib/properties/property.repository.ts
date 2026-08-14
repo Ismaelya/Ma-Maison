@@ -134,6 +134,7 @@ export class PropertyRepository {
         surface: rest.surface ? Number(rest.surface) : null,
         furnished: Boolean(rest.furnished),
         rentalPeriod: rest.rentalPeriod ? String(rest.rentalPeriod).toUpperCase() : null,
+        whatsappNumber: rest.whatsappNumber || null,
         status: (rest.status || "PENDING").toUpperCase(),
         updatedAt: rest.updatedAt || new Date().toISOString(),
       })
@@ -179,6 +180,7 @@ export class PropertyRepository {
     "furnished",
     "rentalPeriod",
     "availability",
+    "whatsappNumber",
   ] as const;
 
   static async update(id: string, updates: Partial<Property> & { images?: string[] }): Promise<Property> {
@@ -200,6 +202,9 @@ export class PropertyRepository {
     if (sanitized.furnished !== undefined) sanitized.furnished = Boolean(sanitized.furnished);
     if (sanitized.rentalPeriod !== undefined) {
       sanitized.rentalPeriod = sanitized.rentalPeriod ? String(sanitized.rentalPeriod).toUpperCase() : null;
+    }
+    if (sanitized.whatsappNumber !== undefined) {
+      sanitized.whatsappNumber = sanitized.whatsappNumber ? String(sanitized.whatsappNumber) : null;
     }
     // La période de location n'a de sens qu'en location : on la vide dès que
     // la transaction bascule en vente, même si l'appelant ne l'a pas renvoyée.

@@ -53,7 +53,7 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700"
+            className="flex items-center gap-1 text-sm text-primary-600 hover:opacity-70"
           >
             <X className="h-3.5 w-3.5" />
             Effacer
@@ -77,7 +77,7 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
             placeholder="Ex: villa, studio..."
             defaultValue={currentFilters.q ?? ""}
             onChange={(e) => debouncedUpdateFilter("q", e.target.value)}
-            className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 py-2.5 pl-10 pr-4 text-sm transition-colors focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+            className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 py-2.5 pl-10 pr-4 text-sm transition-colors focus:border-primary-500 focus:bg-[var(--color-bg)] focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           />
         </div>
       </div>
@@ -94,7 +94,7 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
           id="filter-city"
           value={currentFilters.city ?? ""}
           onChange={(e) => updateFilter("city", e.target.value)}
-          className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-[var(--color-bg)] focus:outline-none focus:ring-2 focus:ring-primary-500/20"
         >
           <option value="">Toutes les villes</option>
           {NIGER_CITIES.map((city) => (
@@ -123,8 +123,8 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
               className={cn(
                 "rounded-lg border px-3 py-2 text-sm font-medium transition-all",
                 (currentFilters.transaction ?? "").toUpperCase() === option.value
-                  ? "border-primary-500 bg-primary-50 text-primary-700"
-                  : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-neutral-100"
+                  ? "border-primary-500 bg-[var(--color-primary)]/10 text-primary-700"
+                  : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-[var(--color-border)]"
               )}
             >
               {option.label}
@@ -142,7 +142,7 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
           id="filter-type"
           value={currentFilters.type ?? ""}
           onChange={(e) => updateFilter("type", e.target.value)}
-          className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-[var(--color-bg)] focus:outline-none focus:ring-2 focus:ring-primary-500/20"
         >
           <option value="">Tous les types</option>
           <option value="HOUSE">Maison</option>
@@ -174,8 +174,8 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
               className={cn(
                 "rounded-lg border px-2 py-2 text-sm font-medium transition-all",
                 (currentFilters.furnished ?? "") === option.value
-                  ? "border-primary-500 bg-primary-50 text-primary-700"
-                  : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-neutral-100"
+                  ? "border-primary-500 bg-[var(--color-primary)]/10 text-primary-700"
+                  : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-[var(--color-border)]"
               )}
             >
               {option.label}
@@ -197,7 +197,7 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
             id="filter-rental-period"
             value={currentFilters.rentalPeriod ?? ""}
             onChange={(e) => updateFilter("rentalPeriod", e.target.value)}
-            className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+            className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-[var(--color-bg)] focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           >
             <option value="">Toutes</option>
             <option value="DAILY">Journalière</option>
@@ -218,14 +218,14 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
             placeholder="Min"
             defaultValue={currentFilters.minPrice ?? ""}
             onChange={(e) => debouncedUpdateFilter("minPrice", e.target.value)}
-            className="w-1/2 rounded-xl border border-[var(--border)] bg-neutral-50 px-3 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+            className="w-1/2 rounded-xl border border-[var(--border)] bg-neutral-50 px-3 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-[var(--color-bg)] focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           />
           <input
             type="number"
             placeholder="Max"
             defaultValue={currentFilters.maxPrice ?? ""}
             onChange={(e) => debouncedUpdateFilter("maxPrice", e.target.value)}
-            className="w-1/2 rounded-xl border border-[var(--border)] bg-neutral-50 px-3 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+            className="w-1/2 rounded-xl border border-[var(--border)] bg-neutral-50 px-3 py-2.5 text-sm transition-colors focus:border-primary-500 focus:bg-[var(--color-bg)] focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           />
         </div>
       </div>
@@ -243,8 +243,8 @@ export function SearchFilters({ currentFilters }: SearchFiltersProps) {
               className={cn(
                 "flex-1 rounded-lg border px-2 py-2 text-sm font-medium transition-all",
                 (currentFilters.bedrooms ?? "") === val
-                  ? "border-primary-500 bg-primary-50 text-primary-700"
-                  : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-neutral-100"
+                  ? "border-primary-500 bg-[var(--color-primary)]/10 text-primary-700"
+                  : "border-[var(--border)] bg-neutral-50 text-neutral-600 hover:bg-[var(--color-border)]"
               )}
             >
               {val || "Tout"}

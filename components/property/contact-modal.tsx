@@ -4,20 +4,25 @@ import { useState } from "react";
 import Link from "next/link";
 import { Lock, UserPlus, LogIn, X, Phone, MessageSquare } from "lucide-react";
 import { useToast } from "@/components/ui/toast-notification";
+import { WhatsApp3DButton } from "@/components/ui/whatsapp-3d-button";
 
 type ContactProtectionProps = {
   phone: string | null;
+  whatsappNumber?: string | null;
   ownerName: string;
   ownerId: string;
   listingId: string;
+  propertyTitle?: string;
   isAuthenticated: boolean;
 };
 
 export function ContactProtection({
   phone,
+  whatsappNumber,
   ownerName,
   ownerId,
   listingId,
+  propertyTitle,
   isAuthenticated,
 }: ContactProtectionProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -63,18 +68,27 @@ export function ContactProtection({
           {isInitializing ? "Ouverture de la discussion..." : "Envoyer un message"}
         </button>
 
+        {whatsappNumber && (
+          <WhatsApp3DButton
+            whatsappNumber={whatsappNumber}
+            propertyTitle={propertyTitle}
+          />
+        )}
+
         {phone ? (
           <a
             href={`tel:${phone}`}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-secondary-500 bg-secondary-50 px-4 py-3 text-sm font-semibold text-secondary-700 transition-colors hover:bg-secondary-100"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-secondary-500 bg-[var(--color-secondary)]/10 px-4 py-3 text-sm font-semibold text-secondary-700 transition-colors hover:bg-[var(--color-secondary)]/20"
           >
             <Phone className="h-4 w-4" />
             {phone}
           </a>
         ) : (
-          <p className="text-center text-xs text-neutral-400">
-            Téléphone non renseigné
-          </p>
+          !whatsappNumber && (
+            <p className="text-center text-xs text-neutral-400">
+              Téléphone non renseigné
+            </p>
+          )
         )}
       </div>
     );
@@ -93,7 +107,7 @@ export function ContactProtection({
 
         <button
           onClick={() => setIsOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-500 transition-colors hover:bg-neutral-100"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-500 transition-colors hover:bg-[var(--color-border)]"
         >
           <Lock className="h-4 w-4 text-neutral-400" />
           +227 XX XX XX XX (Masqué)
@@ -107,14 +121,14 @@ export function ContactProtection({
             {/* Close button */}
             <button
               onClick={() => setIsOpen(false)}
-              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 hover:bg-[var(--color-muted)] hover:text-[var(--color-text)]"
             >
               <X className="h-5 w-5" />
             </button>
 
             {/* Modal Content */}
             <div className="text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-100 text-primary-600">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)]/15 text-primary-600">
                 <Lock className="h-7 w-7" />
               </div>
 
@@ -138,7 +152,7 @@ export function ContactProtection({
 
                 <Link
                   href={`/connexion?redirectTo=${encodeURIComponent(`/annonces/${listingId}`)}`}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-5 py-3 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50"
+                  className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-5 py-3 text-sm font-semibold text-neutral-700 transition-colors hover:bg-[var(--color-muted)]"
                 >
                   <LogIn className="h-4 w-4" />
                   Se connecter

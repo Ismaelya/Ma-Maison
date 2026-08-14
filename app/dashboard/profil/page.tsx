@@ -50,8 +50,8 @@ export default async function ProfilePage() {
                   className={cn(
                     "rounded-full px-2.5 py-0.5 text-xs font-semibold",
                     isOwner
-                      ? "bg-secondary-100 text-secondary-700"
-                      : "bg-primary-100 text-primary-700"
+                      ? "bg-[var(--color-secondary)]/15 text-secondary-700"
+                      : "bg-[var(--color-primary)]/15 text-primary-700"
                   )}
                 >
                   {isOwner ? "Propriétaire" : "Locataire"}

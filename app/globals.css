@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-space-grotesk: var(--font-space-grotesk), 'Space Grotesk', system-ui, -apple-system, sans-serif;
   --font-manrope: var(--font-manrope), 'Manrope', system-ui, -apple-system, sans-serif;
@@ -78,6 +80,13 @@
   --color-border: #E2E8F0;    /* Neutral Light Border */
   --color-ring: #13299A;
 
+  /* Accent text/icon color for primary/secondary used directly on a page or
+     card background (not inside a solid-color button). Same hue as
+     --color-primary/--color-secondary in light mode; lightened in .dark
+     below where the deep-navy/teal shades would fail AA on a dark bg. */
+  --color-primary-text: var(--color-primary);
+  --color-secondary-text: var(--color-secondary);
+
   /* Brand gradient — mirrors the logo's blue → turquoise transition */
   --gradient-brand: linear-gradient(135deg, #102281 0%, #05CBAD 100%);
 
@@ -103,20 +112,22 @@
 }
 
 .dark {
-  /* Force light/neutral tokens for consistent brand aesthetic */
-  --color-bg: #FFFFFF !important;
-  --color-text: #0F172A !important;
-  --color-muted: #F1F5F9 !important;
-  --color-border: #E2E8F0 !important;
-  --color-ring: #13299A !important;
+  /* Dark mode tokens — deep navy echoing the primary blue, high-contrast light text */
+  --color-bg: #0F172A;
+  --color-text: #F1F5F9;
+  --color-muted: #1E293B;
+  --color-border: #334155;
+  --color-ring: var(--color-primary-300);
+  --color-primary-text: var(--color-primary-300);   /* 5.66:1 vs #0F172A */
+  --color-secondary-text: var(--color-secondary-500); /* 8.63:1 vs #0F172A */
 
-  --background: var(--color-bg) !important;
-  --foreground: var(--color-text) !important;
-  --border: var(--color-border) !important;
-  --input: var(--color-border) !important;
+  --background: var(--color-bg);
+  --foreground: var(--color-text);
+  --border: var(--color-border);
+  --input: var(--color-border);
 
-  --shadow-card: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
-  --shadow-card-hover: 0 12px 30px rgba(15, 23, 42, 0.1) !important;
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-card-hover: 0 12px 30px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .dark .bg-white,
@@ -147,12 +158,31 @@
 .dark .text-neutral-400,
 .dark .text-neutral-300,
 .dark .text-neutral-200 {
-  color: #78716c !important;
+  color: #94A3B8 !important; /* slate-400: AA-safe muted text on dark bg (6.97:1 vs #0F172A) */
 }
 
 .dark .shadow-card,
 .dark .shadow-card-hover {
   box-shadow: var(--shadow-card) !important;
+}
+
+/* The deep-navy primary/teal shades below 500 read fine on dark bg only as
+   backgrounds (buttons keep white text on top); as standalone text directly on
+   the dark page background their contrast falls under AA, so lighten them here. */
+.dark .text-primary-custom,
+.dark .text-primary-500,
+.dark .text-primary-600,
+.dark .text-primary-700,
+.dark .text-primary-800,
+.dark .text-primary-900 {
+  color: var(--color-primary-300) !important; /* 5.66:1 vs #0F172A */
+}
+
+.dark .text-secondary-600,
+.dark .text-secondary-700,
+.dark .text-secondary-800,
+.dark .text-secondary-900 {
+  color: var(--color-secondary-500) !important; /* 8.63:1 vs #0F172A */
 }
 
 /* ============================================================================

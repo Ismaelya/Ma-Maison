@@ -120,17 +120,17 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
           <Link
             href="/recherche"
-            className="flex items-center gap-2 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
+            className="flex items-center gap-2 text-sm font-medium text-neutral-600 transition-colors hover:text-[var(--color-text)]"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Retour aux résultats</span>
             <span className="sm:hidden">Retour</span>
           </Link>
           <div className="flex items-center gap-2">
-            <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-700">
+            <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-neutral-500 transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-text)]">
               <Share2 className="h-4 w-4" />
             </button>
-            <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-neutral-500 transition-colors hover:bg-red-50 hover:text-red-500">
+            <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-neutral-500 transition-colors hover:bg-red-500/10 hover:text-red-500">
               <Heart className="h-4 w-4" />
             </button>
           </div>
@@ -181,8 +181,8 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                   className={cn(
                     "rounded-full px-3 py-1 text-xs font-semibold",
                     isRent
-                      ? "bg-primary-100 text-primary-700"
-                      : "bg-secondary-100 text-secondary-700"
+                      ? "bg-[var(--color-primary)]/15 text-primary-700"
+                      : "bg-[var(--color-secondary)]/15 text-secondary-700"
                   )}
                 >
                   {getTransactionTypeLabel(transType)}
@@ -191,7 +191,7 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                   {getPropertyTypeLabel(propType)}
                 </span>
                 {furnished && (
-                  <span className="rounded-full bg-secondary-100 px-3 py-1 text-xs font-semibold text-secondary-700">
+                  <span className="rounded-full bg-[var(--color-secondary)]/15 px-3 py-1 text-xs font-semibold text-secondary-700">
                     Meublé
                   </span>
                 )}
@@ -283,7 +283,7 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
               </>
             ) : (
               /* REGISTRATION GATE BANNER FOR UNAUTHENTICATED VISITORS */
-              <div className="rounded-3xl border border-primary-200 bg-gradient-to-br from-primary-50/60 via-white to-secondary-50/40 p-6 sm:p-8 shadow-md text-center">
+              <div className="rounded-3xl border border-[var(--color-primary)]/20 bg-gradient-to-br from-[var(--color-primary)]/10 via-[var(--color-bg)] to-[var(--color-secondary)]/10 p-6 sm:p-8 shadow-md text-center">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-600/20">
                   <Lock className="h-7 w-7" />
                 </div>
@@ -305,7 +305,7 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
 
                   <Link
                     href={`/inscription?redirectTo=${encodeURIComponent(`/annonces/${id}`)}`}
-                    className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-primary-300 bg-white px-6 py-3 text-sm font-semibold text-primary-700 transition-colors hover:bg-primary-50"
+                    className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-[var(--color-primary)]/30 bg-white px-6 py-3 text-sm font-semibold text-primary-700 transition-colors hover:bg-[var(--color-primary)]/10"
                   >
                     <UserPlus className="h-4 w-4" />
                     S&apos;inscrire gratuitement
@@ -357,9 +357,11 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
 
                   <ContactProtection
                     phone={owner.phone}
+                    whatsappNumber={typedListing.whatsappNumber || (typedListing as any).whatsapp_number}
                     ownerName={owner.name ?? "ce propriétaire"}
                     ownerId={owner.id}
                     listingId={typedListing.id}
+                    propertyTitle={typedListing.title}
                     isAuthenticated={isAuthenticated}
                   />
                 </div>
@@ -384,7 +386,7 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                     </Link>
                     <Link
                       href={`/inscription?redirectTo=${encodeURIComponent(`/annonces/${id}`)}`}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-100"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-[var(--color-muted)]"
                     >
                       <UserPlus className="h-4 w-4" />
                       S&apos;inscrire

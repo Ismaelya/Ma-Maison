@@ -233,7 +233,10 @@ export default async function HomePage() {
                   <div className="mt-6 sm:mt-8">
                     <Link
                       href="/inscription"
-                      className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-semibold text-secondary-700 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] sm:w-auto sm:px-8 sm:text-base"
+                      // bg-ivory (not bg-white): stays a fixed white pill on this permanently
+                      // colored gradient panel — bg-white would get neutralized to the dark
+                      // page background by the .dark override, breaking the button in dark mode.
+                      className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-ivory px-6 py-4 text-sm font-semibold text-secondary-700 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] sm:w-auto sm:px-8 sm:text-base"
                     >
                       Commencer gratuitement
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

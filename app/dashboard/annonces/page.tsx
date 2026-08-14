@@ -51,7 +51,7 @@ export default async function MyListingsPage() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4 text-sm text-red-700 dark:text-red-400">
           Erreur lors du chargement de vos annonces.
         </div>
       )}
@@ -121,14 +121,14 @@ export default async function MyListingsPage() {
               <div className="flex items-center gap-2">
                 <Link
                   href={`/annonces/${listing.id}`}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-700"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-neutral-500 transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-text)]"
                   title="Voir"
                 >
                   <Eye className="h-4 w-4" />
                 </Link>
                 <Link
                   href={`/dashboard/annonces/${listing.id}/edit` as any}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-700"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-neutral-500 transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-text)]"
                   title="Modifier"
                 >
                   <Edit className="h-4 w-4" />

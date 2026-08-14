@@ -134,7 +134,7 @@ export function ChatBox({
       </div>
 
       {/* Messages Feed */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-neutral-50/30">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[var(--color-muted)]/30">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-neutral-400 text-sm">
             Envoyez un message pour démarrer la discussion avec {partnerName}.
@@ -180,7 +180,7 @@ export function ChatBox({
 
       {/* Send Error Alert */}
       {sendError && (
-        <div className="flex items-start gap-2 border-t border-red-100 bg-red-50 px-4 py-3 text-xs text-red-700">
+        <div className="flex items-start gap-2 border-t border-red-100 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-4 py-3 text-xs text-red-700 dark:text-red-400">
           <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
           <span>{sendError}</span>
         </div>
@@ -194,7 +194,7 @@ export function ChatBox({
             placeholder="Écrivez votre message..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="flex-1 rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-3 text-sm focus:border-primary-500 focus:bg-white focus:outline-none"
+            className="flex-1 rounded-xl border border-[var(--border)] bg-neutral-50 px-4 py-3 text-sm focus:border-primary-500 focus:bg-[var(--color-bg)] focus:outline-none"
           />
           <button
             type="submit"

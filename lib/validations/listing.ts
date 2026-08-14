@@ -59,8 +59,31 @@ export const listingObjectSchema = z
     availability: z
       .enum(["AVAILABLE", "UNAVAILABLE", "SOLD", "available", "unavailable", "sold"])
       .optional(),
+    whatsappNumber: z
+      .string()
+      .optional()
+      .or(z.literal(""))
+      .refine(
+        (val) => {
+          if (!val || val.trim() === "") return true;
+          const digits = val.replace(/\D/g, "");
+          return digits.length === 8 || (digits.length === 11 && digits.startsWith("227"));
+        },
+        { message: "Format invalide (8 chiffres pour le Niger, ex: 90 00 00 00)" }
+      )
+      .transform((val) => normalizeNigerPhone(val)),
     images: z.array(z.string()).default([]),
   });
+
+/** Normalise un numéro de téléphone/WhatsApp du Niger au format E.164 (+227XXXXXXXX). */
+export function normalizeNigerPhone(phone?: string | null): string | undefined {
+  if (!phone) return undefined;
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return undefined;
+  if (digits.length === 8) return `+227${digits}`;
+  if (digits.length === 11 && digits.startsWith("227")) return `+${digits}`;
+  return phone.trim();
+}
 
 /** Schéma complet pour la création (POST) : impose rentalPeriod si RENT, et
  * l'ignore (le retire) si SALE, même s'il a été envoyé par erreur. */

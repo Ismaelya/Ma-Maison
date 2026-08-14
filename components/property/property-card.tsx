@@ -122,7 +122,10 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false, on
           >
             {getTransactionTypeLabel(String(rawTrans))}
           </span>
-          <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-neutral-700 shadow-sm backdrop-blur-sm">
+          {/* Fixed white/90 chip over the photo in both themes — text uses a literal
+              hex (not text-neutral-700) so it isn't neutralized to light text by the
+              .dark override, which would make it invisible on this permanently-white chip. */}
+          <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-[#374151] shadow-sm backdrop-blur-sm">
             {getPropertyTypeLabel(propertyType)}
           </span>
           {furnished && (
@@ -156,7 +159,7 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false, on
                 "h-4 w-4 transition-colors",
                 isFavorite
                   ? "fill-red-500 text-red-500"
-                  : "text-neutral-500 hover:text-red-500"
+                  : "text-[#737373] hover:text-red-500"
               )}
             />
           </button>
@@ -166,18 +169,18 @@ export function PropertyCard({ listing, className, isFavoriteInitial = false, on
       {/* Content */}
       <div className="p-4">
         {/* Price */}
-        <p className="text-lg font-bold text-[var(--color-primary)]">
+        <p className="text-lg font-bold text-[var(--color-primary-text)]">
           {formatPropertyPrice(price, rawTrans, rentalPeriod)}
         </p>
 
         {/* Title */}
-        <h3 className="mt-1 line-clamp-1 text-base font-semibold text-neutral-900 group-hover:text-[var(--color-primary)] transition-colors">
+        <h3 className="mt-1 line-clamp-1 text-base font-semibold text-neutral-900 group-hover:text-[var(--color-primary-text)] transition-colors">
           {title}
         </h3>
 
         {/* Location */}
         <p className="mt-1 flex items-center gap-1 text-sm text-neutral-500">
-          <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-[var(--color-primary)]" />
+          <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-[var(--color-primary-text)]" />
           <span className="line-clamp-1">
             {locationText !== city ? `${locationText}, ${city}` : city}
           </span>
