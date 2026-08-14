@@ -67,23 +67,45 @@ export const listingObjectSchema = z
         (val) => {
           if (!val || val.trim() === "") return true;
           const digits = val.replace(/\D/g, "");
-          return digits.length === 8 || (digits.length === 11 && digits.startsWith("227"));
+          return digits.length >= 7 && digits.length <= 15;
         },
-        { message: "Format invalide (8 chiffres pour le Niger, ex: 90 00 00 00)" }
+        { message: "Numéro WhatsApp invalide (7 à 15 chiffres, ex: +227 96 70 71 16 ou +33 6 12 34 56 78)" }
       )
-      .transform((val) => normalizeNigerPhone(val)),
+      .transform((val) => normalizeWhatsAppNumber(val)),
     images: z.array(z.string()).default([]),
   });
 
-/** Normalise un numéro de téléphone/WhatsApp du Niger au format E.164 (+227XXXXXXXX). */
-export function normalizeNigerPhone(phone?: string | null): string | undefined {
+/** Normalise un numéro WhatsApp au format E.164 (+[indicatif][numéro]).
+ * Si un numéro à 8 chiffres est saisi (format local du Niger), l'indicatif par défaut +227 est appliqué.
+ * Si un numéro international avec indicatif (+33, +225, etc.) est saisi, il est conservé intact. */
+export function normalizeWhatsAppNumber(phone?: string | null): string | undefined {
   if (!phone) return undefined;
-  const digits = phone.replace(/\D/g, "");
+  const trimmed = phone.trim();
+  if (!trimmed) return undefined;
+
+  const digits = trimmed.replace(/\D/g, "");
   if (!digits) return undefined;
-  if (digits.length === 8) return `+227${digits}`;
-  if (digits.length === 11 && digits.startsWith("227")) return `+${digits}`;
-  return phone.trim();
+
+  // Format local du Niger (8 chiffres) -> préfixe par défaut +227
+  if (digits.length === 8) {
+    return `+227${digits}`;
+  }
+
+  // 11 chiffres commençant par 227 -> +227XXXXXXXX
+  if (digits.length === 11 && digits.startsWith("227")) {
+    return `+${digits}`;
+  }
+
+  // Format international générique E.164 (7 à 15 chiffres)
+  if (digits.length >= 7 && digits.length <= 15) {
+    return trimmed.startsWith("+") ? `+${digits}` : `+${digits}`;
+  }
+
+  return trimmed;
 }
+
+/** Alias de rétrocompatibilité */
+export const normalizeNigerPhone = normalizeWhatsAppNumber;
 
 /** Schéma complet pour la création (POST) : impose rentalPeriod si RENT, et
  * l'ignore (le retire) si SALE, même s'il a été envoyé par erreur. */

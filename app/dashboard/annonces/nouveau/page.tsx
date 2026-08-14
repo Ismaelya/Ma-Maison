@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { WhatsAppInput } from "@/components/ui/whatsapp-input";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useToast } from "@/components/ui/toast-notification";
 import { cn } from "@/lib/utils";
@@ -211,13 +212,10 @@ export default function NewListingPage() {
             error={errors.address?.message as string}
           />
 
-          <Input
-            label="Numéro WhatsApp (optionnel)"
-            placeholder="90 00 00 00"
-            leftIcon={<span className="text-xs font-bold text-neutral-500">+227</span>}
-            {...register("whatsappNumber")}
+          <WhatsAppInput
+            value={watch("whatsappNumber")}
+            onChange={(val) => setValue("whatsappNumber", val, { shouldValidate: true })}
             error={errors.whatsappNumber?.message as string}
-            helperText="Format Niger (+227). Si renseigné, un bouton WhatsApp apparaîtra pour les visiteurs connectés."
           />
         </div>
 

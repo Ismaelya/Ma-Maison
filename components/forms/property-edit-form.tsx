@@ -8,6 +8,7 @@ import { Loader2, Save } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { listingSchema, NIGER_CITIES } from "@/lib/validations/listing";
 import { cn } from "@/lib/utils";
+import { WhatsAppInput } from "@/components/ui/whatsapp-input";
 import { DeletePropertyButton } from "@/components/properties/delete-property-button";
 
 type PropertyEditFormProps = {
@@ -245,26 +246,11 @@ export function PropertyEditForm({ initialData }: PropertyEditFormProps) {
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-1">
-          Numéro WhatsApp (optionnel)
-        </label>
-        <div className="relative flex items-center">
-          <span className="absolute left-3.5 text-xs font-bold text-neutral-500 pointer-events-none">+227</span>
-          <input
-            type="text"
-            placeholder="90 00 00 00"
-            {...register("whatsappNumber")}
-            className="w-full rounded-xl border border-[var(--border)] bg-neutral-50 pl-14 pr-4 py-3 text-sm focus:border-primary-500 focus:bg-white focus:outline-none"
-          />
-        </div>
-        {errors.whatsappNumber && (
-          <p className="mt-1 text-xs text-red-500">{errors.whatsappNumber.message as string}</p>
-        )}
-        <p className="mt-1 text-xs text-neutral-500">
-          Format Niger (+227). Si renseigné, les locataires connectés pourront vous contacter directement sur WhatsApp.
-        </p>
-      </div>
+      <WhatsAppInput
+        value={watch("whatsappNumber")}
+        onChange={(val) => setValue("whatsappNumber", val, { shouldValidate: true })}
+        error={errors.whatsappNumber?.message as string}
+      />
 
       <div>
         <label className="block text-sm font-medium text-neutral-700 mb-1">
