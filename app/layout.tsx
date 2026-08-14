@@ -6,7 +6,6 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastProvider } from "@/components/ui/toast-notification";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import InstallPrompt from "@/components/ui/InstallPrompt";
-import { SplashScreen } from "@/components/ui/splash-screen";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -54,12 +53,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/logo.png" },
       { url: "/favicon.png", type: "image/png" },
     ],
-    shortcut: "/icon-192.png",
-    apple: "/apple-icon.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
   },
 };
 
@@ -95,7 +93,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] transition-colors duration-200 antialiased font-sans">
         <ThemeProvider defaultTheme="light">
-          <SplashScreen />
           <QueryProvider>
             <ToastProvider>
               <div className="flex min-h-screen flex-col">
