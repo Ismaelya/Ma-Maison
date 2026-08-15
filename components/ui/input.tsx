@@ -10,7 +10,24 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   helperText?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
+  /**
+   * "default" — bordered, card-colored background (var(--color-bg)/var(--color-border)).
+   * "filled" — opaque gray fill with a visible resting border, for forms placed
+   * directly on a white/dark card (e.g. auth pages). Both light and dark values
+   * are explicit here so contrast can't drift the way ad hoc `bg-stone-100`
+   * overrides did (light-mode-only gray + near-white dark-mode text = unreadable).
+   */
+  variant?: "default" | "filled";
 }
+
+const inputVariants: Record<"default" | "filled", string> = {
+  default:
+    "border-[var(--color-border)] bg-[var(--color-bg)] focus:border-[var(--color-primary)]",
+  // `!` forces these border colors past the unlayered `* { border-color: var(--color-border); }`
+  // reset in globals.css, which otherwise beats layered Tailwind utilities regardless of specificity.
+  filled:
+    "h-12 rounded-2xl !border-stone-300 dark:!border-stone-600 bg-stone-100 dark:bg-slate-800 focus:!border-[var(--color-secondary-500)] focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[var(--color-secondary-500)]/25",
+};
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
@@ -23,6 +40,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       rightIcon,
       type = "text",
       id,
+      variant = "default",
       ...props
     },
     ref
@@ -55,10 +73,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={actualType}
             className={cn(
-              "w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3 text-sm text-[var(--color-text)] transition-colors placeholder:text-neutral-400 focus:border-[var(--color-primary)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-muted)] disabled:opacity-70",
+              "w-full rounded-xl border px-4 py-3 text-sm text-[var(--color-text)] transition-colors placeholder:text-neutral-400 focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-muted)] disabled:opacity-70",
+              inputVariants[variant],
               leftIcon && "pl-11",
               (rightIcon || isPasswordType) && "pr-11",
-              error && "border-[var(--color-danger)] focus:border-[var(--color-danger)] focus:ring-[var(--color-danger)]",
+              error && "border-[var(--color-danger)] focus:border-[var(--color-danger)] focus:ring-[var(--color-danger)] focus:ring-2",
               className
             )}
             {...props}

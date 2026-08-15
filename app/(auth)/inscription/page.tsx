@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, Lock, User, Phone, Building2, UserCheck, ShieldCheck, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
+import { Mail, Lock, User, Phone, Building2, UserCheck, ArrowRight, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { registerSchema, type RegisterFormData } from "@/lib/validations/auth";
 import { createClient } from "@/lib/supabase/client";
@@ -76,54 +76,27 @@ export default function InscriptionPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--color-muted)] p-4 sm:p-6 lg:p-10">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-muted)] p-4 sm:p-6">
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-[var(--color-border)] bg-white shadow-2xl md:grid-cols-12"
+        className="w-full max-w-[540px] rounded-[28px] bg-white p-6 shadow-2xl sm:p-9"
       >
-        {/* Left Side: Brand Panel */}
-        <div className="relative flex flex-col justify-between bg-[var(--color-primary-950)] p-8 text-white md:col-span-5 md:p-10 overflow-hidden">
-          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-[var(--color-secondary-500)]/15 blur-3xl" />
-          <div className="absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-[var(--color-primary-400)]/10 blur-3xl" />
-
-          <div className="relative z-10 space-y-6">
-            <Logo variant="light" />
-            <div className="pt-4 space-y-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-secondary-400)]/30 bg-[var(--color-secondary-400)]/10 px-3 py-1 text-xs font-semibold text-[var(--color-secondary-400)]">
-            Rejoignez-nous
-              </span>
-              <h2 className="text-2xl font-bold font-heading leading-tight text-white sm:text-3xl">
-                Rejoignez le réseau immobilier d&apos;exception
-              </h2>
-              <p className="text-sm leading-relaxed text-stone-300 font-sans">
-                Créez votre compte en 1 minute. Que vous soyez locataire, propriétaire ou agence, Ma Maison s&apos;adapte à vos besoins.
-              </p>
-            </div>
+        {/* Header */}
+        <div className="mb-7 space-y-3 text-center">
+          <div className="flex justify-center">
+            <Logo />
           </div>
-
-          <div className="relative z-10 pt-8 space-y-3 border-t border-white/10 text-xs text-stone-400">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-[var(--color-secondary-400)]" />
-              <span>Publication illimitée</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <UserCheck className="h-4 w-4 text-[var(--color-secondary-400)]" />
-              <span>Mise en relation directe et sécurisée</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Side: Form */}
-        <div className="flex flex-col justify-center p-8 sm:p-10 lg:p-12 bg-white text-left md:col-span-7">
-          {/* Header */}
-          <div className="space-y-2 mb-6">
-            <h1 className="text-h3 font-bold text-[var(--color-text)] font-heading">Créer votre compte</h1>
-            <p className="text-small text-stone-500 dark:text-stone-400 font-sans">
-              Rejoignez la plateforme immobilière de référence au Niger
+          <div className="space-y-1.5">
+            <h1 className="font-heading text-2xl font-bold text-[var(--color-text)] sm:text-3xl">
+              Rejoignez Ma Maison
+            </h1>
+            <p className="text-sm text-stone-500 font-sans">
+              Créez votre compte en 1 minute
             </p>
           </div>
+        </div>
 
           {isSuccess ? (
             <div
@@ -207,15 +180,30 @@ export default function InscriptionPage() {
                         type="button"
                         onClick={() => setValue("role", roleOpt.value as any)}
                         className={cn(
-                          "flex flex-col items-center justify-center p-3 rounded-xl border transition-all text-center",
+                          "flex flex-col items-center justify-center gap-1 p-3 rounded-2xl border-2 transition-all text-center bg-stone-50 dark:bg-slate-800",
                           selectedRole === roleOpt.value
-                            ? "border-[var(--color-primary-text)] bg-[var(--color-primary)]/10 text-[var(--color-primary-text)] font-bold shadow-sm"
-                            : "border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600 hover:bg-stone-50 dark:hover:bg-stone-800/50"
+                            ? "border-[var(--color-secondary-500)] bg-white shadow-[0_0_0_4px_rgba(5,203,173,0.12)]"
+                            : "border-transparent hover:border-stone-200 dark:hover:border-stone-600 hover:bg-stone-100 dark:hover:bg-slate-700"
                         )}
                       >
-                        <div className="mb-1">{roleOpt.icon}</div>
-                        <span className="text-xs font-bold font-heading">{roleOpt.label}</span>
-                        <span className="text-[10px] text-stone-400 font-sans">{roleOpt.desc}</span>
+                        <div
+                          className={cn(
+                            "flex h-9 w-9 items-center justify-center rounded-full text-white transition-opacity",
+                            selectedRole !== roleOpt.value && "opacity-60"
+                          )}
+                          style={{ background: "linear-gradient(135deg, #102281 0%, #05CBAD 100%)" }}
+                        >
+                          {roleOpt.icon}
+                        </div>
+                        <span
+                          className={cn(
+                            "text-xs font-bold font-heading",
+                            selectedRole === roleOpt.value ? "text-[var(--color-primary-text)]" : "text-stone-600 dark:text-stone-300"
+                          )}
+                        >
+                          {roleOpt.label}
+                        </span>
+                        <span className="text-[10px] text-stone-400 dark:text-stone-300 font-sans">{roleOpt.desc}</span>
                       </button>
                     ))}
                   </div>
@@ -229,6 +217,7 @@ export default function InscriptionPage() {
                     leftIcon={<User className="h-4 w-4 text-stone-400" />}
                     {...register("fullName")}
                     error={errors.fullName?.message}
+                    variant="filled"
                   />
 
                   <Input
@@ -238,6 +227,7 @@ export default function InscriptionPage() {
                     leftIcon={<Mail className="h-4 w-4 text-stone-400" />}
                     {...register("email")}
                     error={errors.email?.message}
+                    variant="filled"
                   />
                 </div>
 
@@ -248,6 +238,7 @@ export default function InscriptionPage() {
                     leftIcon={<Phone className="h-4 w-4 text-stone-400" />}
                     {...register("phone")}
                     error={errors.phone?.message}
+                    variant="filled"
                   />
 
                   {selectedRole === "AGENCY" && (
@@ -257,6 +248,7 @@ export default function InscriptionPage() {
                       leftIcon={<Building2 className="h-4 w-4 text-stone-400" />}
                       {...register("agencyName")}
                       error={errors.agencyName?.message}
+                      variant="filled"
                     />
                   )}
                 </div>
@@ -270,6 +262,7 @@ export default function InscriptionPage() {
                     {...register("password")}
                     error={errors.password?.message}
                     helperText="Au moins 8 car., 1 majuscule, 1 chiffre."
+                    variant="filled"
                   />
 
                   <Input
@@ -279,6 +272,7 @@ export default function InscriptionPage() {
                     leftIcon={<Lock className="h-4 w-4 text-stone-400" />}
                     {...register("confirmPassword")}
                     error={errors.confirmPassword?.message}
+                    variant="filled"
                   />
                 </div>
 
@@ -327,6 +321,8 @@ export default function InscriptionPage() {
                   fullWidth
                   isLoading={isSubmitting}
                   disabled={!isTermsAccepted || isSubmitting}
+                  className="rounded-2xl border-0 text-white shadow-[0_10px_30px_rgba(5,203,173,0.35)] transition-transform hover:scale-[1.01] hover:shadow-[0_12px_36px_rgba(5,203,173,0.45)] disabled:hover:scale-100"
+                  style={{ background: "linear-gradient(135deg, #102281 0%, #05CBAD 100%)" }}
                 >
                   Créer mon compte
                 </Button>
@@ -348,7 +344,6 @@ export default function InscriptionPage() {
               Se connecter <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-        </div>
       </motion.div>
     </div>
   );
