@@ -44,12 +44,25 @@ export function Footer() {
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-white sm:text-sm">Villes</h4>
             <ul className="mt-3 space-y-2 text-xs text-neutral-400 sm:mt-4">
-              <li>Niamey</li>
-              <li>Zinder</li>
-              <li>Maradi</li>
-              <li>Tahoua</li>
-              <li>Agadez</li>
-              <li>Dosso</li>
+              {[
+                "Niamey",
+                "Agadez",
+                "Diffa",
+                "Dosso",
+                "Maradi",
+                "Tahoua",
+                "Tillabéri",
+                "Zinder",
+              ].map((city) => (
+                <li key={city}>
+                  <Link
+                    href={`/recherche?city=${encodeURIComponent(city)}`}
+                    className="hover:text-white transition-colors"
+                  >
+                    {city}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
