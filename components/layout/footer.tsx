@@ -44,12 +44,30 @@ export function Footer() {
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-white sm:text-sm">Villes</h4>
             <ul className="mt-3 space-y-2 text-xs text-neutral-400 sm:mt-4">
-              <li>Niamey</li>
-              <li>Zinder</li>
-              <li>Maradi</li>
-              <li>Tahoua</li>
-              <li>Agadez</li>
-              <li>Dosso</li>
+              <li>
+                <Link href="/recherche?city=Niamey" className="hover:text-white transition-colors">Niamey</Link>
+              </li>
+              <li>
+                <Link href="/recherche?city=Zinder" className="hover:text-white transition-colors">Zinder</Link>
+              </li>
+              <li>
+                <Link href="/recherche?city=Maradi" className="hover:text-white transition-colors">Maradi</Link>
+              </li>
+              <li>
+                <Link href="/recherche?city=Tahoua" className="hover:text-white transition-colors">Tahoua</Link>
+              </li>
+              <li>
+                <Link href="/recherche?city=Agadez" className="hover:text-white transition-colors">Agadez</Link>
+              </li>
+              <li>
+                <Link href="/recherche?city=Dosso" className="hover:text-white transition-colors">Dosso</Link>
+              </li>
+              <li>
+                <Link href="/recherche?city=Diffa" className="hover:text-white transition-colors">Diffa</Link>
+              </li>
+              <li>
+                <Link href="/recherche?city=Tillabéri" className="hover:text-white transition-colors">Tillabéri</Link>
+              </li>
             </ul>
           </div>
 
