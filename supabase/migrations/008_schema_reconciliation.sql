@@ -209,6 +209,11 @@ begin
   set status = 'DELETED',
       email = 'deleted-' || old.id::text || '@ma-maison.invalid'
   where id = old.id::text;
+
+  update public.properties
+  set status = 'HIDDEN'
+  where "ownerId" = old.id::text and status = 'APPROVED';
+
   return old;
 end;
 $function$;

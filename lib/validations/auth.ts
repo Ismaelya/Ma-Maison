@@ -44,6 +44,9 @@ export const registerSchema = z
     confirmPassword: z
       .string()
       .min(1, "Veuillez confirmer votre mot de passe"),
+    acceptTerms: z.boolean().refine((val) => val === true, {
+      message: "Vous devez accepter les Conditions Générales et la Politique de Confidentialité",
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Les mots de passe ne correspondent pas",

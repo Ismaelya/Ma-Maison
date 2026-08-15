@@ -32,10 +32,12 @@ export default function InscriptionPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       role: "TENANT",
+      acceptTerms: false,
     },
   });
 
   const selectedRole = (watch("role") || "TENANT").toUpperCase();
+  const isTermsAccepted = watch("acceptTerms");
 
   async function onSubmit(data: RegisterFormData) {
     setServerError(null);
@@ -279,12 +281,52 @@ export default function InscriptionPage() {
                     error={errors.confirmPassword?.message}
                   />
                 </div>
+
+                {/* Consentement CGU et Confidentialité */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="flex items-start gap-3 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      id="acceptTerms"
+                      {...register("acceptTerms")}
+                      className="mt-0.5 h-4 w-4 rounded border-stone-300 text-[var(--color-primary-text)] focus:ring-[var(--color-primary-text)] cursor-pointer"
+                    />
+                    <span className="text-xs text-stone-600 font-sans leading-snug">
+                      J&apos;ai lu et j&apos;accepte les{" "}
+                      <Link
+                        href="/conditions-generales"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-[var(--color-primary-text)] underline hover:text-stone-900"
+                      >
+                        Conditions Générales d&apos;Utilisation
+                      </Link>{" "}
+                      et la{" "}
+                      <Link
+                        href="/confidentialite"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-[var(--color-primary-text)] underline hover:text-stone-900"
+                      >
+                        Politique de Confidentialité
+                      </Link>
+                      . *
+                    </span>
+                  </label>
+                  {errors.acceptTerms && (
+                    <p className="text-[11px] font-medium text-red-500 pl-7">
+                      {errors.acceptTerms.message}
+                    </p>
+                  )}
+                </div>
+
                 <Button
                   type="submit"
                   variant="primary"
                   size="lg"
                   fullWidth
                   isLoading={isSubmitting}
+                  disabled={!isTermsAccepted || isSubmitting}
                 >
                   Créer mon compte
                 </Button>

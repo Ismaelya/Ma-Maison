@@ -31,6 +31,12 @@ export function Footer() {
               <li>
                 <Link href="/connexion" className="hover:text-white transition-colors">Espace membre</Link>
               </li>
+              <li>
+                <Link href="/conditions-generales" className="hover:text-white transition-colors">Conditions Générales (CGU)</Link>
+              </li>
+              <li>
+                <Link href="/confidentialite" className="hover:text-white transition-colors">Politique de Confidentialité</Link>
+              </li>
             </ul>
           </div>
 
@@ -123,7 +129,8 @@ export function Footer() {
 
         <div className="mt-8 border-t border-neutral-800 pt-6 text-center text-xs text-neutral-500">
           © {new Date().getFullYear()} Ma Maison Niger. Tous droits réservés.{" "}
-          Ismael Service Digital
+          
+          By Ismael Service Digital
         </div>
       </div>
     </footer>
