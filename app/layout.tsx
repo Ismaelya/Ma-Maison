@@ -13,6 +13,8 @@ const manrope = Manrope({
   weight: ["400", "500", "600", "700"],
   variable: "--font-manrope",
   display: "swap",
+  preload: false,
+  fallback: ["system-ui", "sans-serif"],
 });
 
 const spaceGrotesk = Space_Grotesk({
@@ -20,6 +22,8 @@ const spaceGrotesk = Space_Grotesk({
   weight: ["600", "700"],
   variable: "--font-space-grotesk",
   display: "swap",
+  preload: false,
+  fallback: ["system-ui", "sans-serif"],
 });
 
 export const metadata: Metadata = {
