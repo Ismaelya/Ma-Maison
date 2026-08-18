@@ -1,71 +1,67 @@
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+interface RateLimitResult {
+  success: boolean;
+  limit: number;
+  remaining: number;
+  reset: number;
+}
 
-let redis: Redis | null = null;
+class MemoryRateLimiter {
+  private requests = new Map<string, { count: number; resetAt: number }>();
+  private maxRequests: number;
+  private windowMs: number;
 
-function getRedis(): Redis {
-  if (redis) return redis;
-
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-  if ((!url || !token) && process.env.NODE_ENV === "production") {
-    throw new Error(
-      "UPSTASH_REDIS_REST_URL et UPSTASH_REDIS_REST_TOKEN doivent être définies en production. " +
-        "Configurez-les dans Vercel > Project Settings > Environment Variables."
-    );
+  constructor(maxRequests: number, windowMs: number) {
+    this.maxRequests = maxRequests;
+    this.windowMs = windowMs;
   }
 
-  redis = new Redis({
-    url: url || "https://placeholder.upstash.io",
-    token: token || "placeholder",
-  });
-  return redis;
-}
+  async limit(identifier: string): Promise<RateLimitResult> {
+    const now = Date.now();
+    const record = this.requests.get(identifier);
 
-function createRateLimiter(
-  prefix: string,
-  tokens: number,
-  window: Parameters<typeof Ratelimit.slidingWindow>[1]
-) {
-  let instance: Ratelimit | null = null;
-
-  const getInstance = () => {
-    if (!instance) {
-      instance = new Ratelimit({
-        redis: getRedis(),
-        limiter: Ratelimit.slidingWindow(tokens, window),
-        prefix,
-        analytics: true,
-      });
+    if (record && now > record.resetAt) {
+      this.requests.delete(identifier);
     }
-    return instance;
-  };
 
-  return {
-    limit: (identifier: string) => getInstance().limit(identifier),
-  };
+    const currentRecord = this.requests.get(identifier);
+
+    if (!currentRecord) {
+      const resetAt = now + this.windowMs;
+      this.requests.set(identifier, { count: 1, resetAt });
+      return {
+        success: true,
+        limit: this.maxRequests,
+        remaining: this.maxRequests - 1,
+        reset: resetAt,
+      };
+    }
+
+    if (currentRecord.count >= this.maxRequests) {
+      return {
+        success: false,
+        limit: this.maxRequests,
+        remaining: 0,
+        reset: currentRecord.resetAt,
+      };
+    }
+
+    currentRecord.count += 1;
+    return {
+      success: true,
+      limit: this.maxRequests,
+      remaining: this.maxRequests - currentRecord.count,
+      reset: currentRecord.resetAt,
+    };
+  }
 }
 
-export const loginRateLimiter = createRateLimiter(
-  "@upstash/ratelimit/login",
-  5,
-  "60 s"
-);
-
-export const signupRateLimiter = createRateLimiter(
-  "@upstash/ratelimit/signup",
-  5,
-  "60 s"
-);
-
-export const messagingRateLimiter = createRateLimiter(
-  "@upstash/ratelimit/messaging",
-  10,
-  "60 s"
-);
+// Rate limiters configured with thresholds (60s window)
+export const loginRateLimiter = new MemoryRateLimiter(5, 60 * 1000);
+export const signupRateLimiter = new MemoryRateLimiter(5, 60 * 1000);
+export const messagingRateLimiter = new MemoryRateLimiter(10, 60 * 1000);
 
 // Aliases matching naming conventions
 export const loginRateLimit = loginRateLimiter;
 export const signupRateLimit = signupRateLimiter;
 export const messagingRateLimit = messagingRateLimiter;
+
