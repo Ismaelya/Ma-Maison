@@ -25,7 +25,7 @@ function escapePostgrestValue(value: string): string {
 
 export class PropertyRepository {
   static async search(filters: PropertyFilterOptions = {}): Promise<Property[]> {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     const page = Math.max(1, filters.page || 1);
     const limit = Math.max(1, Math.min(filters.limit || 12, 100));
@@ -88,7 +88,7 @@ export class PropertyRepository {
   }
 
   static async findById(id: string): Promise<Property | null> {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
     const { data, error } = await supabase
       .from("properties")
       .select("*, property_images(*), profiles!inner(id, name, badgeVerified, avatarUrl, phone)")
