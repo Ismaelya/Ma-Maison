@@ -484,9 +484,18 @@ create policy "profiles_admin_full_access"
 drop policy if exists "profiles_select_own_or_public_fields" on public.profiles;
 create policy "profiles_select_own_or_public_fields"
   on public.profiles for SELECT
-  using (((id = (auth.uid())::text) OR is_admin() OR (EXISTS ( SELECT 1
-   FROM properties pr
-  WHERE ((pr."ownerId" = profiles.id) AND (pr.status = 'APPROVED'::"PropertyStatus"))))));
+  using (
+    (id = (auth.uid())::text)
+    OR is_admin()
+    OR (EXISTS (
+      SELECT 1 FROM properties pr
+      WHERE ((pr."ownerId" = profiles.id) AND (pr.status = 'APPROVED'::"PropertyStatus"))
+    ))
+    OR (EXISTS (
+      SELECT 1 FROM conversations c
+      WHERE ((c."tenantId" = (auth.uid())::text OR c."ownerId" = (auth.uid())::text) AND (c."tenantId" = profiles.id OR c."ownerId" = profiles.id))
+    ))
+  );
 
 drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own"

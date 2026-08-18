@@ -28,6 +28,7 @@ import {
   getAvatarUrl,
 } from "@/lib/utils";
 import { ContactProtection } from "@/components/property/contact-modal";
+import { DetailActionButtons } from "@/components/property/detail-action-buttons";
 
 type ListingDetailParams = {
   params: Promise<{ id: string }>;
@@ -95,6 +96,17 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
     delete typedListing.address;
   }
 
+  let isFavoriteInitial = false;
+  if (currentUser) {
+    const { data: fav } = await supabase
+      .from("favorites")
+      .select("id")
+      .eq("userId", currentUser.id)
+      .eq("propertyId", id)
+      .maybeSingle();
+    isFavoriteInitial = !!fav;
+  }
+
   const imagesList: string[] =
     Array.isArray(typedListing.images) && typedListing.images.length > 0
       ? typedListing.images
@@ -126,14 +138,12 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
             <span className="hidden sm:inline">Retour aux résultats</span>
             <span className="sm:hidden">Retour</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-neutral-500 transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-text)]">
-              <Share2 className="h-4 w-4" />
-            </button>
-            <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] text-neutral-500 transition-colors hover:bg-red-500/10 hover:text-red-500">
-              <Heart className="h-4 w-4" />
-            </button>
-          </div>
+          <DetailActionButtons
+            propertyId={id}
+            propertyTitle={typedListing.title}
+            isFavoriteInitial={isFavoriteInitial}
+            isAuthenticated={isAuthenticated}
+          />
         </div>
       </div>
 
@@ -222,6 +232,18 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
 
             {isAuthenticated ? (
               <>
+                {/* Description */}
+                {typedListing.description && (
+                  <div>
+                    <h2 className="text-lg font-semibold text-neutral-900">
+                      Description
+                    </h2>
+                    <p className="mt-3 whitespace-pre-line leading-relaxed text-neutral-600">
+                      {typedListing.description}
+                    </p>
+                  </div>
+                )}
+
                 {/* Key features */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                   {roomsCount !== null && (
@@ -251,18 +273,6 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
                     value={formatRelativeTime(typedListing.createdAt || typedListing.created_at)}
                   />
                 </div>
-
-                {/* Description */}
-                {typedListing.description && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-neutral-900">
-                      Description
-                    </h2>
-                    <p className="mt-3 whitespace-pre-line leading-relaxed text-neutral-600">
-                      {typedListing.description}
-                    </p>
-                  </div>
-                )}
 
                 {/* Amenities */}
                 {amenitiesList.length > 0 && (

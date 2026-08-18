@@ -202,6 +202,11 @@ create policy "profiles_select_own_or_public_fields"
       where pr."ownerId" = profiles.id
         and pr.status = 'APPROVED'
     )
+    or exists (
+      select 1 from public.conversations c
+      where (c."tenantId" = auth.uid()::text or c."ownerId" = auth.uid()::text)
+        and (c."tenantId" = profiles.id or c."ownerId" = profiles.id)
+    )
   );
 
 drop policy if exists "profiles_update_own" on public.profiles;
