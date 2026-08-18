@@ -155,7 +155,7 @@ export default async function SubscriptionPage() {
                 ) : status === "free" ? (
                   <div>
                     <p className="text-sm font-semibold text-blue-900 dark:text-blue-300">
-                      Compte Gratuit — publication illimitée, visibilité normale, 10 messages/jour.
+                      Compte Gratuit — publication illimitée, visibilité normale.
                     </p>
                     <p className="mt-1 text-xs text-blue-700 dark:text-blue-400">
                       Passez en Premium pour obtenir le badge vérifié, la mise en avant, les statistiques de vues et la messagerie illimitée.

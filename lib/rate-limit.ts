@@ -1,66 +1,34 @@
-export type RateLimitResult = {
-  success: boolean;
-  limit: number;
-  remaining: number;
-  reset: number;
-};
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
-type RateLimitRecord = {
-  count: number;
-  resetAt: number;
-};
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || "https://placeholder.upstash.io",
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || "placeholder",
+});
 
-// In-memory sliding window store (compatible Vercel Edge & Node.js)
-const memoryStore = new Map<string, RateLimitRecord>();
+export const loginRateLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, "60 s"),
+  prefix: "@upstash/ratelimit/login",
+  analytics: true,
+});
 
-export class RateLimiter {
-  private limit: number;
-  private windowMs: number;
+export const signupRateLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, "60 s"),
+  prefix: "@upstash/ratelimit/signup",
+  analytics: true,
+});
 
-  constructor(limit: number, windowMs: number = 60000) {
-    this.limit = limit;
-    this.windowMs = windowMs;
-  }
+export const messagingRateLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, "60 s"),
+  prefix: "@upstash/ratelimit/messaging",
+  analytics: true,
+});
 
-  async check(identifier: string): Promise<RateLimitResult> {
-    const now = Date.now();
-    const record = memoryStore.get(identifier);
+// Aliases matching naming conventions
+export const loginRateLimit = loginRateLimiter;
+export const signupRateLimit = signupRateLimiter;
+export const messagingRateLimit = messagingRateLimiter;
 
-    if (!record || now > record.resetAt) {
-      const resetAt = now + this.windowMs;
-      memoryStore.set(identifier, { count: 1, resetAt });
-      return {
-        success: true,
-        limit: this.limit,
-        remaining: this.limit - 1,
-        reset: resetAt,
-      };
-    }
-
-    if (record.count >= this.limit) {
-      return {
-        success: false,
-        limit: this.limit,
-        remaining: 0,
-        reset: record.resetAt,
-      };
-    }
-
-    record.count += 1;
-    return {
-      success: true,
-      limit: this.limit,
-      remaining: this.limit - record.count,
-      reset: record.resetAt,
-    };
-  }
-
-  reset(identifier: string) {
-    memoryStore.delete(identifier);
-  }
-}
-
-// Global instances as per Sprint 9 specifications
-export const loginRateLimiter = new RateLimiter(5, 60000); // 5 tentatives / min
-export const signupRateLimiter = new RateLimiter(5, 60000); // 5 tentatives / min (par IP)
-export const messagingRateLimiter = new RateLimiter(10, 60000); // 10 messages / min (anti-spam)

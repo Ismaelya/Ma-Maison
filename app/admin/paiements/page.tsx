@@ -45,7 +45,7 @@ export default async function AdminPaymentsPage() {
           <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400" />
           <span>
             <strong className="font-semibold text-amber-200">Mode Premium actuellement désactivé</strong>
-            {" "}— Les nouvelles demandes de paiement sont bloquées côté propriétaire. Aucune nouvelle soumission attendue tant que{" "}
+            Les nouvelles demandes de paiement sont bloquées côté propriétaire.
             <code className="rounded bg-amber-900/60 px-1.5 py-0.5 text-xs font-mono text-amber-300">premiumEnabled = false</code>.
           </span>
         </div>

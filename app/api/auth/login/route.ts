@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
     const identifier = `login:${ip}:${userEmail}`;
 
     // Rate Limiting check
-    const rateLimit = await loginRateLimiter.check(identifier);
+    console.log("RATE_LIMIT_DEBUG: using", typeof loginRateLimiter, "redis client:", !!process.env.UPSTASH_REDIS_REST_URL);
+    const rateLimit = await loginRateLimiter.limit(identifier);
     if (!rateLimit.success) {
       return NextResponse.json(
         {
@@ -87,8 +88,6 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-
-    loginRateLimiter.reset(identifier);
 
     // Fetch exact profile from Supabase (source of truth)
     const { data: profile, error: profileError } = await supabase

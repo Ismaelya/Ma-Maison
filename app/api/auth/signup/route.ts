@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const identifier = `signup:${ip}`;
 
     // Rate Limiting check on signup per IP
-    const rateLimit = await signupRateLimiter.check(identifier);
+    const rateLimit = await signupRateLimiter.limit(identifier);
     if (!rateLimit.success) {
       return NextResponse.json(
         {

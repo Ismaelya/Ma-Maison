@@ -92,11 +92,12 @@ describe("API Integration: POST /api/messages", () => {
 
   it("returns 429 when rate limit is exceeded (anti-spam guard)", async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: "spam-user" } } });
-    vi.spyOn(messagingRateLimiter, "check").mockResolvedValue({
+    vi.spyOn(messagingRateLimiter, "limit").mockResolvedValue({
       success: false,
       limit: 10,
       remaining: 0,
       reset: Date.now() + 60000,
+      pending: Promise.resolve(),
     });
 
     const req = new Request("http://localhost:3000/api/messages", {
@@ -117,11 +118,12 @@ describe("API Integration: POST /api/messages", () => {
     const conversationId = "conv-100";
 
     mockGetUser.mockResolvedValue({ data: { user: { id: senderId } } });
-    vi.spyOn(messagingRateLimiter, "check").mockResolvedValue({
+    vi.spyOn(messagingRateLimiter, "limit").mockResolvedValue({
       success: true,
       limit: 10,
       remaining: 9,
       reset: Date.now() + 60000,
+      pending: Promise.resolve(),
     });
 
     const createdMsg = {

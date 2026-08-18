@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     const identifier = `messages:${senderId}`;
 
     // ── Rate limiting anti-spam (10 messages / minute) ────────────────────
-    const rateLimit = await messagingRateLimiter.check(identifier);
+    const rateLimit = await messagingRateLimiter.limit(identifier);
     if (!rateLimit.success) {
       return NextResponse.json(
         {
