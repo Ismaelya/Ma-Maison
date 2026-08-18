@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
     const identifier = `login:${ip}:${userEmail}`;
 
     // Rate Limiting check
-    console.log("RATE_LIMIT_DEBUG: using", typeof loginRateLimiter, "redis client:", !!process.env.UPSTASH_REDIS_REST_URL);
     const rateLimit = await loginRateLimiter.limit(identifier);
     if (!rateLimit.success) {
       return NextResponse.json(
