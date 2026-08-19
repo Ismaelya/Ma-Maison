@@ -491,10 +491,13 @@ create policy "profiles_select_own_or_public_fields"
       SELECT 1 FROM properties pr
       WHERE ((pr."ownerId" = profiles.id) AND (pr.status = 'APPROVED'::"PropertyStatus"))
     ))
-    OR (EXISTS (
-      SELECT 1 FROM conversations c
-      WHERE ((c."tenantId" = (auth.uid())::text OR c."ownerId" = (auth.uid())::text) AND (c."tenantId" = profiles.id OR c."ownerId" = profiles.id))
-    ))
+    OR (
+      auth.uid() IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM conversations c
+        WHERE ((c."tenantId" = (auth.uid())::text OR c."ownerId" = (auth.uid())::text) AND (c."tenantId" = profiles.id OR c."ownerId" = profiles.id))
+      )
+    )
   );
 
 drop policy if exists "profiles_update_own" on public.profiles;
