@@ -3,65 +3,16 @@ import { POST } from "@/app/api/messages/route";
 import { messagingRateLimiter } from "@/lib/rate-limit";
 import { NotificationService } from "@/lib/notifications/notification.service";
 
-const mockGetUser = vi.fn();
-const mockSingleMessage = vi.fn();
-const mockSingleConv = vi.fn();
-const mockSingleProfile = vi.fn();
+const mockRpc = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
-  // Le client authentifié fait la lecture de profil (rôle) ET l'insertion du
-  // message (RLS messages_participants_send appliquée) — c'est le vrai chemin
-  // de la route, l'admin client ne sert que pour la notification du destinataire.
   createClient: vi.fn(() => Promise.resolve({
     auth: {
       getUser: mockGetUser,
     },
-    from: (table: string) => {
-      if (table === "profiles") {
-        return {
-          select: () => ({
-            eq: () => ({
-              single: mockSingleProfile,
-            }),
-          }),
-        };
-      }
-      if (table === "conversations") {
-        return {
-          select: () => ({
-            eq: () => ({
-              single: mockSingleConv,
-            }),
-          }),
-        };
-      }
-      if (table === "messages") {
-        return {
-          insert: () => ({
-            select: () => ({
-              single: mockSingleMessage,
-            }),
-          }),
-        };
-      }
-      return {};
-    },
-    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+    rpc: mockRpc,
   })),
-  createAdminClient: vi.fn(() => Promise.resolve({
-    from: (table: string) => {
-      if (table === "conversations") {
-        return {
-          select: () => ({
-            eq: () => ({
-              single: mockSingleConv,
-            }),
-          }),
-        };
-      }
-      return {};
-    },
-  })),
+  createAdminClient: vi.fn(() => Promise.resolve({})),
 }));
 
 vi.mock("@/lib/notifications/notification.service", () => ({
@@ -69,6 +20,8 @@ vi.mock("@/lib/notifications/notification.service", () => ({
     createNotification: vi.fn(),
   },
 }));
+
+const mockGetUser = vi.fn();
 
 describe("API Integration: POST /api/messages", () => {
   beforeEach(() => {
@@ -112,10 +65,10 @@ describe("API Integration: POST /api/messages", () => {
     expect(body.error).toContain("Anti-spam");
   });
 
-  it("creates message & sends notification to recipient when parameters are valid (200)", async () => {
+  it("creates message & notification via send_message RPC when parameters are valid (200)", async () => {
     const senderId = "tenant-1";
-    const recipientId = "owner-1";
     const conversationId = "conv-100";
+    const createdAt = new Date().toISOString();
 
     mockGetUser.mockResolvedValue({ data: { user: { id: senderId } } });
     vi.spyOn(messagingRateLimiter, "limit").mockResolvedValue({
@@ -126,23 +79,10 @@ describe("API Integration: POST /api/messages", () => {
       pending: Promise.resolve(),
     });
 
-    const createdMsg = {
-      id: "msg-123",
-      conversationId,
-      senderId,
-      content: "Bonjour, le logement est-il disponible ?",
-      isRead: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    mockSingleProfile.mockResolvedValue({ data: { role: "TENANT" }, error: null });
-    mockSingleMessage.mockResolvedValue({ data: createdMsg, error: null });
-    mockSingleConv.mockResolvedValue({
-      data: { tenantId: senderId, ownerId: recipientId },
+    mockRpc.mockResolvedValue({
+      data: { id: "msg-123", createdAt },
       error: null,
     });
-
-    const createNotificationSpy = vi.spyOn(NotificationService, "createNotification").mockResolvedValue({} as any);
 
     const req = new Request("http://localhost:3000/api/messages", {
       method: "POST",
@@ -158,13 +98,9 @@ describe("API Integration: POST /api/messages", () => {
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
     expect(body.message.id).toBe("msg-123");
-
-    expect(createNotificationSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: recipientId,
-        type: "NEW_MESSAGE",
-        title: "Nouveau message reçu",
-      })
-    );
+    expect(mockRpc).toHaveBeenCalledWith("send_message", {
+      p_conversation_id: conversationId,
+      p_content: "Bonjour, le logement est-il disponible ?",
+    });
   });
 });

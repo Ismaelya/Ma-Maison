@@ -746,5 +746,57 @@ FROM public.conversations c
 WHERE c.id = m."conversationId" AND m."receiverId" IS NULL;
 
 ALTER TABLE public.messages ALTER COLUMN "receiverId" SET NOT NULL;
+
+-- ------------------------------------------------------------
+-- 9. FONCTION RPC : send_message (Optimisation 1-call atomic)
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.send_message(
+  p_conversation_id text,
+  p_content text
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_sender_id text := auth.uid()::text;
+  v_conversation record;
+  v_receiver_id text;
+  v_message_id text := gen_random_uuid()::text;
+  v_now timestamp := now();
+BEGIN
+  IF v_sender_id IS NULL THEN
+    RAISE EXCEPTION 'Non authentifié';
+  END IF;
+
+  SELECT * INTO v_conversation FROM conversations WHERE id = p_conversation_id;
+  IF v_conversation IS NULL THEN
+    RAISE EXCEPTION 'Conversation introuvable';
+  END IF;
+
+  -- Vérification manuelle de participation, équivalente à la policy RLS actuelle
+  IF v_sender_id != v_conversation."tenantId" AND v_sender_id != v_conversation."ownerId" THEN
+    RAISE EXCEPTION 'Non autorisé à écrire dans cette conversation';
+  END IF;
+
+  v_receiver_id := CASE WHEN v_sender_id = v_conversation."tenantId" 
+                        THEN v_conversation."ownerId" 
+                        ELSE v_conversation."tenantId" END;
+
+  INSERT INTO messages (id, "conversationId", "senderId", "receiverId", content, "isRead", "createdAt")
+  VALUES (v_message_id, p_conversation_id, v_sender_id, v_receiver_id, p_content, false, v_now);
+
+  INSERT INTO notifications (id, "userId", type, title, message, "createdAt")
+  VALUES (gen_random_uuid()::text, v_receiver_id, 'NEW_MESSAGE', 'Nouveau message reçu', left(p_content, 100), v_now);
+
+  RETURN json_build_object('id', v_message_id, 'createdAt', v_now);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.send_message(text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.send_message(text, text) TO authenticated;
+
 CREATE INDEX IF NOT EXISTS "messages_receiverId_idx" ON public.messages ("receiverId");
 

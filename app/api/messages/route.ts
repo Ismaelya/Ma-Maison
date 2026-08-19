@@ -49,48 +49,29 @@ export async function POST(request: Request) {
     // (see git history on this file) and re-add the FREE_DAILY_LIMIT
     // constant and quota fields in the response.
 
-    // ── Resolve receiverId from conversation participants ─────────────────
-    const { data: conv } = await supabase
-      .from("conversations")
-      .select("tenantId, ownerId")
-      .eq("id", conversationId)
-      .single();
+    // ── Atomic RPC send_message (1 single DB network call) ──────────────────
+    const { data: rpcResult, error: rpcErr } = await supabase.rpc("send_message", {
+      p_conversation_id: conversationId,
+      p_content: content,
+    });
 
-    if (!conv) {
-      return NextResponse.json(
-        { error: "Conversation introuvable." },
-        { status: 404 }
-      );
+    if (rpcErr) {
+      const isForbidden = rpcErr.message.includes("Non autorisé");
+      const isNotFound = rpcErr.message.includes("introuvable");
+      const status = isForbidden ? 403 : isNotFound ? 404 : 400;
+      return NextResponse.json({ error: rpcErr.message }, { status });
     }
-
-    const receiverId = conv.tenantId === senderId ? conv.ownerId : conv.tenantId;
-
-    // ── INSERT via authenticated client → RLS messages_participants_send enforced ──
-    // Policy: senderId = auth.uid() AND user is tenant OR owner of conversation.
-    // This prevents inserting into conversations the sender doesn't belong to.
-    const { data: message, error: msgErr } = await supabase
-      .from("messages")
-      .insert({
-        id: crypto.randomUUID(),
-        conversationId,
-        senderId,
-        receiverId,
-        content,
-        isRead: false,
-        createdAt: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (msgErr) {
-      return NextResponse.json({ error: msgErr.message }, { status: 400 });
-    }
-
-    notifyRecipient(receiverId, content, conversationId).catch(() => {});
 
     return NextResponse.json({
       success: true,
-      message,
+      message: {
+        id: (rpcResult as any)?.id,
+        conversationId,
+        senderId,
+        content,
+        isRead: false,
+        createdAt: (rpcResult as any)?.createdAt,
+      },
       quota: { isPremium: true },
     });
   } catch (err: any) {
@@ -98,28 +79,4 @@ export async function POST(request: Request) {
   }
 }
 
-/**
- * Sends a NEW_MESSAGE notification to the recipient.
- * Uses admin client — the server needs elevated privilege to write a
- * notification for the recipient without exposing them to the sender.
- */
-async function notifyRecipient(
-  recipientId: string,
-  content: string,
-  conversationId: string
-) {
-  try {
-    if (recipientId) {
-      await NotificationService.createNotification({
-        userId: recipientId,
-        type: "NEW_MESSAGE",
-        title: "Nouveau message reçu",
-        message: `Vous avez reçu un nouveau message : "${content.slice(0, 50)}${content.length > 50 ? "..." : ""}"`,
-        link: `/dashboard/messages?conversationId=${conversationId}`,
-      });
-    }
-  } catch {
-    // Notification failure is non-fatal — message was already inserted
-  }
-}
 

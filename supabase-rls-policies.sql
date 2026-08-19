@@ -506,3 +506,55 @@ drop policy if exists "notifications_insert_system" on public.notifications;
 create policy "notifications_insert_system"
   on public.notifications for insert
   with check (public.is_admin());
+
+-- ------------------------------------------------------------
+-- 16. FONCTION RPC : send_message (Optimisation 1-call atomic)
+-- ------------------------------------------------------------
+
+create or replace function public.send_message(
+  p_conversation_id text,
+  p_content text
+)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_sender_id text := auth.uid()::text;
+  v_conversation record;
+  v_receiver_id text;
+  v_message_id text := gen_random_uuid()::text;
+  v_now timestamp := now();
+begin
+  if v_sender_id is null then
+    raise exception 'Non authentifié';
+  end if;
+
+  select * into v_conversation from conversations where id = p_conversation_id;
+  if v_conversation is null then
+    raise exception 'Conversation introuvable';
+  end if;
+
+  -- Vérification manuelle de participation, équivalente à la policy RLS actuelle
+  if v_sender_id != v_conversation."tenantId" and v_sender_id != v_conversation."ownerId" then
+    raise exception 'Non autorisé à écrire dans cette conversation';
+  end if;
+
+  v_receiver_id := case when v_sender_id = v_conversation."tenantId" 
+                        then v_conversation."ownerId" 
+                        else v_conversation."tenantId" end;
+
+  insert into messages (id, "conversationId", "senderId", "receiverId", content, "isRead", "createdAt")
+  values (v_message_id, p_conversation_id, v_sender_id, v_receiver_id, p_content, false, v_now);
+
+  insert into notifications (id, "userId", type, title, message, "createdAt")
+  values (gen_random_uuid()::text, v_receiver_id, 'NEW_MESSAGE', 'Nouveau message reçu', left(p_content, 100), v_now);
+
+  return json_build_object('id', v_message_id, 'createdAt', v_now);
+end;
+$$;
+
+revoke all on function public.send_message(text, text) from public;
+grant execute on function public.send_message(text, text) to authenticated;
+
