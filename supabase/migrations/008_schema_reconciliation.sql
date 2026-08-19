@@ -789,7 +789,7 @@ BEGIN
   VALUES (v_message_id, p_conversation_id, v_sender_id, v_receiver_id, p_content, false, v_now);
 
   INSERT INTO notifications (id, "userId", type, title, message, "createdAt")
-  VALUES (gen_random_uuid()::text, v_receiver_id, 'NEW_MESSAGE', 'Nouveau message reçu', left(p_content, 100), v_now);
+  VALUES (gen_random_uuid(), v_receiver_id, 'NEW_MESSAGE', 'Nouveau message reçu', left(p_content, 100), v_now);
 
   RETURN json_build_object('id', v_message_id, 'createdAt', v_now);
 END;
