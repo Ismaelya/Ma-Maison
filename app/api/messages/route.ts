@@ -86,7 +86,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: msgErr.message }, { status: 400 });
     }
 
-    await notifyRecipient(receiverId, content, conversationId);
+    notifyRecipient(receiverId, content, conversationId).catch(() => {});
 
     return NextResponse.json({
       success: true,

@@ -86,7 +86,10 @@ export function formatDate(date: string | Date | null | undefined): string {
  */
 export function formatRelativeTime(date: string | Date): string {
   const now = new Date();
-  const target = new Date(date);
+  const target =
+    typeof date === "string"
+      ? new Date(date.includes("Z") || date.includes("+") ? date : date + "Z")
+      : new Date(date);
   const diffMs = now.getTime() - target.getTime();
   const diffSeconds = Math.floor(diffMs / 1000);
   const diffMinutes = Math.floor(diffSeconds / 60);
