@@ -51,7 +51,7 @@ describe("API Integration: POST /api/messages", () => {
       remaining: 0,
       reset: Date.now() + 60000,
       pending: Promise.resolve(),
-    });
+    } as any);
 
     const req = new Request("http://localhost:3000/api/messages", {
       method: "POST",
@@ -77,7 +77,7 @@ describe("API Integration: POST /api/messages", () => {
       remaining: 9,
       reset: Date.now() + 60000,
       pending: Promise.resolve(),
-    });
+    } as any);
 
     mockRpc.mockResolvedValue({
       data: { id: "msg-123", createdAt },

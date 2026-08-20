@@ -225,6 +225,14 @@ security definer
 set search_path = public
 as $$
 begin
+  if auth.role() = 'service_role' or session_user = 'postgres' or auth.uid() is null then
+    return new;
+  end if;
+  if current_setting('app.in_upgrade_to_owner', true) = 'true' then
+    if old.role = 'TENANT' and new.role = 'OWNER' and new.status is not distinct from old.status then
+      return new;
+    end if;
+  end if;
   if not public.is_admin() then
     if new.role is distinct from old.role or new.status is distinct from old.status then
       raise exception 'Modification de role/status réservée à un administrateur';
@@ -238,6 +246,43 @@ drop trigger if exists guard_profile_role_status on public.profiles;
 create trigger guard_profile_role_status
   before update on public.profiles
   for each row execute function public.prevent_role_status_escalation();
+
+create or replace function public.upgrade_to_owner()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id text := auth.uid()::text;
+  v_current_role "UserRole";
+begin
+  if v_user_id is null then
+    raise exception 'Non authentifié';
+  end if;
+
+  select role into v_current_role from profiles where id = v_user_id;
+
+  if v_current_role is null then
+    raise exception 'Profil introuvable';
+  end if;
+
+  if v_current_role != 'TENANT' then
+    raise exception 'Seuls les comptes Locataire peuvent devenir Propriétaire';
+  end if;
+
+  perform set_config('app.in_upgrade_to_owner', 'true', true);
+
+  update profiles set role = 'OWNER' where id = v_user_id;
+
+  insert into subscriptions (id, "userId", status, price, "startDate", "endDate", "createdAt")
+  select gen_random_uuid(), v_user_id, 'FREE', 0, now(), null, now()
+  where not exists (select 1 from subscriptions where "userId" = v_user_id);
+end;
+$$;
+
+revoke all on function public.upgrade_to_owner() from public;
+grant execute on function public.upgrade_to_owner() to authenticated;
 
 drop policy if exists "profiles_admin_full_access" on public.profiles;
 create policy "profiles_admin_full_access"
