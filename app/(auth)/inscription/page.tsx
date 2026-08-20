@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Lock, User, Phone, Building2, UserCheck, ArrowRight, CheckCircle2 } from "lucide-react";
@@ -20,7 +20,11 @@ export default function InscriptionPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [emailSent, setEmailSent] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
+
+  const paramRole = (searchParams.get("role") || "").toUpperCase();
+  const defaultRole = (paramRole === "OWNER" || paramRole === "AGENCY") ? paramRole : "TENANT";
 
   const {
     register,
@@ -31,7 +35,7 @@ export default function InscriptionPage() {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      role: "TENANT",
+      role: defaultRole as any,
       acceptTerms: false,
     },
   });

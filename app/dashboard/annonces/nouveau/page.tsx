@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, ArrowLeft, Send, Save, Building2 } from "lucide-react";
+import { Loader2, ArrowLeft, Send, Save, Building2, Sparkles, CheckCircle2 } from "lucide-react";
 import { listingSchema, type ListingFormData, NIGER_CITIES } from "@/lib/validations/listing";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,9 @@ export default function NewListingPage() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [submitTargetStatus, setSubmitTargetStatus] = useState<"DRAFT" | "PENDING">("PENDING");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
+  const isNewOwnerWelcome = searchParams.get("welcome") === "1";
 
   const {
     register,
@@ -101,6 +103,22 @@ export default function NewListingPage() {
           </p>
         </div>
       </div>
+
+      {/* Welcome banner for newly upgraded OWNER accounts */}
+      {isNewOwnerWelcome && (
+        <div className="rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white shadow-xl animate-fade-in space-y-2">
+          <div className="flex items-center gap-2 text-yellow-300 text-xs font-extrabold uppercase tracking-wider">
+            <Sparkles className="h-4 w-4" />
+            <span>Félicitations & Bienvenue !</span>
+          </div>
+          <h2 className="text-xl font-bold font-space-grotesk text-white">
+            Votre compte Propriétaire est désormais actif 🎉
+          </h2>
+          <p className="text-sm text-emerald-50 opacity-95">
+            Vous pouvez maintenant publier vos annonces gratuitement. Remplissez le formulaire ci-dessous pour publier votre premier bien sur Ma Maison.
+          </p>
+        </div>
+      )}
 
       {/* Server Error Alert */}
       {serverError && (

@@ -13,6 +13,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { PropertyGrid } from "@/components/property/property-grid";
 import { HeroCarousel } from "@/components/property/hero-carousel";
+import { HeroOwnerBanner } from "@/components/ui/hero-owner-banner";
 import { formatHeroProperties } from "@/lib/properties/hero-selection";
 import type { Listing } from "@/types";
 
@@ -213,41 +214,9 @@ export default async function HomePage() {
       </section>
 
       {/* ================================================================
-          CTA — FOR OWNERS (hidden for logged-in TENANT accounts)
+          CTA — FOR UNAUTHENTICATED & TENANT USERS
           ================================================================ */}
-      {showOwnerCta && (
-        <section className="py-12 sm:py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-secondary-600 to-secondary-800 shadow-xl">
-              <div className="relative px-6 py-12 sm:px-16 sm:py-20">
-                <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/5 blur-2xl" />
-                <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-white/5 blur-2xl" />
-                <div className="relative mx-auto max-w-2xl text-center">
-                  <h2 className="text-2xl font-bold text-white sm:text-4xl">
-                    Vous êtes propriétaire ?
-                  </h2>
-                  <p className="mt-3 text-base text-white/80 sm:mt-4 sm:text-lg">
-                    Publiez vos annonces gratuitement, sans limite de temps.
-                    Touchez des milliers de locataires potentiels au Niger.
-                  </p>
-                  <div className="mt-6 sm:mt-8">
-                    <Link
-                      href="/inscription"
-                      // bg-ivory (not bg-white): stays a fixed white pill on this permanently
-                      // colored gradient panel — bg-white would get neutralized to the dark
-                      // page background by the .dark override, breaking the button in dark mode.
-                      className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-ivory px-6 py-4 text-sm font-semibold text-secondary-700 shadow-lg transition-all hover:shadow-xl hover:scale-[1.02] sm:w-auto sm:px-8 sm:text-base"
-                    >
-                      Commencer gratuitement
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      <HeroOwnerBanner userRole={userRole} isAuthenticated={!!user} />
     </div>
   );
 }

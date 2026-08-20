@@ -29,6 +29,12 @@ export function DashboardNav({ isOwner }: { isOwner: boolean }) {
       show: isOwner,
     },
     {
+      href: "/dashboard/devenir-proprietaire",
+      icon: Building2,
+      label: "Devenir Propriétaire",
+      show: !isOwner,
+    },
+    {
       href: "/dashboard/abonnement",
       icon: CreditCard,
       label: "Abonnement",
