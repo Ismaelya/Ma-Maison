@@ -14,32 +14,11 @@ export async function POST(request: Request) {
 
     // E2E Test Provisioning Mode (Placed before rate limiting & field validation)
     if (isE2EPrepare && e2eSecret === "e2e-secret-key-ma-maison-2026") {
-      const e2eEmail = "e2e_tenant_real_browser@example.com";
+      const e2eEmail = `e2e_tenant_${Date.now()}@example.com`;
       const e2ePassword = "Password123!";
       const adminClient = await createAdminClient();
 
-      // 1. Check existing profile by email in DB
-      const existingProf = await prisma.profile.findFirst({
-        where: { email: e2eEmail },
-      });
-
-      if (existingProf) {
-        try { await prisma.property.deleteMany({ where: { ownerId: existingProf.id } }); } catch {}
-        try { await prisma.subscription.deleteMany({ where: { userId: existingProf.id } }); } catch {}
-        try { await prisma.profile.delete({ where: { id: existingProf.id } }); } catch {}
-        try { await adminClient.auth.admin.deleteUser(existingProf.id); } catch {}
-      }
-
-      // Also search auth users if listUsers finds it
-      try {
-        const { data: usersData } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
-        const existingAuthUser = usersData?.users?.find((u: any) => u.email?.toLowerCase() === e2eEmail);
-        if (existingAuthUser) {
-          await adminClient.auth.admin.deleteUser(existingAuthUser.id);
-        }
-      } catch {}
-
-      // 2. Create fresh auto-confirmed user
+      // Create fresh auto-confirmed TENANT user via Supabase Auth Admin API
       const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
         email: e2eEmail,
         password: e2ePassword,
@@ -53,13 +32,13 @@ export async function POST(request: Request) {
 
       const userId = newUser.user.id;
 
-      // 3. Create fresh TENANT profile
+      // Create profile in Prisma DB
       await prisma.profile.create({
         data: {
           id: userId,
           email: e2eEmail,
           name: "Locataire Test E2E",
-          phone: "+22790998877",
+          phone: `+227${Math.floor(80000000 + Math.random() * 19999999)}`,
           role: "TENANT",
           status: "ACTIVE",
         },
