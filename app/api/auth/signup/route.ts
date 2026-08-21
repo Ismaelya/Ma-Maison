@@ -23,24 +23,21 @@ export async function POST(request: Request) {
       let userId: string;
 
       if (existingUser) {
-        userId = existingUser.id;
-        await adminClient.auth.admin.updateUserById(userId, {
-          password: e2ePassword,
-          email_confirm: true,
-          user_metadata: { role: "TENANT", name: "Locataire Test E2E" },
-        });
-      } else {
-        const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
-          email: e2eEmail,
-          password: e2ePassword,
-          email_confirm: true,
-          user_metadata: { role: "TENANT", name: "Locataire Test E2E" },
-        });
-        if (createErr || !newUser.user) {
-          throw new Error(createErr?.message || "Failed to create test user");
-        }
-        userId = newUser.user.id;
+        try {
+          await adminClient.auth.admin.deleteUser(existingUser.id);
+        } catch {}
       }
+
+      const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
+        email: e2eEmail,
+        password: e2ePassword,
+        email_confirm: true,
+        user_metadata: { role: "TENANT", name: "Locataire Test E2E" },
+      });
+      if (createErr || !newUser?.user) {
+        throw new Error(createErr?.message || "Failed to create test user");
+      }
+      userId = newUser.user.id;
 
       await prisma.property.deleteMany({ where: { ownerId: userId } });
       await prisma.subscription.deleteMany({ where: { userId } });
