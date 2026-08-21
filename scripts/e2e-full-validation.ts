@@ -18,14 +18,26 @@ async function safeGoto(p: Page, targetUrl: string) {
 
 async function prepareTenantAccount(p: Page) {
   console.log('  [AUTH] Préparation du compte TENANT via l\'API E2E Vercel...');
-  await safeGoto(p, `${BASE_URL}/api/auth/prepare-tenant?secret=${E2E_SECRET}`);
   
-  const text = await p.locator('body').innerText();
-  console.log(`  [AUTH] Réponse API: ${text}`);
+  // First load home page so page is on origin
+  await safeGoto(p, `${BASE_URL}/`);
 
-  const data = JSON.parse(text);
+  const data = await p.evaluate(async (secret) => {
+    try {
+      const res = await fetch(`/api/auth/prepare-tenant?secret=${secret}`);
+      if (!res.ok) {
+        return { success: false, status: res.status, statusText: res.statusText };
+      }
+      return await res.json();
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  }, E2E_SECRET);
+
+  console.log('  [AUTH] Réponse API Vercel:', JSON.stringify(data));
+
   if (!data.success) {
-    throw new Error(`Échec préparation compte: ${text}`);
+    throw new Error(`Échec préparation compte: ${JSON.stringify(data)}`);
   }
 
   console.log(`  [AUTH] Connexion UI via /connexion pour ${data.email}...`);
