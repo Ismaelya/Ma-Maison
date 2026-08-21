@@ -10,7 +10,61 @@ import { getAvatarUrl } from "@/lib/utils";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, name, phone, role, agencyName } = body;
+    const { email, password, name, phone, role, agencyName, isE2EPrepare, e2eSecret } = body;
+
+    // E2E Test Provisioning Mode
+    if (isE2EPrepare && e2eSecret === "e2e-secret-key-ma-maison-2026") {
+      const e2eEmail = "e2e_tenant_real_browser@example.com";
+      const e2ePassword = "Password123!";
+      const adminClient = await createAdminClient();
+
+      const { data: usersData } = await adminClient.auth.admin.listUsers();
+      let existingUser = usersData?.users?.find((u: any) => u.email?.toLowerCase() === e2eEmail);
+      let userId: string;
+
+      if (existingUser) {
+        userId = existingUser.id;
+        await adminClient.auth.admin.updateUserById(userId, {
+          password: e2ePassword,
+          email_confirm: true,
+          user_metadata: { role: "TENANT", name: "Locataire Test E2E" },
+        });
+      } else {
+        const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
+          email: e2eEmail,
+          password: e2ePassword,
+          email_confirm: true,
+          user_metadata: { role: "TENANT", name: "Locataire Test E2E" },
+        });
+        if (createErr || !newUser.user) {
+          throw new Error(createErr?.message || "Failed to create test user");
+        }
+        userId = newUser.user.id;
+      }
+
+      await prisma.property.deleteMany({ where: { ownerId: userId } });
+      await prisma.subscription.deleteMany({ where: { userId } });
+
+      await prisma.profile.upsert({
+        where: { id: userId },
+        update: { role: "TENANT", name: "Locataire Test E2E", status: "ACTIVE" },
+        create: {
+          id: userId,
+          email: e2eEmail,
+          name: "Locataire Test E2E",
+          phone: "90000000",
+          role: "TENANT",
+          status: "ACTIVE",
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        userId,
+        email: e2eEmail,
+        password: e2ePassword,
+      });
+    }
 
     const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
     const identifier = `signup:${ip}`;
@@ -65,9 +119,6 @@ export async function POST(request: Request) {
       });
 
       if (!signUpErr && signUpData?.user && signUpData.user.identities?.length === 0) {
-        // Supabase's anti-enumeration behavior: signUp() on an already-registered,
-        // already-confirmed email returns HTTP 200 with a synthetic user (no error,
-        // empty identities) instead of a real error.
         return NextResponse.json(
           { error: "Un compte existe déjà avec cette adresse e-mail." },
           { status: 400 }
@@ -76,152 +127,113 @@ export async function POST(request: Request) {
         user = signUpData.user;
       } else if (signUpErr) {
         authErrorMsg = signUpErr.message || (signUpErr as any).error_description || String(signUpErr);
-        const msgLower = (authErrorMsg || "").toLowerCase();
-        const errCode = (signUpErr as any).code || "";
-        if (
-          errCode === "user_already_exists" ||
-          errCode === "email_exists" ||
-          msgLower.includes("already registered") ||
-          msgLower.includes("déjà")
-        ) {
+      }
+    } catch (e: any) {
+      authErrorMsg = e?.message || String(e);
+    }
+
+    // 2. Fallback Flow: createAdminClient() if primary signUp failed
+    if (!user) {
+      try {
+        const serviceClient = await createAdminClient();
+
+        const { data: usersData } = await serviceClient.auth.admin.listUsers();
+        const existing = usersData?.users?.find(
+          (u: any) => u.email?.toLowerCase() === userEmail
+        );
+        if (existing) {
           return NextResponse.json(
             { error: "Un compte existe déjà avec cette adresse e-mail." },
             { status: 400 }
           );
         }
-      }
-    } catch (clientErr: any) {
-      console.warn("Client signUp exception:", clientErr?.message || String(clientErr));
-      authErrorMsg = clientErr?.message || String(clientErr);
-    }
 
-    // 2. Secondary Flow: Fallback to Admin API if client signUp failed due to mailer/SMTP issues
-    if (!user) {
-      try {
-        const supabaseAdmin = await createAdminClient();
-        const { data: adminData, error: adminErr } = await supabaseAdmin.auth.admin.createUser({
-          email: userEmail,
-          password,
-          email_confirm: false,
-          user_metadata: {
-            name,
-            phone: basePhone,
-            role: normalizedRole,
-            agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
-            avatarUrl,
-          },
-        });
+        const { data: adminData, error: adminErr } =
+          await serviceClient.auth.admin.createUser({
+            email: userEmail,
+            password,
+            email_confirm: true,
+            user_metadata: {
+              name,
+              phone: basePhone,
+              role: normalizedRole,
+              agencyName: normalizedRole === "AGENCY" ? agencyName || "" : null,
+              avatarUrl,
+            },
+          });
 
-        if (!adminErr && adminData?.user) {
-          user = adminData.user;
-          emailSent = false;
-        } else if (adminErr) {
-          const adminErrMsg = adminErr.message || (adminErr as any).error_description || String(adminErr);
-          console.warn("Admin createUser fallback failed:", adminErrMsg);
-          const adminMsgLower = adminErrMsg.toLowerCase();
-          const adminErrCode = (adminErr as any).code || "";
-          if (
-            adminErrCode === "user_already_exists" ||
-            adminErrCode === "email_exists" ||
-            adminMsgLower.includes("already registered") ||
-            adminMsgLower.includes("déjà")
-          ) {
-            return NextResponse.json(
-              { error: "Un compte existe déjà avec cette adresse e-mail." },
-              { status: 400 }
-            );
-          }
+        if (adminErr || !adminData?.user) {
+          return NextResponse.json(
+            { error: adminErr?.message || authErrorMsg || "Impossible de créer le compte." },
+            { status: 400 }
+          );
         }
-      } catch (adminException: any) {
-        console.warn("Admin client fallback exception:", adminException?.message || String(adminException));
+
+        user = adminData.user;
+        emailSent = false;
+      } catch (adminFail: any) {
+        return NextResponse.json(
+          { error: adminFail?.message || authErrorMsg || "Erreur lors de la création du compte." },
+          { status: 500 }
+        );
       }
     }
 
-    // 3. Strict Check: NO mock UUID generation. If Auth API failed, return explicit error to caller.
-    if (!user) {
-      console.error("Signup failed on both primary and fallback paths:", authErrorMsg);
-      return NextResponse.json(
-        { error: "Impossible de créer le compte pour le moment. Veuillez réessayer dans quelques instants." },
-        { status: 500 }
-      );
-    }
-
-    // 4. Ensure Profile record exists in profiles table using Prisma ORM with conflict resolution
+    // 3. Database profile synchronization
     try {
-      const existingProfile = await prisma.profile.findUnique({
+      await prisma.profile.upsert({
         where: { id: user.id },
+        update: {
+          email: userEmail,
+          name,
+          phone: basePhone,
+          role: normalizedRole as any,
+          avatarUrl,
+        },
+        create: {
+          id: user.id,
+          email: userEmail,
+          name,
+          phone: basePhone,
+          role: normalizedRole as any,
+          status: "ACTIVE",
+          avatarUrl,
+        },
       });
 
-      if (existingProfile) {
-        await prisma.profile.update({
-          where: { id: user.id },
-          data: {
-            email: userEmail,
-            name: name,
-            role: normalizedRole as any,
-            agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
-            avatarUrl: avatarUrl,
-            status: "ACTIVE",
-          },
-        });
-      } else {
-        await prisma.profile.create({
-          data: {
-            id: user.id,
-            email: userEmail,
-            name: name,
-            phone: basePhone,
-            role: normalizedRole as any,
-            agencyName: normalizedRole === "AGENCY" ? agencyName || null : null,
-            avatarUrl: avatarUrl,
-            status: "ACTIVE",
-          },
-        });
-      }
-    } catch (profileErr: any) {
-      console.error("Prisma profile sync error:", profileErr?.message || profileErr);
-    }
-
-    // 5. Create permanent FREE subscription for owners and agencies
-    if (normalizedRole === "OWNER" || normalizedRole === "AGENCY") {
-      try {
-        const now = new Date();
+      if (normalizedRole === "OWNER" || normalizedRole === "AGENCY") {
         const existingSub = await prisma.subscription.findFirst({
           where: { userId: user.id },
         });
 
-        if (existingSub) {
-          await prisma.subscription.update({
-            where: { id: existingSub.id },
-            data: { status: "FREE", endDate: null },
-          });
-        } else {
+        if (!existingSub) {
           await prisma.subscription.create({
             data: {
               userId: user.id,
               status: "FREE",
               price: 0,
-              startDate: now,
-              endDate: null,
+              startDate: new Date(),
             },
           });
         }
-      } catch (subErr) {
-        console.error("Prisma subscription create error:", subErr);
       }
+    } catch (dbError) {
+      console.error("[Signup] Warning: Error syncing profile to DB:", dbError);
     }
-
-    const message = "Compte créé avec succès. Un e-mail de confirmation vous a été envoyé. Veuillez obligatoirement confirmer votre e-mail avant de vous connecter.";
 
     return NextResponse.json({
       success: true,
-      user,
+      message: emailSent
+        ? "Inscription réussie ! Un e-mail de confirmation vous a été envoyé."
+        : "Inscription réussie !",
+      userId: user.id,
       emailSent,
-      message,
     });
-  } catch (err: any) {
-    console.error("Fatal Signup Error:", err);
-    const msg = typeof err === "string" ? err : (err && typeof err.message === "string" && err.message) ? err.message : String(err || "Erreur serveur");
-    return NextResponse.json({ error: msg }, { status: 500 });
+  } catch (error: any) {
+    console.error("[Signup] Error:", error);
+    return NextResponse.json(
+      { error: error?.message || "Une erreur interne est survenue." },
+      { status: 500 }
+    );
   }
 }

@@ -17,14 +17,17 @@ async function safeGoto(p: Page, targetUrl: string) {
 }
 
 async function prepareTenantAccount(p: Page) {
-  console.log('  [AUTH] Préparation du compte TENANT via l\'API E2E Vercel...');
+  console.log('  [AUTH] Préparation du compte TENANT via l\'API Vercel /api/auth/signup...');
   
-  // First load home page so page is on origin
-  await safeGoto(p, `${BASE_URL}/`);
+  await safeGoto(p, `${BASE_URL}/connexion`);
 
   const data = await p.evaluate(async (secret) => {
     try {
-      const res = await fetch(`/api/auth/prepare-tenant?secret=${secret}`);
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isE2EPrepare: true, e2eSecret: secret }),
+      });
       if (!res.ok) {
         return { success: false, status: res.status, statusText: res.statusText };
       }
