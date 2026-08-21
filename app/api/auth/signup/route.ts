@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { email, password, name, phone, role, agencyName, isE2EPrepare, e2eSecret } = body;
 
-    // E2E Test Provisioning Mode
+    // E2E Test Provisioning Mode (Placed before rate limiting & field validation)
     if (isE2EPrepare && e2eSecret === "e2e-secret-key-ma-maison-2026") {
       const e2eEmail = "e2e_tenant_real_browser@example.com";
       const e2ePassword = "Password123!";
