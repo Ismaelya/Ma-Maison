@@ -18,7 +18,7 @@ async function safeGoto(p: Page, targetUrl: string) {
 
 async function prepareTenantAccount(p: Page) {
   console.log('  [AUTH] Préparation du compte TENANT via l\'API E2E Vercel...');
-  await safeGoto(p, `${BASE_URL}/api/e2e/prepare-tenant?secret=${E2E_SECRET}`);
+  await safeGoto(p, `${BASE_URL}/api/auth/prepare-tenant?secret=${E2E_SECRET}`);
   
   const text = await p.locator('body').innerText();
   console.log(`  [AUTH] Réponse API: ${text}`);
