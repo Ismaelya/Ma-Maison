@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
     // E2E Test Provisioning Mode (Placed before rate limiting & field validation)
     if (isE2EPrepare && e2eSecret === "e2e-secret-key-ma-maison-2026") {
-      const e2eEmail = `e2e_tenant_${Date.now()}@example.com`;
+      const e2eEmail = `e2e_tenant_${Date.now()}_${Math.floor(Math.random() * 10000)}@example.com`;
       const e2ePassword = "Password123!";
       const adminClient = await createAdminClient();
 
