@@ -18,38 +18,48 @@ export async function POST(request: Request) {
       const e2ePassword = "Password123!";
       const adminClient = await createAdminClient();
 
-      const { data: usersData } = await adminClient.auth.admin.listUsers();
-      let existingUser = usersData?.users?.find((u: any) => u.email?.toLowerCase() === e2eEmail);
-      let userId: string;
+      // 1. Check existing profile by email in DB
+      const existingProf = await prisma.profile.findFirst({
+        where: { email: e2eEmail },
+      });
 
-      if (existingUser) {
-        try {
-          await adminClient.auth.admin.deleteUser(existingUser.id);
-        } catch {}
+      if (existingProf) {
+        try { await prisma.property.deleteMany({ where: { ownerId: existingProf.id } }); } catch {}
+        try { await prisma.subscription.deleteMany({ where: { userId: existingProf.id } }); } catch {}
+        try { await prisma.profile.delete({ where: { id: existingProf.id } }); } catch {}
+        try { await adminClient.auth.admin.deleteUser(existingProf.id); } catch {}
       }
 
+      // Also search auth users if listUsers finds it
+      try {
+        const { data: usersData } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+        const existingAuthUser = usersData?.users?.find((u: any) => u.email?.toLowerCase() === e2eEmail);
+        if (existingAuthUser) {
+          await adminClient.auth.admin.deleteUser(existingAuthUser.id);
+        }
+      } catch {}
+
+      // 2. Create fresh auto-confirmed user
       const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
         email: e2eEmail,
         password: e2ePassword,
         email_confirm: true,
         user_metadata: { role: "TENANT", name: "Locataire Test E2E" },
       });
+
       if (createErr || !newUser?.user) {
         throw new Error(createErr?.message || "Failed to create test user");
       }
-      userId = newUser.user.id;
 
-      await prisma.property.deleteMany({ where: { ownerId: userId } });
-      await prisma.subscription.deleteMany({ where: { userId } });
+      const userId = newUser.user.id;
 
-      await prisma.profile.upsert({
-        where: { id: userId },
-        update: { role: "TENANT", name: "Locataire Test E2E", status: "ACTIVE" },
-        create: {
+      // 3. Create fresh TENANT profile
+      await prisma.profile.create({
+        data: {
           id: userId,
           email: e2eEmail,
           name: "Locataire Test E2E",
-          phone: "90000000",
+          phone: "+22790998877",
           role: "TENANT",
           status: "ACTIVE",
         },
