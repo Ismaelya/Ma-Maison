@@ -1,24 +1,24 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma/client";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const secret = searchParams.get("secret");
 
-  const expectedSecret = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!expectedSecret || secret !== expectedSecret.slice(0, 32)) {
+  if (secret !== "e2e-secret-key-ma-maison-2026") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
 
   const email = "e2e_tenant_real_browser@example.com";
   const password = "Password123!";
 
   try {
+    const serviceClient = createAdminClient();
+
     // Check if user already exists
     const { data: usersData } = await serviceClient.auth.admin.listUsers();
     let existingUser = usersData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());

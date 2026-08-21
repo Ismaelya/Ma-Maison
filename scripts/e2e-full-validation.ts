@@ -3,12 +3,9 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 import { chromium, Page } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
-import * as dotenv from 'dotenv';
-
-dotenv.config({ path: '.env.local' });
 
 const BASE_URL = process.env.TARGET_URL || 'https://ma-maison-niger.vercel.app';
-const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').slice(0, 32);
+const E2E_SECRET = 'e2e-secret-key-ma-maison-2026';
 
 async function safeGoto(p: Page, targetUrl: string) {
   try {
@@ -21,7 +18,7 @@ async function safeGoto(p: Page, targetUrl: string) {
 
 async function prepareTenantAccount(p: Page) {
   console.log('  [AUTH] Préparation du compte TENANT via l\'API E2E Vercel...');
-  await safeGoto(p, `${BASE_URL}/api/e2e/prepare-tenant?secret=${serviceKey}`);
+  await safeGoto(p, `${BASE_URL}/api/e2e/prepare-tenant?secret=${E2E_SECRET}`);
   
   const text = await p.locator('body').innerText();
   console.log(`  [AUTH] Réponse API: ${text}`);
