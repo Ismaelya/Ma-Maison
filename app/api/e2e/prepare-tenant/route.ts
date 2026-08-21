@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma/client";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -59,6 +59,7 @@ export async function GET(request: Request) {
         id: userId,
         email,
         name: "Locataire Test E2E",
+        phone: "90000000",
         role: "TENANT",
         status: "ACTIVE",
       },
