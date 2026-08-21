@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma/client";
 
-export async function GET(request: Request) {
+async function handle(request: Request) {
   const { searchParams } = new URL(request.url);
   const secret = searchParams.get("secret");
 
@@ -75,4 +75,12 @@ export async function GET(request: Request) {
     console.error("Error in prepare-tenant:", error);
     return NextResponse.json({ error: error?.message || "Internal Error" }, { status: 500 });
   }
+}
+
+export async function GET(request: Request) {
+  return handle(request);
+}
+
+export async function POST(request: Request) {
+  return handle(request);
 }
