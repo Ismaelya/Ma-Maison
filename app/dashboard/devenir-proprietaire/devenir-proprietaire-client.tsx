@@ -87,12 +87,12 @@ export function DevenirProprietaireClient({ userName }: { userName?: string }) {
             Publication Illimitée & Gratuite
           </h3>
           <p className="text-sm text-neutral-500 leading-relaxed">
-            Publiez et gérez toutes vos offres de location ou de vente. Vos annonces sont visibles immédiatement par des milliers d'utilisateurs actifs à Niamey, Zinder, Maradi et dans tout le Niger.
+            Publiez et gérez toutes vos offres de location ou de vente. Vos annonces sont visibles immédiatement par des milliers d&apos;utilisateurs actifs à Niamey, Zinder, Maradi et dans tout le Niger.
           </p>
           <ul className="space-y-2 pt-2 text-xs font-medium text-[var(--color-text)]">
             <li className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-              <span>Publication d'annonces 100% gratuite</span>
+              <span>Publication d&apos;annonces 100% gratuite</span>
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
@@ -113,7 +113,7 @@ export function DevenirProprietaireClient({ userName }: { userName?: string }) {
             Badge Vérifié en option Premium
           </h3>
           <p className="text-sm text-neutral-500 leading-relaxed">
-            Profitez en option des fonctionnalités Premium pour certifier votre identité, obtenir le badge "Propriétaire Vérifié" et maximiser le taux de réponse de vos annonces.
+            Profitez en option des fonctionnalités Premium pour certifier votre identité, obtenir le badge &quot;Propriétaire Vérifié&quot; et maximiser le taux de réponse de vos annonces.
           </p>
           <ul className="space-y-2 pt-2 text-xs font-medium text-[var(--color-text)]">
             <li className="flex items-center gap-2">

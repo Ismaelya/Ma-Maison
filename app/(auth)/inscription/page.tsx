@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -16,6 +16,14 @@ import { useToast } from "@/components/ui/toast-notification";
 import { cn } from "@/lib/utils";
 
 export default function InscriptionPage() {
+  return (
+    <Suspense fallback={null}>
+      <InscriptionForm />
+    </Suspense>
+  );
+}
+
+function InscriptionForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [emailSent, setEmailSent] = useState(true);

@@ -17,10 +17,12 @@ import { useToast } from "@/components/ui/toast-notification";
 export default function ConnexionPage() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [isReturningUser, setIsReturningUser] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const router = useRouter();
   const toast = useToast();
 
   useEffect(() => {
+    setIsHydrated(true);
     try {
       if (typeof window !== "undefined" && localStorage.getItem("ma_maison_returning_user")) {
         setIsReturningUser(true);
@@ -57,19 +59,15 @@ export default function ConnexionPage() {
       const result = await res.json();
 
       if (res.ok && result.success) {
+        // The API route already established the session via Set-Cookie on this
+        // response — do NOT also call supabase.auth.signInWithPassword() here.
+        // That used to fire a second, concurrent sign-in against Supabase Auth
+        // with the same credentials, which could race against these cookies and
+        // leave the browser without a usable session even though this request
+        // succeeded (observed: 200 response, correct profile, no session cookie).
         loggedUser = result.user;
         userRole = String(result.profile?.role || "").toUpperCase();
         userStatus = String(result.profile?.status || "").toUpperCase();
-
-        // Sync browser client session
-        try {
-          await supabase.auth.signInWithPassword({
-            email: data.email,
-            password: data.password,
-          });
-        } catch {
-          // Non-critical if browser client auto-refreshes from cookie
-        }
       } else {
         // Fallback: direct browser client sign-in
         const { data: authResult, error: clientAuthError } = await supabase.auth.signInWithPassword({
@@ -176,7 +174,17 @@ export default function ConnexionPage() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* method="post" is a defense-in-depth fallback: if this submit fires before React
+              hydrates and attaches the JS handler below, the browser's native submission stays
+              a POST instead of a GET, so email/password never land in the URL query string. */}
+          <form
+            method="post"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit(onSubmit)(e);
+            }}
+            className="space-y-4"
+          >
             <Input
               label="Adresse e-mail"
               type="email"
@@ -213,6 +221,7 @@ export default function ConnexionPage() {
               size="lg"
               fullWidth
               isLoading={isSubmitting}
+              disabled={!isHydrated || isSubmitting}
               leftIcon={<LogIn className="h-4 w-4" />}
               className="rounded-2xl border-0 text-white shadow-[0_10px_30px_rgba(5,203,173,0.35)] transition-transform hover:scale-[1.01] hover:shadow-[0_12px_36px_rgba(5,203,173,0.45)]"
               style={{ background: "linear-gradient(135deg, #102281 0%, #05CBAD 100%)" }}

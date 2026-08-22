@@ -10,47 +10,7 @@ import { getAvatarUrl } from "@/lib/utils";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, name, phone, role, agencyName, isE2EPrepare, e2eSecret } = body;
-
-    // E2E Test Provisioning Mode (Placed before rate limiting & field validation)
-    if (isE2EPrepare && e2eSecret === "e2e-secret-key-ma-maison-2026") {
-      const e2eEmail = `e2e_tenant_${Date.now()}_${Math.floor(Math.random() * 10000)}@example.com`;
-      const e2ePassword = "Password123!";
-      const adminClient = await createAdminClient();
-
-      // Create fresh auto-confirmed TENANT user via Supabase Auth Admin API
-      const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
-        email: e2eEmail,
-        password: e2ePassword,
-        email_confirm: true,
-        user_metadata: { role: "TENANT", name: "Locataire Test E2E" },
-      });
-
-      if (createErr || !newUser?.user) {
-        throw new Error(createErr?.message || "Failed to create test user");
-      }
-
-      const userId = newUser.user.id;
-
-      // Create profile in Prisma DB
-      await prisma.profile.create({
-        data: {
-          id: userId,
-          email: e2eEmail,
-          name: "Locataire Test E2E",
-          phone: `+227${Math.floor(80000000 + Math.random() * 19999999)}`,
-          role: "TENANT",
-          status: "ACTIVE",
-        },
-      });
-
-      return NextResponse.json({
-        success: true,
-        userId,
-        email: e2eEmail,
-        password: e2ePassword,
-      });
-    }
+    const { email, password, name, phone, role, agencyName } = body;
 
     const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
     const identifier = `signup:${ip}`;

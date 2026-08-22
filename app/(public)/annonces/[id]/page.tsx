@@ -61,9 +61,13 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
   const { id } = await params;
   const supabase = await createClient();
 
+  // No "profiles(...)" embed here: anon has no direct SELECT on public.profiles
+  // (see migration 010_profiles_public_view.sql / audit finding A5), so an
+  // embedded join against the base table 404s the whole page for anonymous
+  // visitors. Owner info is fetched separately below, from profiles_public.
   const { data: listing } = await supabase
     .from("properties")
-    .select("*, profiles(id, name, agencyName, badgeVerified, avatarUrl, phone, createdAt), property_images(url)")
+    .select("*, property_images(url)")
     .eq("id", id)
     .single();
 
@@ -83,13 +87,34 @@ export default async function ListingDetailPage({ params }: ListingDetailParams)
   }
 
   const typedListing = listing as any;
-  const owner = typedListing.profiles ?? {};
 
   // Check if current visitor is authenticated
   const {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
   const isAuthenticated = !!currentUser;
+
+  const { data: ownerPublic } = await supabase
+    .from("profiles_public")
+    .select("id, name, agencyName, badgeVerified, avatarUrl")
+    .eq("id", typedListing.ownerId)
+    .single();
+
+  // "phone" is intentionally not in profiles_public (PII) — only fetch it for
+  // authenticated visitors, who still have direct SELECT on public.profiles.
+  let ownerPhone: string | null = null;
+  let ownerCreatedAt: string | null = null;
+  if (isAuthenticated) {
+    const { data: ownerPrivate } = await supabase
+      .from("profiles")
+      .select("phone, createdAt")
+      .eq("id", typedListing.ownerId)
+      .single();
+    ownerPhone = ownerPrivate?.phone ?? null;
+    ownerCreatedAt = ownerPrivate?.createdAt ?? null;
+  }
+
+  const owner: any = { ...(ownerPublic ?? {}), phone: ownerPhone, createdAt: ownerCreatedAt };
 
   // Security Requirement: Exclude exact address for unauthenticated visitors
   if (!isAuthenticated && typedListing && "address" in typedListing) {

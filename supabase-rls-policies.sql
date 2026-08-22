@@ -603,3 +603,25 @@ $$;
 revoke all on function public.send_message(text, text) from public;
 grant execute on function public.send_message(text, text) to authenticated;
 
+-- ------------------------------------------------------------
+-- 12. PROFILES_PUBLIC — vue publique (voir migration 010)
+-- RLS ne filtre jamais par colonne : "profiles_select_own_or_public_fields"
+-- laisse passer des lignes entières (email, téléphone...) pour anon dès
+-- qu'un propriétaire a une annonce APPROVED. On retire donc l'accès direct
+-- de anon à public.profiles et on n'expose que les champs réellement publics
+-- via cette vue.
+-- ------------------------------------------------------------
+
+revoke select on public.profiles from anon;
+
+create or replace view public.profiles_public as
+select
+  id,
+  name,
+  "avatarUrl",
+  "agencyName",
+  "badgeVerified"
+from public.profiles;
+
+grant select on public.profiles_public to anon, authenticated;
+
